@@ -6,7 +6,7 @@ matches the time and hardware you have.
 | level | what it does | needs | result |
 |---|---|---|---|
 | **1. Check** | rebuilds every table and number from `results/` and compares with the paper | CPU, 1 minute, no data | byte-identical |
-| **2. Evaluate** | downloads the models and holograms, reconstructs, evaluates every model and reruns the end-to-end, discovery, full-frame and fidelity experiments | 1 GPU, @@L2_TIME@@, @@L2_DISK@@ of disk | @@L2_RESULT@@ |
+| **2. Evaluate** | downloads the models and holograms, reconstructs, evaluates every model and reruns the end-to-end, discovery, full-frame and fidelity experiments | GPU, about 1 hour on two GPUs, 90 GB of disk | the same numbers, within 0.01 |
 | **3. Rebuild** | everything from the seeds: simulation, reconstruction, 160 models, all experiments | several GPUs, 280 GB of disk | within the spread of the five repetitions |
 
 Set up the environment first: see *Installation* in the [README](../README.md). `requirements-lock.txt` is the exact
@@ -31,6 +31,16 @@ python -m holo_openset reproduce evaluate --gpus 0        # several GPUs: --gpus
 Results go to `output/level2/results`, and the run ends by comparing them with the paper: every number must be within
 0.01 or 1 %. Stage times are not compared, because they measure the machine. The robustness and oracle experiments
 need the robustness sets, so they belong to level 3; level 2 reuses their results from `results/`.
+
+Measured in a clean clone, on two H100 GPUs, with the archives of the data record unpacked by hand: 7 minutes of
+reconstruction and 46 minutes of evaluation and experiments, 178 jobs, none failed. Of the 137 numbers of the paper
+that this level computes again, 134 came out identical and 3 differed within the tolerance:
+
+| number | paper | clean run |
+|---|---|---|
+| discovery, B-cubed F1 of the learned layer | 0.61 | 0.60 |
+| full frames, open-set F1 of hologram crops | 0.786 | 0.787 |
+| enrollment with k = 5, learned layer | 0.350 | 0.349 |
 
 ## Level 3: rebuild
 
@@ -68,10 +78,10 @@ What to expect:
 | idealised and small-object tables | `results/eval/ideal`, `results/eval/small_*` | `evaluate --set` | 2 |
 | fidelity numbers | `results/fidelity.json` | `experiment fidelity` | 2 |
 | gaps of the idealised model | `results/gaps.json` | `experiment gaps` | 3 |
-| Figs. spectrum, formation, acquisition, autofocus, flows, filter | none | `python -m holo_openset paper figures` | 2 |
-| Fig. variants | none | `paper figures`, after `simulate variants` | 3 |
+| Figs. bench, spectrum, formation, acquisition, variants, autofocus, flows, filter | none | `python -m holo_openset paper figures` | 2 |
 
-Tables and numbers are written to `output/paper/`. Figures need the data of level 2.
+Tables, numbers and figures are written to `output/paper/`. Figures need the data of level 2 and take a few minutes
+on one GPU (`HOLO_PAPER_DEVICE=cuda:0`).
 
 ## Hardware of the paper
 
