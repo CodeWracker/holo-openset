@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "holo-openset: open-set recognition of interference patterns on raw lensless holograms"
+type: software
+license: AGPL-3.0-only
+version: 1.0.0
+repository-code: "https://github.com/CodeWracker/holo-openset"
+authors:
+  - family-names: Souza
+    given-names: Rodrigo Ferraz
+  - family-names: Souza
+    given-names: Rodrigo Guedes de
+  - family-names: Panisson
+    given-names: Alison R.
+  - family-names: Macedo
+    given-names: Douglas Dyllon J. de
+  - family-names: Sobieranski
+    given-names: Antonio Carlos

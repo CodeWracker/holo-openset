@@ -1,0 +1,17 @@
+# Direct dependencies. The exact environment of the paper is in requirements-lock.txt.
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.5.1
+torchvision==0.20.1
+numpy==1.26.4
+pandas
+scipy
+scikit-learn
+matplotlib
+pillow
+pyyaml
+ultralytics==8.4.178
+ultralytics-thop>=2.2.2
+polars
+opencv-python==4.10.0.84
+nvidia-ml-py
+pytest
