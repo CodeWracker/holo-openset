@@ -1,0 +1,16 @@
+{
+ "rep": 2,
+ "set": "realistic",
+ "counts": {
+  "train": 1118,
+  "val": 700,
+  "train_removed": 2382
+ },
+ "epochs": 40,
+ "patience": 10,
+ "base": "yolo12s.pt",
+ "val_map50": 0.9949061409933415,
+ "val_map": 0.8496794162572915,
+ "val_precision": 0.9963056746331682,
+ "val_recall": 0.9942216774645422
+}

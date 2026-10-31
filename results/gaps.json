@@ -1,0 +1,7 @@
+{
+ "n_scenes": 100,
+ "periodic_rel_diff_mean": 0.38094771534204486,
+ "periodic_rel_diff_std": 0.04626286477557537,
+ "quadratic_rel_energy_mean": 0.18548919156193733,
+ "quadratic_rel_energy_std": 0.022412637499460167
+}
