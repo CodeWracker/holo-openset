@@ -3,11 +3,11 @@
 torch==2.5.1
 torchvision==0.20.1
 numpy==1.26.4
-pandas
-scipy
-scikit-learn
-matplotlib
-pillow
+pandas==2.2.3
+scipy==1.14.1
+scikit-learn==1.5.2
+matplotlib==3.9.2
+pillow==11.0.0
 pyyaml
 ultralytics==8.4.178
 ultralytics-thop>=2.2.2
