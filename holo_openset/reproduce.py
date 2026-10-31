@@ -91,8 +91,9 @@ def compare(results):
             continue
         if a == b:
             same += 1
-        elif abs(a - b) <= max(TOLERANCE, 0.01 * abs(a)):
+        elif abs(a - b) <= max(TOLERANCE, 0.01 * abs(a)) + 1e-9:
             close += 1
+            print(f'  {k}: paper {v}, this run {new.get(k)}')
         else:
             far.append((k, v, new.get(k)))
     print(f'{same} identical, {close} within {TOLERANCE} or 1 %, {len(far)} further apart, {machine} machine-dependent '
