@@ -46,8 +46,8 @@ What to expect:
 
 * **Simulation.** The scenes, annotations and dust are always the same. The images repeat bit by bit on one build of
   the software (tested: 200 of 200 identical). With another build of PyTorch and CUDA, rounding moves a few pixels:
-  rebuilding the base set with `requirements-lock.txt` left 0.03 % of the pixels different from the published set, with
-  an rms difference of 0.07 grey levels against an image contrast of 17. `checksums/data.sha256` holds the checksums of
+  rebuilding the base set with `requirements-lock.txt` left 0.02 % of the pixels different from the published set, with
+  an rms difference of 0.05 grey levels against an image contrast of 17. `checksums/data.sha256` holds the checksums of
   the published files. To measure a rebuilt set, keep the published one in `data/` and run
   `python -m holo_openset reproduce compare-data path/to/rebuilt/data`.
 * **Training.** Seeds are fixed, but GPU training is not fully deterministic. Numbers come out close to the paper, not
