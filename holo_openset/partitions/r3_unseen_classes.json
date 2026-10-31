@@ -1,0 +1,11 @@
+{
+  "repetition": 3,
+  "seed": 103,
+  "classes": [
+    "C",
+    "G",
+    "O",
+    "W",
+    "X"
+  ]
+}
