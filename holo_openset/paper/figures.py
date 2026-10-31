@@ -755,7 +755,7 @@ def fig_robustness():
     save(fig, 'fig_robustness')
 
 
-ALL = ['fig_setup', 'fig_fresnel', 'fig_acquisition', 'fig_variants', 'fig_autofocus', 'fig_flows', 'fig_filter', 'fig_scores',
+ALL = ['fig_setup', 'fig_spectrum', 'fig_fresnel', 'fig_acquisition', 'fig_variants', 'fig_autofocus', 'fig_flows', 'fig_filter', 'fig_scores',
        'fig_enroll', 'fig_cost', 'fig_full_frame', 'fig_robustness']
 
 
