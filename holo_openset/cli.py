@@ -280,9 +280,9 @@ def main(argv=None):
     p.set_defaults(fn=cmd_paper)
 
     p = sub.add_parser('reproduce', help='reproduce the paper (docs/REPRODUCIBILITY.md)')
-    p.add_argument('what', choices=['check', 'download', 'evaluate', 'full', 'compare', 'verify-data', 'package',
-                                    'write-data-sums'])
-    p.add_argument('path', nargs='?', help='results directory (compare) or output directory (package)')
+    p.add_argument('what', choices=['check', 'download', 'evaluate', 'full', 'compare', 'verify-data', 'compare-data',
+                                    'package', 'write-data-sums'])
+    p.add_argument('path', nargs='?', help='results (compare), data (compare-data) or output (package) directory')
     p.add_argument('--gpus', nargs='+', default=['0'], help='physical GPU indices (each job uses one)')
     p.add_argument('--record', help='Zenodo record of the data')
     p.set_defaults(fn=cmd_reproduce)

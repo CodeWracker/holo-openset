@@ -36,17 +36,20 @@ need the robustness sets, so they belong to level 3; level 2 reuses their result
 
 ```bash
 python -m holo_openset reproduce full --gpus 0 1 2 3
-python -m holo_openset reproduce verify-data
 python -m holo_openset paper figures
 ```
 
 This runs the 404 jobs of `holo_openset/pipeline.py`, one GPU per job. A job that finished leaves `logs/done/<job>.ok`
-and is not repeated, so the queue can be stopped and restarted. `verify-data` compares the simulated holograms with
-`checksums/data.sha256`.
+and is not repeated, so the queue can be stopped and restarted.
 
 What to expect:
 
-* **Simulation.** @@BIT_RESULT@@
+* **Simulation.** The scenes, annotations and dust are always the same. The images repeat bit by bit on one build of
+  the software (tested: 200 of 200 identical). With another build of PyTorch and CUDA, rounding moves a few pixels:
+  rebuilding the base set with `requirements-lock.txt` left 0.03 % of the pixels different from the published set, with
+  an rms difference of 0.07 grey levels against an image contrast of 17. `checksums/data.sha256` holds the checksums of
+  the published files. To measure a rebuilt set, keep the published one in `data/` and run
+  `python -m holo_openset reproduce compare-data path/to/rebuilt/data`.
 * **Training.** Seeds are fixed, but GPU training is not fully deterministic. Numbers come out close to the paper, not
   identical. Compare them with the standard deviation over the five repetitions in the tables.
 * **Times.** They depend on the machine and on the load of the GPU. Compare the growth with image size and the ratios

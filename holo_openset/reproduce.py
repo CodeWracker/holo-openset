@@ -6,6 +6,7 @@
     python -m holo_openset reproduce full --gpus 0 1 2 3       # level 3: everything from the seeds
     python -m holo_openset reproduce compare output/level2/results
     python -m holo_openset reproduce verify-data               # checksums of the data on disk
+    python -m holo_openset reproduce compare-data OTHER_DATA   # a regenerated set against the published one
     python -m holo_openset reproduce package OUT               # maintainers: the archives of the Zenodo record
 
 `check` must match expected/ byte by byte. `compare` allows a tolerance: a new run on other hardware gives close, not
@@ -150,6 +151,22 @@ def verify_data():
     return 1 if bad else 0
 
 
+def compare_data(other, sets=('realistic',)):
+    """A rebuilt set against the one on disk. The simulation repeats exactly on one build of the software; another
+    build of CUDA rounds differently, and a few pixels of each image move."""
+    import numpy as np
+    for s in sets:
+        a = np.load(paths.DATA / s / 'holograms.npy', mmap_mode='r')
+        b = np.load(Path(other) / s / 'holograms.npy', mmap_mode='r')
+        n = min(len(a), len(b))
+        step = max(1, n // 200)
+        d = [np.asarray(a[i], np.float32) - np.asarray(b[i], np.float32) for i in range(0, n, step)]
+        d = np.stack(d)
+        print(f'{s}: {n} images compared in steps of {step}; {(d != 0).mean():.4%} of the pixels differ, '
+              f'rms {np.sqrt((d ** 2).mean()):.3f} grey levels')
+    return 0
+
+
 def download(record=None):
     record = record or ZENODO_RECORD
     if record is None:
@@ -222,4 +239,6 @@ def main(a):
         return full(a.gpus)
     if a.what == 'compare':
         return compare(a.path)
+    if a.what == 'compare-data':
+        return compare_data(a.path)
     return package(a.path)

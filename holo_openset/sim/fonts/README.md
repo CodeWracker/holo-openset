@@ -1,6 +1,6 @@
 # Fonts of the simulated letters
 
-Shipped with the package so the dataset is rebuilt bit by bit on any machine. All are free to redistribute.
+Shipped with the package so the scenes of the dataset are the same on any machine. All are free to redistribute.
 
 * `main/` — the three fonts of every scene (train, validation, test): DejaVu Sans, DejaVu Serif (Bitstream Vera
   licence) and STIX General (SIL OFL), a sans, a serif and a Times-like face.

@@ -355,8 +355,10 @@ def fig_acquisition(image_id=None):
         ses = session(ses_seed, p)
         g = torch.Generator(device=DEV).manual_seed(seed + 700_000_000)
         out.append((title, record(sensor_intensity(sc, ses, p, DEV), ses, p, cam, g, DEV)))
-    assert np.array_equal(out[-1][1], np.load(BASE / 'holograms.npy', mmap_mode='r')[
-        pd.read_csv(BASE / 'metadata.csv').image_id.tolist().index(image_id)]), 'not the dataset image'
+    stored = np.load(BASE / 'holograms.npy', mmap_mode='r')[
+        pd.read_csv(BASE / 'metadata.csv').image_id.tolist().index(image_id)]
+    # the same up to floating-point rounding: another build of CUDA moves a few pixels (docs/REPRODUCIBILITY.md)
+    assert np.mean(np.asarray(out[-1][1], float) != stored) < 0.01, 'not the dataset image'
     amp = np.asarray(Image.open(BASE / 'objects' / f'{image_id:06d}_amp.png'))
     ph = np.asarray(Image.open(BASE / 'objects' / f'{image_id:06d}_phase.png'))
     fig, axs = plt.subplots(2, 4, figsize=(7.16, 3.85), gridspec_kw=dict(wspace=0.04, hspace=0.14))
