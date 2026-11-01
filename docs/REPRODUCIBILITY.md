@@ -34,13 +34,16 @@ need the robustness sets, so they belong to level 3; level 2 reuses their result
 
 Measured in a clean clone, on two H100 GPUs, with the archives of the data record unpacked by hand: 7 minutes of
 reconstruction and 46 minutes of evaluation and experiments, 178 jobs, none failed. Of the 137 numbers of the paper
-that this level computes again, 134 came out identical and 3 differed within the tolerance:
+that this level computes again, 135 came out identical and 2 differed within the tolerance:
 
 | number | paper | clean run |
 |---|---|---|
 | discovery, B-cubed F1 of the learned layer | 0.61 | 0.60 |
-| full frames, open-set F1 of hologram crops | 0.786 | 0.787 |
 | enrollment with k = 5, learned layer | 0.350 | 0.349 |
+
+The full-frame experiment was repeated after full frames moved to fast FFT sizes: two independent runs gave identical
+accuracy files. GPU times need a GPU that nothing else is using: on a saturated GPU every call takes the same few
+milliseconds, whatever the size of the image.
 
 ## Level 3: rebuild
 
