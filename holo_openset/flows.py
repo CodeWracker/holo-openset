@@ -25,12 +25,16 @@ FLOWS = {
     'bank_jit': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5, alpha_jitter=0.05)),
     'bank_wide': dict(mode='bank', fourier='learned', rec=None,
                       train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.12)),
+    # sweep of the width of the stack against the jitter (repetition 1)
+    'bank_w1': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.08, alpha_jitter=0.08)),
+    'bank_w2': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=9, alpha_spread=0.12, alpha_jitter=0.12)),
+    'bank_w3': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.05)),
     'rec_z0': dict(mode='none', fourier='learned', rec='z0'),
     'rec_af': dict(mode='none', fourier='learned', rec='af'),
     'rec_edf': dict(mode='none', fourier='learned', rec='edf'),
     'rec_twin': dict(mode='none', fourier='learned', rec='twin'),
 }
-HOLOGRAM_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'prop0', 'bank', 'prop_jit', 'bank_jit', 'bank_wide']
+HOLOGRAM_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'prop0', 'bank', 'prop_jit', 'bank_jit', 'bank_wide', 'bank_w1', 'bank_w2', 'bank_w3']
 LABELS = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
           'prop': 'learned propagation', 'prop0': 'learned propagation, from the identity',
           'bank': 'learned focal stack', 'prop_jit': 'learned propagation, distance jitter',
