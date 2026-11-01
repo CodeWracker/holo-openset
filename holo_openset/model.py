@@ -44,12 +44,18 @@ class FourierLayer(nn.Module):
     (W_re + i W_im, initialised to 1 + 0i); the output is the complex filtered hologram as three channels, real part,
     imaginary part and modulus -- the form of a numerical back-propagation, exp(+i pi lambda z |f|^2) = cos + i sin,
     which an intensity hologram of objects that absorb AND delay the light needs (one real filter can only invert
-    one of the two). 'none': identity; a multi-channel input (e.g. a reconstruction cache) passes through."""
+    one of the two). 'none': identity; a multi-channel input (e.g. a reconstruction cache) passes through.
 
-    def __init__(self, size=IMAGE_SIZE, mode='radial'):
+    'prop': the gain per radius of 'radial' times the PHASE of a free-space propagation, exp(+i alpha q), with
+    alpha ONE learnable scalar in units of the training grid (alpha = pi lambda z / (N pixel)^2 for a distance z: the
+    optical parameters are never given, alpha is found from the holograms). 'bank': the same at n_dist distances
+    around alpha, a focal stack of 3 x n_dist channels for objects at different depths and sessions at different
+    distances, without an autofocus per hologram."""
+
+    def __init__(self, size=IMAGE_SIZE, mode='radial', n_dist=1):
         super().__init__()
         self.mode = mode
-        if mode in ('radial', 'complex'):
+        if mode in ('radial', 'complex', 'prop', 'bank'):
             k = np.fft.fftfreq(size, d=1.0 / size).astype(np.int64)
             q = k[None, :] ** 2 + k[:, None] ** 2
             uniq, inv = np.unique(q, return_inverse=True)
@@ -58,17 +64,29 @@ class FourierLayer(nn.Module):
             self.weight = nn.Parameter(torch.ones(len(uniq)))
             if mode == 'complex':
                 self.weight_im = nn.Parameter(torch.zeros(len(uniq)))
+            if mode in ('prop', 'bank'):
+                self.alpha = nn.Parameter(torch.zeros(n_dist if mode == 'bank' else 1, dtype=torch.float64))
         elif mode == 'none':
             self.register_buffer('weight', torch.ones(1))
         else:
             raise ValueError(mode)
 
+    @property
+    def out_channels(self):
+        return {'none': None, 'radial': 1, 'complex': 3}.get(self.mode) or 3 * self.alpha.numel()
+
+    def grid_q(self, shape):
+        """q = kx^2 + ky^2 of an image of `shape`, in units of the training grid (float64 [H, W])."""
+        size = self.inv.shape[-1]
+        if tuple(shape) == (size, size):
+            return self.q_values.double()[self.inv]
+        fy = torch.fft.fftfreq(shape[0], device=self.inv.device, dtype=torch.float64) * size
+        fx = torch.fft.fftfreq(shape[1], device=self.inv.device, dtype=torch.float64) * size
+        return fx[None, :] ** 2 + fy[:, None] ** 2
+
     def _resampled(self, w, shape):
         """Weights w (one per bin of q_values) evaluated at the physical frequencies of an image of `shape`."""
-        size = self.inv.shape[-1]
-        fy = torch.fft.fftfreq(shape[0], device=w.device, dtype=torch.float64) * size
-        fx = torch.fft.fftfreq(shape[1], device=w.device, dtype=torch.float64) * size
-        q = (fx[None, :] ** 2 + fy[:, None] ** 2).flatten()
+        q = self.grid_q(shape).flatten()
         qv = self.q_values.double()
         j = torch.searchsorted(qv, q).clamp(1, len(qv) - 1)
         t = ((q - qv[j - 1]) / (qv[j] - qv[j - 1])).clamp(0, 1).to(w.dtype)
@@ -86,6 +104,9 @@ class FourierLayer(nn.Module):
         else:
             re = self._resampled(self.weight, shape)
             im = self._resampled(self.weight_im, shape) if self.mode == 'complex' else None
+        if self.mode in ('prop', 'bank'):   # [K, H, W]: the gain times the phase of each distance
+            phase = self.alpha[:, None, None] * self.grid_q(shape if shape is not None else (size, size))[None]
+            return (re.double()[None] * torch.exp(1j * phase)).to(torch.complex64)
         return re if im is None else torch.complex(re, im)
 
     def forward(self, x):  # [B, H, W] -> [B, 1, H, W]   ('complex': [B, 3, H, W]; 'none' keeps [B, C, H, W])
@@ -97,11 +118,15 @@ class FourierLayer(nn.Module):
         if self.training:
             t = self.transfer(shape)
         else:  # cached until the weights change
-            key = (self.weight._version, getattr(self, 'weight_im', self.weight)._version, shape, str(x.device))
+            key = (tuple(p._version for p in self.parameters()), shape, str(x.device))
             if getattr(self, '_key', None) != key:
                 self._t = self.transfer(shape).detach()
                 self._key = key
             t = self._t
+        if self.mode in ('prop', 'bank'):
+            y = torch.fft.ifft2(torch.fft.fft2(x)[:, None] * t[None])            # [B, K, H, W]
+            y = torch.stack([y.real, y.imag, torch.sqrt(y.real ** 2 + y.imag ** 2 + 1e-12)], 2)
+            return y.flatten(1, 2)[..., :h, :w]                                   # re, im, |.| of each distance
         if self.mode == 'complex':
             y = torch.fft.ifft2(torch.fft.fft2(x) * t)
             return torch.stack([y.real, y.imag, torch.sqrt(y.real ** 2 + y.imag ** 2 + 1e-12)], 1)[..., :h, :w]
@@ -113,12 +138,17 @@ class FourierLayer(nn.Module):
 
 
 class HoloEmbedder(nn.Module):
-    def __init__(self, n_classes, mode='radial', crop=64, proj_dim=128, pretrained=True):
+    def __init__(self, n_classes, mode='radial', crop=64, proj_dim=128, pretrained=True, n_dist=1):
         super().__init__()
-        self.fourier = FourierLayer(IMAGE_SIZE, mode)
+        self.fourier = FourierLayer(IMAGE_SIZE, mode, n_dist)
         self.crop = crop
         m = torchvision.models.resnet18(weights='IMAGENET1K_V1' if pretrained else None)
         m.fc = nn.Identity()
+        cin = self.fourier.out_channels or 3
+        if cin not in (1, 3):   # a focal stack: the first convolution takes every triplet like the RGB of ImageNet
+            conv = nn.Conv2d(cin, 64, 7, 2, 3, bias=False)
+            conv.weight.data = m.conv1.weight.data.repeat(1, cin // 3, 1, 1) / (cin // 3)
+            m.conv1 = conv
         self.backbone = m
         self.proj = nn.Sequential(nn.Linear(512, 512), nn.BatchNorm1d(512), nn.ReLU(), nn.Linear(512, proj_dim))
         self.cls = nn.Parameter(torch.randn(n_classes, proj_dim) * 0.01)  # CosFace proxies (training only)
@@ -205,8 +235,10 @@ def load_model(path, device='cpu'):
     else:
         state = ck
     n_classes = state['cls'].shape[0]
-    mode = 'complex' if 'fourier.weight_im' in state else 'radial' if 'fourier.inv' in state else 'none'
-    model = HoloEmbedder(n_classes, mode=mode, pretrained=False)
+    n_dist = state['fourier.alpha'].numel() if 'fourier.alpha' in state else 1
+    mode = ('bank' if n_dist > 1 else 'prop') if 'fourier.alpha' in state else \
+        'complex' if 'fourier.weight_im' in state else 'radial' if 'fourier.inv' in state else 'none'
+    model = HoloEmbedder(n_classes, mode=mode, pretrained=False, n_dist=n_dist)
     model.load_state_dict(state)
     model.to(device).eval()
     return model, meta

@@ -45,6 +45,20 @@ def test_a_size_with_a_large_prime_comes_back_with_its_size():
     assert backprop(a, [0.01925]).shape == (1, 229, 160) and remove_twin(a, 0.01925, iters=2).shape == (229, 160)
 
 
+def test_propagation_layer_at_the_physical_alpha_is_the_back_propagation():
+    import math
+    from holo_openset.sim.physics import PIXEL, WAVELENGTH, Z0
+    layer = FourierLayer(mode='prop').eval()
+    layer.alpha.data[:] = math.pi * WAVELENGTH * Z0 / (640 * PIXEL) ** 2
+    x = torch.rand(640, 640)
+    y, u = layer(x[None])[0], backprop(x, [Z0])[0]
+    assert torch.allclose(y[0], u.real, atol=1e-3) and torch.allclose(y[1], u.imag, atol=1e-3)
+
+
+def test_focal_stack_has_three_channels_per_distance():
+    assert FourierLayer(mode='bank', n_dist=5).eval()(torch.randn(1, 96, 96)).shape == (1, 15, 96, 96)
+
+
 def test_complex_layer_gives_three_channels():
     assert FourierLayer(mode='complex').eval()(torch.randn(2, 64, 64)).shape == (2, 3, 64, 64)
 

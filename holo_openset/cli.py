@@ -102,7 +102,8 @@ def cmd_train(a):
             seen = sorted(set(seen) - set(held_out_seen(r)))
         aux = aux_scenes(a.flow, r, _set(a), cal=a.cal) if not a.no_aux else None
         model = train(dataset(a.flow, _set(a)), seen, steps=a.steps, mode=f['mode'], fourier=f['fourier'],
-                      lr_fourier=a.lr_fourier, aux_scenes=aux, threads=a.threads, seed=a.seed, device=dev)
+                      lr_fourier=a.lr_fourier, aux_scenes=aux, threads=a.threads, seed=a.seed, device=dev,
+                      **f.get('train', {}))
         save_checkpoint(model, out, flow=a.flow, set=a.set, classes=seen, rep=r, steps=a.steps,
                         lr_fourier=a.lr_fourier, cal=a.cal, aux=not a.no_aux)
         print(f'saved {out}', flush=True)
