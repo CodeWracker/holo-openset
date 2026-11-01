@@ -51,6 +51,7 @@ def main(argv=None):
     ap.add_argument('--n', type=int, default=None, help='repetitions per stage (default: 20 GPU, 5 CPU, 2 for the '
                                                         'iterative stages on the CPU above 1 MP)')
     ap.add_argument('--sizes', nargs='+', default=None, help='HxW')
+    ap.add_argument('--stages', nargs='+', default=None, help='only these stages (default: all)')
     a = ap.parse_args(argv)
     a.threads = 1 if a.device == 'cpu' else a.threads
     dev = device(a)
@@ -96,6 +97,8 @@ def main(argv=None):
                 'decide': (lambda: (e @ gal.T).max(1), n),
             }
             for name, (fn, k) in stages.items():
+                if a.stages and name not in a.stages:
+                    continue
                 t = measure(fn, dev, k)
                 rows.append(dict(device='gpu' if dev.type == 'cuda' else 'cpu', height=h, width=w, megapixels=h * w / 1e6,
                                  area_mm2=h * w * 1.67e-3 ** 2, n_boxes=len(g), stage=name, n=k,
