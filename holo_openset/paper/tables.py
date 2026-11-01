@@ -343,6 +343,12 @@ def tab_stages():
         macro(f'T{k}GpuSmallMs', gs * 1e3 if gs else None, '{:.2f}')
         macro(f'T{k}GpuBigMs', gb * 1e3 if gb else None, '{:.1f}')
         macro(f'T{k}CpuRatio', cb / cs if cs and cb else None, '{:.0f}')
+    # what a back-propagation costs against the layer, both one transform pair
+    for tag, df, size, key in [('GpuSmall', g, small, 'min_s'), ('GpuBig', g, big, 'min_s'), ('CpuSmall', c, small,
+                                                                                            'median_s'),
+                               ('CpuBig', c, big, 'median_s')]:
+        b_, l_ = get(df, 'backprop', size, key), get(df, 'layer_real', size, key)
+        macro(f'BackOverLayer{tag}', b_ / l_ if b_ and l_ else None, '{:.1f}')
     write_table('tab_stages', lines)
 
 
