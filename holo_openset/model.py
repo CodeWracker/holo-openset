@@ -66,6 +66,7 @@ class FourierLayer(nn.Module):
                 self.weight_im = nn.Parameter(torch.zeros(len(uniq)))
             if mode in ('prop', 'bank'):
                 self.alpha = nn.Parameter(torch.zeros(n_dist if mode == 'bank' else 1, dtype=torch.float64))
+                self.alpha_scale = 1.0   # training-time jitter of the distance (not a parameter, not saved)
         elif mode == 'none':
             self.register_buffer('weight', torch.ones(1))
         else:
@@ -105,7 +106,8 @@ class FourierLayer(nn.Module):
             re = self._resampled(self.weight, shape)
             im = self._resampled(self.weight_im, shape) if self.mode == 'complex' else None
         if self.mode in ('prop', 'bank'):   # [K, H, W]: the gain times the phase of each distance
-            phase = self.alpha[:, None, None] * self.grid_q(shape if shape is not None else (size, size))[None]
+            phase = (self.alpha * self.alpha_scale)[:, None, None] * self.grid_q(shape if shape is not None
+                                                                                 else (size, size))[None]
             return (re.double()[None] * torch.exp(1j * phase)).to(torch.complex64)
         return re if im is None else torch.complex(re, im)
 
@@ -118,7 +120,8 @@ class FourierLayer(nn.Module):
         if self.training:
             t = self.transfer(shape)
         else:  # cached until the weights change
-            key = (tuple(p._version for p in self.parameters()), shape, str(x.device))
+            key = (tuple(p._version for p in self.parameters()), getattr(self, 'alpha_scale', 1.0), shape,
+                   str(x.device))
             if getattr(self, '_key', None) != key:
                 self._t = self.transfer(shape).detach()
                 self._key = key

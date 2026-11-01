@@ -62,13 +62,15 @@ def calibrate_alpha(imgs_u8, device, lo=0.002, hi=0.08, n_coarse=79, n_fine=41):
 
 def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.05, lr=3e-4, lr_fourier=3e-1,
           aux_weight=0.5, mode='radial', aux_scenes=None, threads=12, seed=0, fourier='learned', device='cpu', distance_error=0.0,
-          n_dist=1, alpha_init='calib', lr_alpha=1e-5, log=print):
+          n_dist=1, alpha_init='calib', lr_alpha=1e-5, alpha_jitter=0.0, log=print):
     """classes: list of letters to train on (the seen classes). aux_scenes: optional (images_npy, boxes_csv).
     fourier: 'learned' (default) or a deterministic-reconstruction baseline, 'fresnel' / 'wiener': the layer is
     set to the physical transfer function and frozen, so the embedding is trained on reconstructed images.
     Modes 'prop' and 'bank': alpha_init 'calib' calibrates the propagation phase on 32 training holograms
     (calibrate_alpha), a number sets it directly (0 = start from the identity); the bank spreads n_dist distances
-    over +-5 % of it; lr_alpha is the learning rate of alpha."""
+    over +-5 % of it; lr_alpha is the learning rate of alpha; alpha_jitter scales every distance of the layer by a
+    random factor in 1 +- alpha_jitter at each training step (the sample is mounted at a different distance), so the
+    network learns to read a focal stack whose focus moves."""
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
     torch.set_num_threads(threads)
@@ -128,6 +130,8 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
         bidx = np.concatenate([np.full(len(groups[k]), j) for j, k in enumerate(pick)])
         xyxy = rows[['x0', 'y0', 'x1', 'y1']].to_numpy()
         boxes = [torch.from_numpy(np.c_[bidx, square_boxes(xyxy, buffer, jitter, rng)]).float() for _ in range(2)]
+        if alpha_jitter > 0:
+            model.fourier.alpha_scale = 1.0 + float(rng.uniform(-alpha_jitter, alpha_jitter))
         filt = model.filtered(torch.from_numpy(np.stack([load(k) for k in pick])))
         f = model.embed_boxes(filt, torch.cat(boxes))
         y = torch.from_numpy(np.array([remap[c] for c in rows.classe])).to(device)
@@ -143,6 +147,7 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
         if step % 100 == 0 or step == steps - 1:
             log(f'step {step}/{steps} loss {loss.item():.4f} ({time.time() - t0:.0f}s)')
     if mode in ('prop', 'bank'):
+        model.fourier.alpha_scale = 1.0
         log('alpha after training ' + ' '.join(f'{v:.6f}' for v in model.fourier.alpha.detach().cpu().tolist()))
     model.cpu().eval()
     return model
