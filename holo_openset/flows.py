@@ -23,16 +23,19 @@ FLOWS = {
     'bank': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5)),
     'prop_jit': dict(mode='prop', fourier='learned', rec=None, train=dict(alpha_jitter=0.05)),
     'bank_jit': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5, alpha_jitter=0.05)),
+    'bank_wide': dict(mode='bank', fourier='learned', rec=None,
+                      train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.12)),
     'rec_z0': dict(mode='none', fourier='learned', rec='z0'),
     'rec_af': dict(mode='none', fourier='learned', rec='af'),
     'rec_edf': dict(mode='none', fourier='learned', rec='edf'),
     'rec_twin': dict(mode='none', fourier='learned', rec='twin'),
 }
-HOLOGRAM_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'prop0', 'bank', 'prop_jit', 'bank_jit']
+HOLOGRAM_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'prop0', 'bank', 'prop_jit', 'bank_jit', 'bank_wide']
 LABELS = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
           'prop': 'learned propagation', 'prop0': 'learned propagation, from the identity',
           'bank': 'learned focal stack', 'prop_jit': 'learned propagation, distance jitter',
-          'bank_jit': 'learned focal stack, distance jitter', 'rec_z0': 'reconstruction at z0', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
+          'bank_jit': 'learned focal stack, distance jitter', 'bank_wide': 'learned focal stack, 7 distances over 12 %',
+          'rec_z0': 'reconstruction at z0', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
           'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
 
 

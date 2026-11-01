@@ -62,13 +62,13 @@ def calibrate_alpha(imgs_u8, device, lo=0.002, hi=0.08, n_coarse=79, n_fine=41):
 
 def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.05, lr=3e-4, lr_fourier=3e-1,
           aux_weight=0.5, mode='radial', aux_scenes=None, threads=12, seed=0, fourier='learned', device='cpu', distance_error=0.0,
-          n_dist=1, alpha_init='calib', lr_alpha=1e-5, alpha_jitter=0.0, log=print):
+          n_dist=1, alpha_init='calib', lr_alpha=1e-5, alpha_jitter=0.0, alpha_spread=0.05, log=print):
     """classes: list of letters to train on (the seen classes). aux_scenes: optional (images_npy, boxes_csv).
     fourier: 'learned' (default) or a deterministic-reconstruction baseline, 'fresnel' / 'wiener': the layer is
     set to the physical transfer function and frozen, so the embedding is trained on reconstructed images.
     Modes 'prop' and 'bank': alpha_init 'calib' calibrates the propagation phase on 32 training holograms
     (calibrate_alpha), a number sets it directly (0 = start from the identity); the bank spreads n_dist distances
-    over +-5 % of it; lr_alpha is the learning rate of alpha; alpha_jitter scales every distance of the layer by a
+    over +-alpha_spread of it; lr_alpha is the learning rate of alpha; alpha_jitter scales every distance of the layer by a
     random factor in 1 +- alpha_jitter at each training step (the sample is mounted at a different distance), so the
     network learns to read a focal stack whose focus moves."""
     torch.manual_seed(seed)
@@ -99,7 +99,8 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
         else:
             a0 = float(alpha_init)
         k = model.fourier.alpha.numel()
-        spread = torch.linspace(-0.05, 0.05, k, dtype=torch.float64) if k > 1 else torch.zeros(1, dtype=torch.float64)
+        spread = torch.linspace(-alpha_spread, alpha_spread, k, dtype=torch.float64) if k > 1 else \
+            torch.zeros(1, dtype=torch.float64)
         model.fourier.alpha.data = a0 * (1 + spread)
         log(f'alpha {a0:.6f} ({"calibrated on 32 training holograms" if alpha_init == "calib" else "given"}); '
             f'the bench would be {np.pi * WAVELENGTH * Z0 / (IMAGE_SIZE * PIXEL) ** 2:.6f}')
