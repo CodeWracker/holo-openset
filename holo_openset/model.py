@@ -17,6 +17,7 @@ from torchvision.ops import roi_align
 
 IMAGE_SIZE = 640
 
+from holo_openset.spectrum import fast_pad
 from holo_openset.sim.physics import PIXEL, WAVELENGTH, Z0
 
 
@@ -90,6 +91,8 @@ class FourierLayer(nn.Module):
     def forward(self, x):  # [B, H, W] -> [B, 1, H, W]   ('complex': [B, 3, H, W]; 'none' keeps [B, C, H, W])
         if self.mode == 'none':
             return x.unsqueeze(1) if x.dim() == 3 else x
+        h, w = x.shape[-2:]
+        x = fast_pad(x)
         shape = tuple(x.shape[-2:])
         if self.training:
             t = self.transfer(shape)
@@ -101,12 +104,12 @@ class FourierLayer(nn.Module):
             t = self._t
         if self.mode == 'complex':
             y = torch.fft.ifft2(torch.fft.fft2(x) * t)
-            return torch.stack([y.real, y.imag, torch.sqrt(y.real ** 2 + y.imag ** 2 + 1e-12)], 1)
+            return torch.stack([y.real, y.imag, torch.sqrt(y.real ** 2 + y.imag ** 2 + 1e-12)], 1)[..., :h, :w]
         if self.training:
-            return torch.fft.ifft2(torch.fft.fft2(x) * t).real.unsqueeze(1)
+            return torch.fft.ifft2(torch.fft.fft2(x) * t).real.unsqueeze(1)[..., :h, :w]
         # Inference: x is real and W[q(k)] = W[q(-k)], so the real FFT gives exactly the same result on half the
         # spectrum.
-        return torch.fft.irfft2(torch.fft.rfft2(x) * t[:, :shape[1] // 2 + 1], s=shape).unsqueeze(1)
+        return torch.fft.irfft2(torch.fft.rfft2(x) * t[:, :shape[1] // 2 + 1], s=shape).unsqueeze(1)[..., :h, :w]
 
 
 class HoloEmbedder(nn.Module):

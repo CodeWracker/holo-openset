@@ -27,6 +27,7 @@ import pandas as pd
 import torch
 
 from holo_openset.sim.physics import WAVELENGTH, Z0, freq_sq
+from holo_openset.spectrum import fast_pad
 
 COARSE = np.linspace(0.004, 0.04, 73) / 0.01925   # candidate distances, in units of z0
 N_FINE = 41
@@ -60,7 +61,9 @@ def kernel(shape, zs, dev, sign=+1):
 
 def backprop(a, zs):
     """a [h, w] real -> U [K, h, w]: the field in the object plane at each distance of zs."""
-    return torch.fft.ifft2(torch.fft.fft2(a.to(CDT))[None] * kernel(a.shape[-2:], zs, a.device))
+    h, w = a.shape[-2:]
+    p = fast_pad(a).to(CDT)
+    return torch.fft.ifft2(torch.fft.fft2(p)[None] * kernel(p.shape[-2:], zs, a.device))[..., :h, :w]
 
 
 def tog(u, boxes=None):
@@ -84,9 +87,10 @@ def _chunk(shape):
 
 def scan(a, zs):
     """Sharpness (ToG) of the reconstruction of a at every distance of zs (one FFT of a, one inverse per z)."""
-    A = torch.fft.fft2(a.to(CDT))[None]
+    h, w = a.shape[-2:]
+    A = torch.fft.fft2(fast_pad(a).to(CDT))[None]
     c = _chunk(a.shape)
-    return torch.cat([tog(torch.fft.ifft2(A * kernel(a.shape[-2:], zs[k:k + c], a.device)))
+    return torch.cat([tog(torch.fft.ifft2(A * kernel(A.shape[-2:], zs[k:k + c], a.device))[..., :h, :w])
                       for k in range(0, len(zs), c)])
 
 
@@ -111,14 +115,15 @@ def per_object(a, z, xyxy):
     sharpest. -> composite U [h, w], the distance chosen for each box."""
     zs = z * (1 + np.linspace(-EDF_REL, EDF_REL, EDF_N))
     boxes = int_boxes(xyxy, a.shape)
-    A = torch.fft.fft2(a.to(CDT))[None]
+    h, w = a.shape[-2:]
+    A = torch.fft.fft2(fast_pad(a).to(CDT))[None]
     c = _chunk(a.shape)
     best = [-1.0] * len(boxes)
     kbest = [EDF_N // 2] * len(boxes)
     region = [None] * len(boxes)
     out = None
     for k in range(0, EDF_N, c):   # the stack is scanned in chunks: on a full frame it does not fit at once
-        u = torch.fft.ifft2(A * kernel(a.shape[-2:], zs[k:k + c], a.device))
+        u = torch.fft.ifft2(A * kernel(A.shape[-2:], zs[k:k + c], a.device))[..., :h, :w]
         if k <= EDF_N // 2 < k + c:
             out = u[EDF_N // 2 - k].clone()
         if boxes:
@@ -135,6 +140,8 @@ def per_object(a, z, xyxy):
 def remove_twin(a, z, iters=TWIN_ITERS, trace=None):
     """Iterative twin-image removal of one hologram -> transmission U [h, w] (|U| <= 1).
     trace: optional callback(k, U) after pass k (k = 1 is the conventional reconstruction, clipped)."""
+    h, w = a.shape[-2:]
+    a = fast_pad(a)
     back = kernel(a.shape[-2:], [z], a.device)[0]
     fwd = torch.conj(back)
     phase = torch.zeros_like(a)
@@ -143,10 +150,10 @@ def remove_twin(a, z, iters=TWIN_ITERS, trace=None):
         m = u.abs()
         u = torch.where(m > 1, u / m.clamp(min=1e-12), u)       # absorption cannot be negative
         if trace:
-            trace(k, u)
+            trace(k, u[..., :h, :w])
         if k < iters:
             phase = torch.angle(torch.fft.ifft2(torch.fft.fft2(u) * fwd))
-    return u
+    return u[..., :h, :w]
 
 
 def channels(u):

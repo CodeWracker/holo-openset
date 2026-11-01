@@ -4,10 +4,11 @@ import torch
 
 from holo_openset.model import FourierLayer
 from holo_openset.protocol import classes
-from holo_openset.reconstruct import kernel
+from holo_openset.reconstruct import backprop, kernel, remove_twin
 from holo_openset.reproduce import check
 from holo_openset.sim.physics import Physics, sensor_intensity
 from holo_openset.sim.scene import make_scene, session
+from holo_openset.spectrum import fast_pad, fast_shape
 
 DEV = torch.device('cpu')
 SMALL = dict(window=(320, 320), margin=128, reach=64, dust_density=0, sensor_dust_density=0)
@@ -29,6 +30,19 @@ def test_layer_starts_as_the_identity_on_any_size():
     layer = FourierLayer(mode='radial').eval()
     x = torch.randn(1, 96, 160)
     assert torch.allclose(layer(x)[0, 0], x, atol=1e-5)
+
+
+def test_fast_sizes():
+    assert fast_shape((2748, 3840)) == (2750, 3840) and fast_shape((640, 640)) == (640, 640)
+    x = torch.randn(640, 640)
+    assert fast_pad(x) is x
+
+
+def test_a_size_with_a_large_prime_comes_back_with_its_size():
+    x = torch.randn(1, 229, 160)
+    assert torch.allclose(FourierLayer(mode='radial').eval()(x)[0, 0], x, atol=1e-5)
+    a = torch.ones(229, 160)
+    assert backprop(a, [0.01925]).shape == (1, 229, 160) and remove_twin(a, 0.01925, iters=2).shape == (229, 160)
 
 
 def test_complex_layer_gives_three_channels():
