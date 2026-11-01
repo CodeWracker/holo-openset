@@ -304,8 +304,9 @@ def tab_full_frames():
         macro(f'Full{k}FoneGt', gt.novel_open_macro_f1.mean() if len(gt) else None)
         macro(f'Full{k}Rej', dt.novel_unknown_rejection.mean() if len(dt) else None)
     if len(acc[acc.boxes == 'det']):
-        macro('FullRecall', acc[acc.boxes == 'det'].detector_recall.mean())
-        macro('FullFpFrame', acc[acc.boxes == 'det'].fp_per_frame.mean(), '{:.1f}')
+        det = acc[(acc.boxes == 'det') & acc.flow.isin(ORDER)]   # a property of the detector: the flows of the paper
+        macro('FullRecall', det.detector_recall.mean())
+        macro('FullFpFrame', det.fp_per_frame.mean(), '{:.1f}')
         macro('FullReps', acc.rep.nunique(), '{}')
     write_table('tab_full', lines)
 
