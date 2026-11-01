@@ -61,6 +61,8 @@ def main(argv=None):
     full = torch.from_numpy(np.array(src.holo[src.row[i]])).to(dev)
     bg = torch.from_numpy(np.array(src.bg[src.session[i]])).to(dev)
     m_learned, m_complex, m_raw = model('learned', rep, dev), model('complex', rep, dev), model('rec_z0', rep, dev)
+    extra = {f'layer_{f}': model(f, rep, dev) for f in ('prop', 'bank')}   # exploration flows, timed when trained
+    extra = {k: m for k, m in extra.items() if m is not None}
     yolo = YoloDetector(paths.yolo_weights(rep), device=dev)
     gal = torch.nn.functional.normalize(torch.randn(5000, 128, device=dev), dim=1)
     sizes = [tuple(int(v) for v in s.split('x')) for s in a.sizes] if a.sizes else SIZES
@@ -83,6 +85,7 @@ def main(argv=None):
                 'flat_field': (lambda: normalise(holo, b), n),
                 'layer_real': (lambda: m_learned.filtered(holo[None]), n),
                 'layer_complex': (lambda: m_complex.filtered(holo[None]), n),
+                **{k: (lambda m=m: m.filtered(holo[None]), n) for k, m in extra.items()},
                 'backprop': (lambda: backprop(amp, [z]), n),
                 'autofocus': (lambda: autofocus(amp, src.z0), n_iter),
                 'per_object': (lambda: per_object(amp, z, g), n_iter),
