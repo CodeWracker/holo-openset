@@ -74,7 +74,9 @@ class FourierLayer(nn.Module):
 
     @property
     def out_channels(self):
-        return {'none': None, 'radial': 1, 'complex': 3}.get(self.mode) or 3 * self.alpha.numel()
+        if self.mode in ('prop', 'bank'):
+            return 3 * self.alpha.numel()
+        return {'none': None, 'radial': 1, 'complex': 3}[self.mode]
 
     def grid_q(self, shape):
         """q = kx^2 + ky^2 of an image of `shape`, in units of the training grid (float64 [H, W])."""

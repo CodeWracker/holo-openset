@@ -59,6 +59,15 @@ def test_focal_stack_has_three_channels_per_distance():
     assert FourierLayer(mode='bank', n_dist=5).eval()(torch.randn(1, 96, 96)).shape == (1, 15, 96, 96)
 
 
+def test_every_mode_builds_an_embedder():
+    from holo_openset.model import HoloEmbedder
+    for mode, n in [('none', None), ('radial', 1), ('complex', 3), ('prop', 3), ('bank', 15)]:
+        m = HoloEmbedder(21, mode=mode, pretrained=False, n_dist=5)
+        assert m.fourier.out_channels == n
+    x = torch.randint(0, 255, (1, 3, 64, 64), dtype=torch.uint8)
+    assert HoloEmbedder(21, mode='none', pretrained=False).filtered(x).shape == (1, 3, 64, 64)
+
+
 def test_complex_layer_gives_three_channels():
     assert FourierLayer(mode='complex').eval()(torch.randn(2, 64, 64)).shape == (2, 3, 64, 64)
 
