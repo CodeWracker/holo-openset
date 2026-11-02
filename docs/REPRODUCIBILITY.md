@@ -7,7 +7,7 @@ matches the time and hardware you have.
 |---|---|---|---|
 | **1. Check** | rebuilds every table and number from `results/` and compares with the paper | CPU, 1 minute, no data | byte-identical |
 | **2. Evaluate** | downloads the models and holograms, reconstructs, evaluates every model and reruns the end-to-end, discovery, full-frame and fidelity experiments | GPU, about 1 hour on two GPUs, 90 GB of disk | the same numbers, within 0.01 |
-| **3. Rebuild** | everything from the seeds: simulation, reconstruction, 230 models, all experiments | several GPUs, 280 GB of disk | within the spread of the five repetitions |
+| **3. Rebuild** | everything from the seeds: simulation, reconstruction, 240 models, all experiments | several GPUs, 280 GB of disk | within the spread of the five repetitions |
 
 Set up the environment first: see *Installation* in the [README](../README.md). `requirements-lock.txt` is the exact
 environment of the paper.

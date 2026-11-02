@@ -11,10 +11,10 @@
 \newcommand{\BackOverLayerCpuSmall}{4.0}
 \newcommand{\BackOverLayerGpuBig}{1.7}
 \newcommand{\BackOverLayerGpuSmall}{1.0}
-\newcommand{\BankWThreeAUROC}{0.974}
-\newcommand{\BankWThreeFone}{0.962}
-\newcommand{\BankWThreeKnown}{0.955}
-\newcommand{\BankWThreeRej}{0.893}
+\newcommand{\BankJitAUROC}{0.982}
+\newcommand{\BankJitFone}{0.963}
+\newcommand{\BankJitKnown}{0.952}
+\newcommand{\BankJitRej}{0.922}
 \newcommand{\ComplexAUROC}{0.950}
 \newcommand{\ComplexEnrollAll}{0.866}
 \newcommand{\ComplexEnrollFive}{0.373}
@@ -49,8 +49,6 @@
 \newcommand{\DiscRecZZeroFrr}{5}
 \newcommand{\DiscRecZZeroLeak}{0.17}
 \newcommand{\DiscRecZZeroReach}{0.92}
-\newcommand{\EtoEBankWThreeFone}{0.957}
-\newcommand{\EtoEBankWThreeRecall}{0.995}
 \newcommand{\EtoEComplexFone}{0.926}
 \newcommand{\EtoEComplexRecall}{0.995}
 \newcommand{\EtoEFp}{0.03}
@@ -73,12 +71,12 @@
 \newcommand{\EtoERecall}{0.995}
 \newcommand{\EtoEWienerFone}{0.902}
 \newcommand{\EtoEWienerRecall}{0.995}
-\newcommand{\FullBankWThreeComputeMs}{5.1}
-\newcommand{\FullBankWThreeFone}{0.965}
-\newcommand{\FullBankWThreeFoneGt}{0.969}
-\newcommand{\FullBankWThreeReadMs}{4}
-\newcommand{\FullBankWThreeRej}{0.896}
-\newcommand{\FullBankWThreeTotalS}{0.29}
+\newcommand{\FullBankJitComputeMs}{4.2}
+\newcommand{\FullBankJitFone}{0.974}
+\newcommand{\FullBankJitFoneGt}{0.976}
+\newcommand{\FullBankJitReadMs}{6}
+\newcommand{\FullBankJitRej}{0.925}
+\newcommand{\FullBankJitTotalS}{0.29}
 \newcommand{\FullComplexComputeMs}{1.4}
 \newcommand{\FullComplexFone}{0.935}
 \newcommand{\FullComplexFoneGt}{0.940}
@@ -155,7 +153,7 @@
 \newcommand{\LearnedFone}{0.928}
 \newcommand{\LearnedKnown}{0.950}
 \newcommand{\LearnedRej}{0.633}
-\newcommand{\NModels}{230}
+\newcommand{\NModels}{240}
 \newcommand{\NYolo}{5}
 \newcommand{\OracleAUROC}{0.922}
 \newcommand{\OracleFone}{0.884}
@@ -196,7 +194,7 @@
 \newcommand{\RecZZeroFone}{0.964}
 \newcommand{\RecZZeroKnown}{0.953}
 \newcommand{\RecZZeroRej}{0.923}
-\newcommand{\RobAbsorbingBankWThree}{0.89}
+\newcommand{\RobAbsorbingBankJit}{0.89}
 \newcommand{\RobAbsorbingComplex}{0.85}
 \newcommand{\RobAbsorbingLearned}{0.84}
 \newcommand{\RobAbsorbingProp}{0.89}
@@ -206,7 +204,7 @@
 \newcommand{\RobAbsorbingRecTwin}{0.91}
 \newcommand{\RobAbsorbingRecZZero}{0.90}
 \newcommand{\RobAbsorbingWiener}{0.89}
-\newcommand{\RobBandFourZeroBankWThree}{0.95}
+\newcommand{\RobBandFourZeroBankJit}{0.94}
 \newcommand{\RobBandFourZeroComplex}{0.92}
 \newcommand{\RobBandFourZeroLearned}{0.92}
 \newcommand{\RobBandFourZeroProp}{0.92}
@@ -216,7 +214,7 @@
 \newcommand{\RobBandFourZeroRecTwin}{0.92}
 \newcommand{\RobBandFourZeroRecZZero}{0.93}
 \newcommand{\RobBandFourZeroWiener}{0.89}
-\newcommand{\RobBandTwoZeroBankWThree}{0.96}
+\newcommand{\RobBandTwoZeroBankJit}{0.96}
 \newcommand{\RobBandTwoZeroComplex}{0.93}
 \newcommand{\RobBandTwoZeroLearned}{0.93}
 \newcommand{\RobBandTwoZeroProp}{0.96}
@@ -226,7 +224,7 @@
 \newcommand{\RobBandTwoZeroRecTwin}{0.96}
 \newcommand{\RobBandTwoZeroRecZZero}{0.96}
 \newcommand{\RobBandTwoZeroWiener}{0.90}
-\newcommand{\RobBandZeroBankWThree}{0.96}
+\newcommand{\RobBandZeroBankJit}{0.96}
 \newcommand{\RobBandZeroComplex}{0.93}
 \newcommand{\RobBandZeroLearned}{0.93}
 \newcommand{\RobBandZeroProp}{0.96}
@@ -236,7 +234,7 @@
 \newcommand{\RobBandZeroRecTwin}{0.97}
 \newcommand{\RobBandZeroRecZZero}{0.97}
 \newcommand{\RobBandZeroWiener}{0.91}
-\newcommand{\RobBaseBankWThree}{0.96}
+\newcommand{\RobBaseBankJit}{0.96}
 \newcommand{\RobBaseComplex}{0.93}
 \newcommand{\RobBaseLearned}{0.93}
 \newcommand{\RobBaseProp}{0.96}
@@ -246,7 +244,7 @@
 \newcommand{\RobBaseRecTwin}{0.96}
 \newcommand{\RobBaseRecZZero}{0.96}
 \newcommand{\RobBaseWiener}{0.91}
-\newcommand{\RobBeamFlatBankWThree}{0.96}
+\newcommand{\RobBeamFlatBankJit}{0.96}
 \newcommand{\RobBeamFlatComplex}{0.93}
 \newcommand{\RobBeamFlatLearned}{0.93}
 \newcommand{\RobBeamFlatProp}{0.96}
@@ -256,7 +254,7 @@
 \newcommand{\RobBeamFlatRecTwin}{0.96}
 \newcommand{\RobBeamFlatRecZZero}{0.96}
 \newcommand{\RobBeamFlatWiener}{0.91}
-\newcommand{\RobBeamNarrowBankWThree}{0.87}
+\newcommand{\RobBeamNarrowBankJit}{0.88}
 \newcommand{\RobBeamNarrowComplex}{0.86}
 \newcommand{\RobBeamNarrowLearned}{0.86}
 \newcommand{\RobBeamNarrowProp}{0.88}
@@ -266,7 +264,7 @@
 \newcommand{\RobBeamNarrowRecTwin}{0.43}
 \newcommand{\RobBeamNarrowRecZZero}{0.96}
 \newcommand{\RobBeamNarrowWiener}{0.83}
-\newcommand{\RobBitsFourBankWThree}{0.96}
+\newcommand{\RobBitsFourBankJit}{0.96}
 \newcommand{\RobBitsFourComplex}{0.93}
 \newcommand{\RobBitsFourLearned}{0.92}
 \newcommand{\RobBitsFourProp}{0.96}
@@ -276,7 +274,7 @@
 \newcommand{\RobBitsFourRecTwin}{0.94}
 \newcommand{\RobBitsFourRecZZero}{0.95}
 \newcommand{\RobBitsFourWiener}{0.90}
-\newcommand{\RobBitsSixBankWThree}{0.96}
+\newcommand{\RobBitsSixBankJit}{0.96}
 \newcommand{\RobBitsSixComplex}{0.93}
 \newcommand{\RobBitsSixLearned}{0.93}
 \newcommand{\RobBitsSixProp}{0.96}
@@ -286,7 +284,7 @@
 \newcommand{\RobBitsSixRecTwin}{0.96}
 \newcommand{\RobBitsSixRecZZero}{0.96}
 \newcommand{\RobBitsSixWiener}{0.91}
-\newcommand{\RobDepthOneFiveZeroBankWThree}{0.96}
+\newcommand{\RobDepthOneFiveZeroBankJit}{0.96}
 \newcommand{\RobDepthOneFiveZeroComplex}{0.93}
 \newcommand{\RobDepthOneFiveZeroLearned}{0.93}
 \newcommand{\RobDepthOneFiveZeroProp}{0.96}
@@ -296,7 +294,7 @@
 \newcommand{\RobDepthOneFiveZeroRecTwin}{0.96}
 \newcommand{\RobDepthOneFiveZeroRecZZero}{0.96}
 \newcommand{\RobDepthOneFiveZeroWiener}{0.91}
-\newcommand{\RobDepthThreeZeroZeroBankWThree}{0.96}
+\newcommand{\RobDepthThreeZeroZeroBankJit}{0.96}
 \newcommand{\RobDepthThreeZeroZeroComplex}{0.93}
 \newcommand{\RobDepthThreeZeroZeroLearned}{0.92}
 \newcommand{\RobDepthThreeZeroZeroProp}{0.96}
@@ -306,7 +304,7 @@
 \newcommand{\RobDepthThreeZeroZeroRecTwin}{0.96}
 \newcommand{\RobDepthThreeZeroZeroRecZZero}{0.96}
 \newcommand{\RobDepthThreeZeroZeroWiener}{0.90}
-\newcommand{\RobDepthZeroBankWThree}{0.96}
+\newcommand{\RobDepthZeroBankJit}{0.96}
 \newcommand{\RobDepthZeroComplex}{0.93}
 \newcommand{\RobDepthZeroLearned}{0.93}
 \newcommand{\RobDepthZeroProp}{0.96}
@@ -316,7 +314,7 @@
 \newcommand{\RobDepthZeroRecTwin}{0.96}
 \newcommand{\RobDepthZeroRecZZero}{0.96}
 \newcommand{\RobDepthZeroWiener}{0.91}
-\newcommand{\RobDustEightBankWThree}{0.96}
+\newcommand{\RobDustEightBankJit}{0.96}
 \newcommand{\RobDustEightComplex}{0.93}
 \newcommand{\RobDustEightLearned}{0.92}
 \newcommand{\RobDustEightProp}{0.96}
@@ -326,7 +324,7 @@
 \newcommand{\RobDustEightRecTwin}{0.96}
 \newcommand{\RobDustEightRecZZero}{0.96}
 \newcommand{\RobDustEightWiener}{0.91}
-\newcommand{\RobDustTwoZeroBankWThree}{0.94}
+\newcommand{\RobDustTwoZeroBankJit}{0.95}
 \newcommand{\RobDustTwoZeroComplex}{0.91}
 \newcommand{\RobDustTwoZeroLearned}{0.91}
 \newcommand{\RobDustTwoZeroProp}{0.95}
@@ -336,7 +334,7 @@
 \newcommand{\RobDustTwoZeroRecTwin}{0.94}
 \newcommand{\RobDustTwoZeroRecZZero}{0.95}
 \newcommand{\RobDustTwoZeroWiener}{0.90}
-\newcommand{\RobDustZeroBankWThree}{0.96}
+\newcommand{\RobDustZeroBankJit}{0.97}
 \newcommand{\RobDustZeroComplex}{0.94}
 \newcommand{\RobDustZeroLearned}{0.93}
 \newcommand{\RobDustZeroProp}{0.97}
@@ -346,7 +344,7 @@
 \newcommand{\RobDustZeroRecTwin}{0.97}
 \newcommand{\RobDustZeroRecZZero}{0.97}
 \newcommand{\RobDustZeroWiener}{0.91}
-\newcommand{\RobFullwellFiveZeroZeroBankWThree}{0.96}
+\newcommand{\RobFullwellFiveZeroZeroBankJit}{0.96}
 \newcommand{\RobFullwellFiveZeroZeroComplex}{0.92}
 \newcommand{\RobFullwellFiveZeroZeroLearned}{0.91}
 \newcommand{\RobFullwellFiveZeroZeroProp}{0.96}
@@ -356,7 +354,7 @@
 \newcommand{\RobFullwellFiveZeroZeroRecTwin}{0.77}
 \newcommand{\RobFullwellFiveZeroZeroRecZZero}{0.95}
 \newcommand{\RobFullwellFiveZeroZeroWiener}{0.90}
-\newcommand{\RobFullwellOneFiveZeroZeroBankWThree}{0.96}
+\newcommand{\RobFullwellOneFiveZeroZeroBankJit}{0.96}
 \newcommand{\RobFullwellOneFiveZeroZeroComplex}{0.93}
 \newcommand{\RobFullwellOneFiveZeroZeroLearned}{0.92}
 \newcommand{\RobFullwellOneFiveZeroZeroProp}{0.96}
@@ -366,7 +364,7 @@
 \newcommand{\RobFullwellOneFiveZeroZeroRecTwin}{0.96}
 \newcommand{\RobFullwellOneFiveZeroZeroRecZZero}{0.96}
 \newcommand{\RobFullwellOneFiveZeroZeroWiener}{0.91}
-\newcommand{\RobFullwellTwoFourZeroZeroZeroBankWThree}{0.96}
+\newcommand{\RobFullwellTwoFourZeroZeroZeroBankJit}{0.96}
 \newcommand{\RobFullwellTwoFourZeroZeroZeroComplex}{0.93}
 \newcommand{\RobFullwellTwoFourZeroZeroZeroLearned}{0.93}
 \newcommand{\RobFullwellTwoFourZeroZeroZeroProp}{0.96}
@@ -376,7 +374,7 @@
 \newcommand{\RobFullwellTwoFourZeroZeroZeroRecTwin}{0.96}
 \newcommand{\RobFullwellTwoFourZeroZeroZeroRecZZero}{0.96}
 \newcommand{\RobFullwellTwoFourZeroZeroZeroWiener}{0.91}
-\newcommand{\RobLaserBankWThree}{0.96}
+\newcommand{\RobLaserBankJit}{0.96}
 \newcommand{\RobLaserComplex}{0.92}
 \newcommand{\RobLaserLearned}{0.91}
 \newcommand{\RobLaserProp}{0.95}
@@ -386,7 +384,7 @@
 \newcommand{\RobLaserRecTwin}{0.95}
 \newcommand{\RobLaserRecZZero}{0.95}
 \newcommand{\RobLaserWiener}{0.91}
-\newcommand{\RobNoOutsideBankWThree}{0.97}
+\newcommand{\RobNoOutsideBankJit}{0.97}
 \newcommand{\RobNoOutsideComplex}{0.94}
 \newcommand{\RobNoOutsideLearned}{0.93}
 \newcommand{\RobNoOutsideProp}{0.97}
@@ -396,7 +394,7 @@
 \newcommand{\RobNoOutsideRecTwin}{0.98}
 \newcommand{\RobNoOutsideRecZZero}{0.97}
 \newcommand{\RobNoOutsideWiener}{0.92}
-\newcommand{\RobOpaqueBankWThree}{0.98}
+\newcommand{\RobOpaqueBankJit}{0.98}
 \newcommand{\RobOpaqueComplex}{0.94}
 \newcommand{\RobOpaqueLearned}{0.93}
 \newcommand{\RobOpaqueProp}{0.98}
@@ -406,7 +404,7 @@
 \newcommand{\RobOpaqueRecTwin}{0.98}
 \newcommand{\RobOpaqueRecZZero}{0.98}
 \newcommand{\RobOpaqueWiener}{0.94}
-\newcommand{\RobPeriodicBankWThree}{0.97}
+\newcommand{\RobPeriodicBankJit}{0.98}
 \newcommand{\RobPeriodicComplex}{0.95}
 \newcommand{\RobPeriodicLearned}{0.94}
 \newcommand{\RobPeriodicProp}{0.98}
@@ -416,7 +414,7 @@
 \newcommand{\RobPeriodicRecTwin}{0.99}
 \newcommand{\RobPeriodicRecZZero}{0.98}
 \newcommand{\RobPeriodicWiener}{0.93}
-\newcommand{\RobPinholeFiveZeroBankWThree}{0.96}
+\newcommand{\RobPinholeFiveZeroBankJit}{0.96}
 \newcommand{\RobPinholeFiveZeroComplex}{0.93}
 \newcommand{\RobPinholeFiveZeroLearned}{0.93}
 \newcommand{\RobPinholeFiveZeroProp}{0.96}
@@ -426,7 +424,7 @@
 \newcommand{\RobPinholeFiveZeroRecTwin}{0.96}
 \newcommand{\RobPinholeFiveZeroRecZZero}{0.96}
 \newcommand{\RobPinholeFiveZeroWiener}{0.91}
-\newcommand{\RobPinholeTwoZeroBankWThree}{0.96}
+\newcommand{\RobPinholeTwoZeroBankJit}{0.96}
 \newcommand{\RobPinholeTwoZeroComplex}{0.93}
 \newcommand{\RobPinholeTwoZeroLearned}{0.93}
 \newcommand{\RobPinholeTwoZeroProp}{0.96}
@@ -436,7 +434,7 @@
 \newcommand{\RobPinholeTwoZeroRecTwin}{0.97}
 \newcommand{\RobPinholeTwoZeroRecZZero}{0.96}
 \newcommand{\RobPinholeTwoZeroWiener}{0.91}
-\newcommand{\RobPinholeTwoZeroZeroBankWThree}{0.94}
+\newcommand{\RobPinholeTwoZeroZeroBankJit}{0.93}
 \newcommand{\RobPinholeTwoZeroZeroComplex}{0.91}
 \newcommand{\RobPinholeTwoZeroZeroLearned}{0.91}
 \newcommand{\RobPinholeTwoZeroZeroProp}{0.89}
@@ -446,7 +444,7 @@
 \newcommand{\RobPinholeTwoZeroZeroRecTwin}{0.90}
 \newcommand{\RobPinholeTwoZeroZeroRecZZero}{0.90}
 \newcommand{\RobPinholeTwoZeroZeroWiener}{0.87}
-\newcommand{\RobReadOneZeroBankWThree}{0.96}
+\newcommand{\RobReadOneZeroBankJit}{0.96}
 \newcommand{\RobReadOneZeroComplex}{0.93}
 \newcommand{\RobReadOneZeroLearned}{0.93}
 \newcommand{\RobReadOneZeroProp}{0.96}
@@ -456,7 +454,7 @@
 \newcommand{\RobReadOneZeroRecTwin}{0.96}
 \newcommand{\RobReadOneZeroRecZZero}{0.96}
 \newcommand{\RobReadOneZeroWiener}{0.91}
-\newcommand{\RobReadSixZeroBankWThree}{0.96}
+\newcommand{\RobReadSixZeroBankJit}{0.96}
 \newcommand{\RobReadSixZeroComplex}{0.93}
 \newcommand{\RobReadSixZeroLearned}{0.93}
 \newcommand{\RobReadSixZeroProp}{0.96}
@@ -466,7 +464,7 @@
 \newcommand{\RobReadSixZeroRecTwin}{0.96}
 \newcommand{\RobReadSixZeroRecZZero}{0.96}
 \newcommand{\RobReadSixZeroWiener}{0.91}
-\newcommand{\RobReadThreeZeroBankWThree}{0.96}
+\newcommand{\RobReadThreeZeroBankJit}{0.96}
 \newcommand{\RobReadThreeZeroComplex}{0.93}
 \newcommand{\RobReadThreeZeroLearned}{0.93}
 \newcommand{\RobReadThreeZeroProp}{0.96}
@@ -476,7 +474,7 @@
 \newcommand{\RobReadThreeZeroRecTwin}{0.96}
 \newcommand{\RobReadThreeZeroRecZZero}{0.96}
 \newcommand{\RobReadThreeZeroWiener}{0.91}
-\newcommand{\RobSessionFiveBankWThree}{0.86}
+\newcommand{\RobSessionFiveBankJit}{0.84}
 \newcommand{\RobSessionFiveComplex}{0.85}
 \newcommand{\RobSessionFiveLearned}{0.83}
 \newcommand{\RobSessionFiveProp}{0.75}
@@ -486,7 +484,7 @@
 \newcommand{\RobSessionFiveRecTwin}{0.96}
 \newcommand{\RobSessionFiveRecZZero}{0.75}
 \newcommand{\RobSessionFiveWiener}{0.74}
-\newcommand{\RobSessionTwoBankWThree}{0.96}
+\newcommand{\RobSessionTwoBankJit}{0.96}
 \newcommand{\RobSessionTwoComplex}{0.92}
 \newcommand{\RobSessionTwoLearned}{0.91}
 \newcommand{\RobSessionTwoProp}{0.94}
@@ -496,7 +494,7 @@
 \newcommand{\RobSessionTwoRecTwin}{0.96}
 \newcommand{\RobSessionTwoRecZZero}{0.94}
 \newcommand{\RobSessionTwoWiener}{0.88}
-\newcommand{\RobSessionZeroBankWThree}{0.96}
+\newcommand{\RobSessionZeroBankJit}{0.96}
 \newcommand{\RobSessionZeroComplex}{0.93}
 \newcommand{\RobSessionZeroLearned}{0.93}
 \newcommand{\RobSessionZeroProp}{0.96}
@@ -506,7 +504,7 @@
 \newcommand{\RobSessionZeroRecTwin}{0.96}
 \newcommand{\RobSessionZeroRecZZero}{0.96}
 \newcommand{\RobSessionZeroWiener}{0.91}
-\newcommand{\RobSourceFivecmBankWThree}{0.76}
+\newcommand{\RobSourceFivecmBankJit}{0.62}
 \newcommand{\RobSourceFivecmComplex}{0.74}
 \newcommand{\RobSourceFivecmLearned}{0.72}
 \newcommand{\RobSourceFivecmProp}{0.50}
@@ -516,7 +514,7 @@
 \newcommand{\RobSourceFivecmRecTwin}{0.46}
 \newcommand{\RobSourceFivecmRecZZero}{0.51}
 \newcommand{\RobSourceFivecmWiener}{0.64}
-\newcommand{\RobTransparentBankWThree}{0.90}
+\newcommand{\RobTransparentBankJit}{0.90}
 \newcommand{\RobTransparentComplex}{0.87}
 \newcommand{\RobTransparentLearned}{0.87}
 \newcommand{\RobTransparentProp}{0.90}
@@ -526,6 +524,7 @@
 \newcommand{\RobTransparentRecTwin}{0.90}
 \newcommand{\RobTransparentRecZZero}{0.91}
 \newcommand{\RobTransparentWiener}{0.73}
+\newcommand{\ScaleSmallNearBankJit}{0.98}
 \newcommand{\ScaleSmallNearBankWThree}{0.97}
 \newcommand{\ScaleSmallNearComplex}{0.96}
 \newcommand{\ScaleSmallNearLearned}{0.94}
@@ -535,6 +534,7 @@
 \newcommand{\ScaleSmallNearRecTwin}{0.98}
 \newcommand{\ScaleSmallNearRecZZero}{0.97}
 \newcommand{\ScaleSmallNearWiener}{0.97}
+\newcommand{\ScaleSmallZZeroBankJit}{0.83}
 \newcommand{\ScaleSmallZZeroBankWThree}{0.77}
 \newcommand{\ScaleSmallZZeroComplex}{0.80}
 \newcommand{\ScaleSmallZZeroLearned}{0.80}
@@ -628,11 +628,11 @@
 \newcommand{\TFlatFieldCpuSmallMs}{1.2}
 \newcommand{\TFlatFieldGpuBigMs}{0.2}
 \newcommand{\TFlatFieldGpuSmallMs}{0.06}
-\newcommand{\TLayerBankWThreeCpuBigS}{6.88}
-\newcommand{\TLayerBankWThreeCpuRatio}{55}
-\newcommand{\TLayerBankWThreeCpuSmallMs}{125.9}
-\newcommand{\TLayerBankWThreeGpuBigMs}{4.8}
-\newcommand{\TLayerBankWThreeGpuSmallMs}{0.31}
+\newcommand{\TLayerBankCpuBigS}{5.28}
+\newcommand{\TLayerBankCpuRatio}{99}
+\newcommand{\TLayerBankCpuSmallMs}{53.3}
+\newcommand{\TLayerBankGpuBigMs}{3.5}
+\newcommand{\TLayerBankGpuSmallMs}{0.29}
 \newcommand{\TLayerComplexCpuBigS}{1.78}
 \newcommand{\TLayerComplexCpuRatio}{152}
 \newcommand{\TLayerComplexCpuSmallMs}{11.7}
