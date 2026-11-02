@@ -683,7 +683,7 @@ def fig_cost(rep=None):
             ax.plot(per[f] + det, a, 'o', color=COLORS[f], ms=5)
             off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12),
                    'rec_edf': (-6, 7), 'rec_twin': (-14, -12), 'rec_z0': (8, 2), 'raw': (6, -2), 'prop': (-8, 7),
-                   'bank_w3': (6, -8)}[f]
+                   'bank_jit': (6, -8), 'bank_w3': (6, -8)}.get(f, (5, 3))
             ax.annotate(SHORT[f], (per[f] + det, a), xytext=off, textcoords='offset points', fontsize=6, color=INK,
                         va='center', arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=0, shrinkB=3)
                         if f in ('complex', 'learned', 'wiener') else None)
