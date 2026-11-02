@@ -7,7 +7,7 @@ Nothing here is needed to run level 1 of [REPRODUCIBILITY.md](REPRODUCIBILITY.md
 | place | what | size |
 |---|---|---|
 | this repository | code, fonts, class splits, csv and json results, expected tables, checksums | about 10 MB |
-| Zenodo | 160 trained models; holograms, blank frames and annotations of the base, idealised and small-object sets; 40 full sensor frames | about 16 GB |
+| Zenodo | 235 trained models (embedding networks and localisers); holograms, blank frames and annotations of the base, idealised and small-object sets; 40 full sensor frames | about 20 GB |
 | rebuilt by the pipeline | reconstruction caches, auxiliary training scenes, the 32 robustness sets, PNG copies, YOLO working files | about 260 GB |
 
 The Zenodo record has one tar per set. `python -m holo_openset reproduce download` fetches them, checks them against
