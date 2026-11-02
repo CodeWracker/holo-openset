@@ -38,9 +38,11 @@ The conventional flows compared in the paper use the same network and change onl
 | flow | input of the network |
 |---|---|
 | `raw` | the hologram |
-| `learned` | real learned layer (the proposed method) |
+| `learned` | real learned layer (gain only; ablation) |
 | `complex` | complex learned layer |
 | `wiener` | fixed filter at the nominal distance |
+| `prop` | the layer with the phase of the propagation: one scalar, calibrated on the holograms (the proposed method) |
+| `bank_w3` | the same at 7 distances, trained with distance jitter (the variant robust to a drifting distance) |
 | `rec_z0` | back-propagation at the nominal distance |
 | `rec_af` | blind autofocus, 114 reconstructions |
 | `rec_edf` | focus per object |

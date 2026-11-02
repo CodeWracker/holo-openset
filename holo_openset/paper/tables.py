@@ -15,11 +15,11 @@ from holo_openset.flows import FLOWS
 from holo_openset.sim.variants import BASE as VBASE, VARIANTS
 
 R = paths.RESULTS
-ORDER = ['raw', 'learned', 'complex', 'wiener', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
+ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
 NAME = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
-        'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
+        'prop': 'propagation layer', 'bank_w3': 'focal stack (7)', 'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
         'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
-NEEDS = {'raw': '--', 'learned': '--', 'complex': '--', 'wiener': '$\\lambda,\\Delta,z_0$',
+NEEDS = {'raw': '--', 'learned': '--', 'complex': '--', 'prop': '--', 'bank_w3': '--', 'wiener': '$\\lambda,\\Delta,z_0$',
          'rec_z0': '$\\lambda,\\Delta,z_0,B$', 'rec_af': '$\\lambda,\\Delta,B$', 'rec_edf': '$\\lambda,\\Delta,B$',
          'rec_twin': '$\\lambda,\\Delta,B$', 'oracle_pixel': '$\\lambda,\\Delta,z_0,B$'}
 M = {}   # macros
@@ -190,11 +190,15 @@ def tab_main():
 
 def tab_ablation():
     lines = []
-    for label, tag, flow in [('learned layer, $\\mathrm{lr}_F=3\\cdot10^{-1}$ (proposed)', '', 'learned'),
-                             ('learned layer, $\\mathrm{lr}_F=3\\cdot10^{-3}$', '_lr3e-3', 'learned'),
-                             ('learned layer, no auxiliary scenes', '_noaux', 'learned'),
+    for label, tag, flow in [('propagation layer, $\\alpha$ calibrated on the holograms (proposed)', '', 'prop'),
+                             ('propagation layer, $\\alpha$ from the identity (loss alone)', '', 'prop0'),
+                             ('focal stack, 5 distances over $\\pm5$\\,\\%, no jitter', '', 'bank'),
+                             ('focal stack, 7 distances over $\\pm12$\\,\\%, jitter 5\\,\\% (proposed)', '', 'bank_w3'),
+                             ('real layer, $\\mathrm{lr}_F=3\\cdot10^{-1}$', '', 'learned'),
+                             ('real layer, $\\mathrm{lr}_F=3\\cdot10^{-3}$', '_lr3e-3', 'learned'),
+                             ('real layer, no auxiliary scenes', '_noaux', 'learned'),
                              ('layer frozen at the identity (hologram crops)', '', 'raw'),
-                             ('complex layer', '', 'complex')]:
+                             ('free complex layer', '', 'complex')]:
         e = evals(tag=tag)
         d = e[e.flow == flow] if len(e) else pd.DataFrame()
         cells = [ms(d[k]) if k in d else '--' for k in ['novel_auroc', 'novel_unknown_rejection', 'novel_known_acc',
@@ -203,7 +207,40 @@ def tab_ablation():
         if tag and len(d):
             macro('Abl' + {'_lr3e-3': 'Lr', '_noaux': 'Noaux'}[tag] + 'Fone', d.novel_open_macro_f1.mean())
             macro('Abl' + {'_lr3e-3': 'Lr', '_noaux': 'Noaux'}[tag] + 'AUROC', d.novel_auroc.mean())
+        if flow == 'prop0' and len(d):
+            macro('AblPropZeroFone', d.novel_open_macro_f1.mean())
+            macro('AblPropZeroRej', d.novel_unknown_rejection.mean())
     write_table('tab_ablation', lines)
+
+
+STACKS = [('prop', 1, 0, 0), ('prop_jit', 1, 0, 5), ('bank', 5, 5, 0), ('bank_jit', 5, 5, 5), ('bank_w3', 7, 12, 5),
+          ('bank_w1', 7, 8, 8), ('bank_wide', 7, 12, 12), ('bank_w2', 9, 12, 12)]
+
+
+def tab_stack():
+    """The focal stack: distances, width and training jitter against the base set, a drift of the distance, a close
+    source, strong shot noise and the full frames (open-set F1, mean over the repetitions found)."""
+    e, r, ff = evals(), load_csv('robustness'), load_csv('full_frames')
+    lines = []
+    for f, n, width, jitter in STACKS:
+        d = e[e.flow == f] if len(e) else pd.DataFrame()
+        if not len(d):
+            continue
+        rr = r[r.flow == f] if len(r) else pd.DataFrame()
+        rob = {v: rr[rr.variant == v].novel_open_macro_f1.mean() for v in ['session_2', 'session_5', 'source_5cm',
+                                                                               'fullwell_500']}
+        fr = ff[(ff.flow == f) & (ff.boxes == 'det')].novel_open_macro_f1 if len(ff) else pd.Series(dtype=float)
+        cells = [str(n), f'$\\pm{width}$' if width else '--', f'{jitter}' if jitter else '--',
+                 ms(d.novel_open_macro_f1, std=False), ms(d.novel_unknown_rejection, std=False)]
+        cells += [f'{rob[v]:.3f}' if rob[v] == rob[v] else '--' for v in ['session_2', 'session_5', 'source_5cm',
+                                                                        'fullwell_500']]
+        cells += [f'{fr.mean():.3f}' if len(fr) else '--', str(len(d))]
+        lines.append(' & '.join(cells) + ' \\\\')
+        k = ''.join(w.capitalize() for w in f.split('_'))
+        for v in ['session_5', 'source_5cm']:
+            if rob[v] == rob[v]:
+                macro(f'Stack{k}{"".join(w.capitalize() for w in v.split("_"))}', rob[v])
+    write_table('tab_stack', lines)
 
 
 def tab_enroll():
@@ -249,7 +286,7 @@ def tab_e2e():
 def tab_discovery():
     d = load_csv('discovery')
     lines = []
-    for f in ['learned', 'rec_z0']:
+    for f in ['learned', 'prop', 'rec_z0']:
         x = d[d.flow == f] if len(d) else pd.DataFrame()
         for r, row in x.sort_values('rep').iterrows():
             lines.append(f"{NAME[f]} & r{row.rep} & {row.frr * 100:g}\\,\\% & {row.cut:g} & {row.pool:.0f} & "
@@ -312,7 +349,8 @@ def tab_full_frames():
 
 
 STAGES = [('flat_field', 'flat field $\\sqrt{I/B}$'), ('layer_real', 'learned layer (real)'),
-          ('layer_complex', 'learned layer (complex)'), ('backprop', 'one back-propagation'),
+          ('layer_complex', 'learned layer (complex)'), ('layer_prop', 'propagation layer'),
+          ('layer_bank_w3', 'focal stack, 7 distances'), ('backprop', 'one back-propagation'),
           ('autofocus', 'autofocus (114 reconstructions)'), ('per_object', 'per-object focus (25 more)'),
           ('twin', 'twin removal (50 passes)'), ('channels', 'channels of the network input'),
           ('yolo_tiled', 'YOLO localiser, tiles'), ('embed', 'ResNet18 embedding, all boxes'),
@@ -394,7 +432,7 @@ def tab_ideal():
     lines = []
     real, ideal, cross = evals('realistic'), evals('ideal'), evals('realistic', train_set='ideal')
     o = load_csv('oracle')
-    for f in ['raw', 'learned', 'complex', 'wiener', 'rec_z0']:
+    for f in ['raw', 'learned', 'complex', 'wiener', 'prop', 'rec_z0']:
         cells = []
         for e in [ideal, real, cross]:
             d = e[e.flow == f] if len(e) else pd.DataFrame()
@@ -416,7 +454,7 @@ def tab_scale():
     sets = [('realistic', '45--125\\,px, 19.25\\,mm'), ('small_z0', '12--36\\,px, 19.25\\,mm'),
             ('small_near', '12--36\\,px, 2\\,mm')]
     data = {s: evals(s) for s, _ in sets}
-    for f in ['raw', 'learned', 'complex', 'wiener', 'rec_z0', 'rec_af', 'rec_twin']:
+    for f in ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']:
         cells = []
         for s, _ in sets:
             d = data[s][data[s].flow == f] if len(data[s]) else pd.DataFrame()
@@ -442,8 +480,8 @@ def fidelity_numbers():
 
 def main():
     paths.PAPER.mkdir(parents=True, exist_ok=True)
-    for fn in [data_numbers, tab_main, tab_ablation, tab_enroll, tab_e2e, tab_discovery, tab_full_frames, tab_stages,
-               tab_robustness, tab_ideal, tab_scale, fidelity_numbers]:
+    for fn in [data_numbers, tab_main, tab_ablation, tab_stack, tab_enroll, tab_e2e, tab_discovery, tab_full_frames,
+               tab_stages, tab_robustness, tab_ideal, tab_scale, fidelity_numbers]:
         try:
             fn()
         except Exception as e:  # noqa: BLE001  one missing result must not stop the others

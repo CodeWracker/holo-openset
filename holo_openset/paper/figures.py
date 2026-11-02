@@ -439,6 +439,15 @@ def _model(flow, rep=1, tag=''):
     return load_model(w, DEV)[0] if w.exists() else None
 
 
+def _view(m, holo):
+    """What the network receives for a hologram, as one image: the modulus channel at the central distance."""
+    with torch.no_grad():
+        y = m.filtered(torch.from_numpy(holo)[None])[0]
+    if m.fourier.mode in ('prop', 'bank'):
+        return y[3 * (m.fourier.alpha.numel() // 2) + 2].cpu().numpy()
+    return y[-1].cpu().numpy()
+
+
 def _evals():
     from holo_openset.paper.tables import evals
     return evals()
@@ -453,12 +462,11 @@ def fig_flows(image_id=None, rep=1):
     ph = np.asarray(Image.open(BASE / 'objects' / f'{image_id:06d}_phase.png'))
     holo = dataset('raw').image(image_id)
     panels = [(amp, 'object: amplitude'), (ph, 'object: phase'), (holo, 'hologram')]
-    for f, t in [('learned', 'learned layer'), ('complex', 'complex layer, |y|'), ('wiener', 'Wiener filter')]:
+    for f, t in [('learned', 'learned layer'), ('complex', 'complex layer, |y|'), ('wiener', 'Wiener filter'),
+                 ('prop', 'prop. layer, |y|'), ('bank_w3', 'stack, |y| centre')]:
         m = _model(f, rep)
         if m is not None:
-            with torch.no_grad():
-                y = m.filtered(torch.from_numpy(holo)[None])[0, -1].cpu().numpy()
-            panels.append((y, t))
+            panels.append((_view(m, holo), t))
     for f, t in [('rec_z0', 'rec. at $z_0$, |q|'), ('rec_af', 'autofocus, |q|'), ('rec_edf', 'per object, |q|'),
                  ('rec_twin', 'twin rem., |q|')]:
         x = dataset(f).image(image_id).astype(np.float32)
@@ -467,7 +475,7 @@ def fig_flows(image_id=None, rep=1):
     panels.append((x[0], 'twin rem., Re q'))
     panels.append((x[1], 'twin rem., Im q'))
     n = len(panels)
-    cols = 6
+    cols = 7
     rows = -(-n // cols)
     fig, axs = plt.subplots(rows, cols, figsize=(7.16, 1.3 * rows + 0.1), gridspec_kw=dict(wspace=0.04, hspace=0.16))
     for k, a in enumerate(axs.flat):
@@ -512,7 +520,7 @@ def fig_filter(rep=1):
     if ml is not None:
         ax.plot(mid, binned(ml.fourier.weight.detach().cpu().numpy(), edges), color=COLORS['raw'], lw=1.0,
                 label='same layer, learning rate 100 times smaller')
-    ax.plot(mid, binned(w, edges), color=COLORS['learned'], lw=1.1, label='learned real layer (proposed)')
+    ax.plot(mid, binned(w, edges), color=COLORS['learned'], lw=1.1, label='learned real layer')
     ax.set_xlim(0, lim)
     ax.set_ylim(-6.5, 10.5)
     ax.set_xlabel('spatial frequency |f| (cycles/mm); 10 cycles/mm: fringes 100 µm apart')
@@ -584,8 +592,8 @@ def fig_scores(rep=1):
     from holo_openset.data import embed_annotations
     from holo_openset.evaluate import IDX, calibrate, nn_scores
     from holo_openset.flows import dataset
-    fig, axs = plt.subplots(1, 3, figsize=(7.16, 2.0), sharey=False, gridspec_kw=dict(wspace=0.12))
-    for k, (ax, f) in enumerate(zip(axs, ['raw', 'learned', 'rec_z0'])):
+    fig, axs = plt.subplots(1, 4, figsize=(7.16, 1.9), sharey=False, gridspec_kw=dict(wspace=0.12))
+    for k, (ax, f) in enumerate(zip(axs, ['raw', 'learned', 'prop', 'rec_z0'])):
         m = _model(f, rep)
         if m is None:
             continue
@@ -605,13 +613,13 @@ def fig_scores(rep=1):
         ax.hist(s[known], bins, color=KNOWN, alpha=0.75, density=True, label='seen classes')
         ax.hist(s[~known], bins, color=UNKNOWN, alpha=0.75, density=True, label='never seen')
         ax.axvline(t, color=INK, lw=0.8, ls='--')
-        ax.set_title(f'({"abc"[k]}) {LABELS[f]}', fontsize=7)
-        ax.set_xlabel('score: similarity to the nearest\ngallery example')
+        ax.set_title(f'({"abcd"[k]}) {LABELS[f]}', fontsize=7)
+        ax.set_xlabel('score: similarity to the\nnearest gallery example')
         ax.set_yticks([])
     axs[0].set_ylabel('share of the patterns')
     h, l = axs[0].get_legend_handles_labels()
     h.append(plt.Line2D([], [], color=INK, lw=0.8, ls='--'))
-    axs[2].legend(h, l + ['threshold'], loc='upper left', fontsize=6)
+    axs[3].legend(h, l + ['threshold'], loc='upper left', fontsize=6)
     save(fig, 'fig_scores')
 
 
@@ -644,7 +652,8 @@ def fig_cost(rep=None):
     from holo_openset.paper.tables import load_csv
     c, g, acc, t = load_csv('timing_cpu'), load_csv('timing_gpu'), load_csv('full_frames'), load_csv('full_frames_time')
     fig, axs = plt.subplots(1, 3, figsize=(7.16, 2.6), gridspec_kw=dict(wspace=0.34))
-    stages = [('layer_real', 'learned layer', COLORS['learned']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
+    stages = [('layer_real', 'real layer', COLORS['learned']), ('layer_prop', 'propagation layer', COLORS['prop']),
+              ('layer_bank_w3', 'focal stack (7)', COLORS['bank_w3']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
               ('autofocus', 'autofocus', COLORS['rec_af']), ('twin', 'twin removal', COLORS['rec_twin']),
               ('yolo_tiled', 'YOLO (tiles)', COLORS['raw'])]
     for ax, df, title, key in [(axs[0], c, '(a) one CPU core', 'median_s'), (axs[1], g, '(b) one GPU', 'min_s')]:
@@ -661,7 +670,7 @@ def fig_cost(rep=None):
         ax.set_xticks([0.41, 1.6, 4.2, 10.6])
         ax.set_xticklabels(['0.41\n640²', '1.6', '4.2', '10.6\nfull'])
     h, l = axs[0].get_legend_handles_labels()
-    fig.legend(h, l, loc='lower center', bbox_to_anchor=(0.36, -0.16), ncol=5, fontsize=6, handlelength=1.4,
+    fig.legend(h, l, loc='lower center', bbox_to_anchor=(0.36, -0.2), ncol=4, fontsize=6, handlelength=1.4,
                columnspacing=1.0)
     ax = axs[2]
     if len(acc) and len(t):
@@ -673,7 +682,8 @@ def fig_cost(rep=None):
             a = acc[(acc.flow == f) & (acc.boxes == 'det')].novel_open_macro_f1.mean()
             ax.plot(per[f] + det, a, 'o', color=COLORS[f], ms=5)
             off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12),
-                   'rec_edf': (-6, 7), 'rec_twin': (-14, -12), 'rec_z0': (6, -8), 'raw': (6, -2)}[f]
+                   'rec_edf': (-6, 7), 'rec_twin': (-14, -12), 'rec_z0': (8, 2), 'raw': (6, -2), 'prop': (-8, 7),
+                   'bank_w3': (6, -8)}[f]
             ax.annotate(SHORT[f], (per[f] + det, a), xytext=off, textcoords='offset points', fontsize=6, color=INK,
                         va='center', arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=0, shrinkB=3)
                         if f in ('complex', 'learned', 'wiener') else None)
@@ -727,6 +737,128 @@ def fig_full_frame(rep=1, frame=0, flow='learned'):
     save(fig, 'fig_full_frame')
 
 
+def fig_prop(rep=1):
+    """The phase of the propagation found without labels: the sharpness of the back-propagated training holograms
+    against alpha, the alpha of every repetition, and what the layer does to one letter."""
+    import math
+    from holo_openset.train import alpha_sharpness
+    from holo_openset.sim.physics import PIXEL as P
+    m = _model('prop', rep)
+    if m is None:
+        print('fig_prop: no model')
+        return
+    cfg = json.load(open(BASE / 'physics.json'))
+    meta = pd.read_csv(BASE / 'metadata.csv')
+    rng = np.random.RandomState(0)
+    ids = rng.choice(meta[meta.split == 'train'].image_id.to_numpy(), 32, replace=False)
+    from holo_openset.flows import dataset
+    imgs = dataset('raw').images(ids)
+    alphas = np.geomspace(0.001, 0.08, 160)
+    s = alpha_sharpness(imgs, DEV, alphas)
+    a_phys = math.pi * WAVELENGTH * Z0 / (640 * P) ** 2
+    trained = [float(_model('prop', r).fourier.alpha.item()) for r in range(1, 6) if _model('prop', r) is not None]
+    fig = plt.figure(figsize=(7.16, 3.6))
+    top = fig.add_gridspec(1, 2, width_ratios=[1.25, 1], wspace=0.3, left=0.07, right=0.99, top=0.93, bottom=0.6)
+    bot = fig.add_gridspec(1, 4, wspace=0.08, left=0.01, right=0.99, top=0.42, bottom=0.0)
+    ax = fig.add_subplot(top[0, 0])
+    z = alphas / a_phys * Z0 * 1e3                      # the distance that each alpha would mean on the bench
+    ax.plot(z, s, color=INK, lw=1.0)
+    ax.axvline(Z0 * 1e3, color=UNKNOWN, lw=0.8, ls='--')
+    ax.text(Z0 * 1e3 * 1.08, max(s), 'distance of the bench,\nnever given', color=UNKNOWN, fontsize=6, va='top')
+    for t in trained:
+        ax.axvline(t / a_phys * Z0 * 1e3, color=COLORS['prop'], lw=0.6, alpha=0.7)
+    ax.plot([], [], color=COLORS['prop'], lw=0.6, label=f'$\\alpha$ after training, {len(trained)} repetitions')
+    ax.set_xscale('log')
+    ax.set_xlabel('candidate $\\alpha$, as the distance it would mean (mm, log scale)')
+    ax.set_ylabel('sharpness of the\nback-propagated holograms')
+    ax.set_title('(a) calibration of $\\alpha$ on 32 training holograms, no label', fontsize=7)
+    ax.legend(loc='lower left', fontsize=6)
+    _note('alpha_trained_over_physical', [t / a_phys for t in trained])
+    # (b) the gain next to the envelope of the bench
+    ax = fig.add_subplot(top[0, 1])
+    q = m.fourier.q_values.cpu().numpy().astype(np.float64)
+    f = np.sqrt(q) / (640 * P) / 1e3
+    edges = np.linspace(0, 100, 201)
+    mid = (edges[1:] + edges[:-1]) / 2
+    idx = np.digitize(f, edges)
+    g = m.fourier.weight.detach().cpu().numpy()
+    med = np.array([np.median(g[idx == i]) if (idx == i).any() else np.nan for i in range(1, len(edges))])
+    ax.plot(mid, med, color=COLORS['prop'], lw=1.1, label='gain of the layer (median per ring)')
+    ax.axhline(1, color=MUTED, lw=0.7, ls='--')
+    ff = np.linspace(0, 100e3, 400)
+    from scipy.special import j1
+    d = 100e-6 * Z0 / 0.15
+    x = math.pi * d * ff
+    airy = np.where(x > 1e-9, 2 * j1(x) / np.maximum(x, 1e-9), 1.0)
+    sig = 10e-9 / (2 * math.sqrt(2 * math.log(2))) / WAVELENGTH
+    band = np.exp(-0.5 * (math.pi * WAVELENGTH * Z0 * ff ** 2 * sig) ** 2)
+    ax2 = ax.twinx()
+    ax2.plot(ff / 1e3, airy * band * np.sinc(ff * P), color=MUTED, lw=0.9, ls=':', label='contrast the bench keeps')
+    ax2.set_ylim(0, 1.05)
+    ax2.set_yticks([])
+    ax2.grid(False)
+    ax.set_xlim(0, 100)
+    ax.set_xlabel('|f| (cycles/mm)')
+    ax.set_ylabel('gain')
+    ax.set_title('(b) what it learned once the phase is right', fontsize=7)
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(h1 + h2, l1 + l2, loc='lower left', fontsize=6)
+    # bottom: one letter that absorbs and delays the light, with the LED of the bench
+    mask = np.asarray(letter_mask('F', FONTS[0], 110, 0), np.float32) / 255
+    bench = Physics().replace(dust_density=0, sensor_dust_density=0)
+    holo = _single(dict(mask=mask, absorption=0.5, phase=1.0), bench)
+    h8 = np.clip(holo * 128, 0, 255).astype(np.uint8)
+    c = slice(160, 480)
+    show(fig.add_subplot(bot[0, 0]), holo[c, c], '(c) hologram of a letter that\nabsorbs and delays the light')
+    show(fig.add_subplot(bot[0, 1]), _view(m, h8)[c, c], '(d) after the propagation\nlayer, |y|')
+    mb = _model('bank_w3', rep)
+    if mb is not None:
+        show(fig.add_subplot(bot[0, 2]), _view(mb, h8)[c, c], '(e) after the focal stack,\n|y| at the central distance')
+    with torch.no_grad():
+        u = backprop(torch.from_numpy(np.sqrt(holo)).to(DEV), [Z0])[0]
+    show(fig.add_subplot(bot[0, 3]), (u - 1).abs().cpu().numpy()[c, c], '(f) back-propagation with\n$\\lambda$, $\\Delta$, $z_0$ (modulus)')
+    save(fig, 'fig_prop')
+
+
+def fig_stack():
+    """The focal stack: accuracy on the calibrated bench against accuracy when the distance drifts by 5 %, one point
+    per configuration (distances, width, training jitter), with the baselines."""
+    from holo_openset.paper.tables import STACKS, evals, load_csv
+    e, r = evals(), load_csv('robustness')
+    if not len(e) or not len(r):
+        return
+    fig, ax = plt.subplots(figsize=(3.5, 2.9))
+    pts = []
+    for f, n, width, jitter in STACKS:
+        d = e[e.flow == f]
+        rr = r[(r.flow == f) & (r.variant == 'session_5')]
+        if not len(d) or not len(rr):
+            continue
+        label = f'{n} dist.' + (f', $\\pm${width} %' if width else '') + (f', jitter {jitter} %' if jitter else '')
+        pts.append((d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), label, jitter, n))
+    off = {'prop': (-30, 7), 'prop_jit': (5, 3), 'bank': (5, 5), 'bank_jit': (5, 3), 'bank_w3': (5, 3),
+           'bank_w1': (5, 3), 'bank_wide': (-104, 7), 'bank_w2': (-24, -13)}
+    for (x, y, label, jitter, n), (f, *_) in zip(pts, [s for s in STACKS if len(e[e.flow == s[0]])
+                                                      and len(r[(r.flow == s[0]) & (r.variant == 'session_5')])]):
+        ax.plot(x, y, 'o', color=COLORS['bank_w3'] if n > 1 else COLORS['prop'], ms=4 + jitter / 3, alpha=0.85)
+        ax.annotate(label, (x, y), xytext=off.get(f, (5, 3)), textcoords='offset points', fontsize=5.4, color=INK)
+    offb = {'learned': (5, -3), 'rec_z0': (5, -9), 'rec_af': (-36, 5), 'rec_twin': (5, -9)}
+    for f in ['learned', 'rec_z0', 'rec_af', 'rec_twin']:
+        d, rr = e[e.flow == f], r[(r.flow == f) & (r.variant == 'session_5')]
+        if len(d) and len(rr):
+            ax.plot(d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), 's', color=COLORS[f], ms=5)
+            ax.annotate(SHORT[f], (d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean()), xytext=offb[f],
+                        textcoords='offset points', fontsize=6, color=INK)
+    x0, x1 = ax.get_xlim()
+    ax.set_xlim(x0, x1 + 0.25 * (x1 - x0))
+    ax.set_xlabel('open-set F1 on the calibrated bench')
+    ax.set_ylabel('open-set F1, distance drifting by 5 %')
+    ax.text(0.03, 0.97, 'circles: the propagation layer and its stacks\n(size: training jitter); squares: the other flows',
+            transform=ax.transAxes, fontsize=5.6, color=MUTED, va='top')
+    save(fig, 'fig_stack')
+
+
 def fig_robustness():
     """Open-set F1 of every flow in every robustness set (models and galleries of the base set)."""
     from holo_openset.paper.tables import load_csv
@@ -755,7 +887,7 @@ def fig_robustness():
     save(fig, 'fig_robustness')
 
 
-ALL = ['fig_setup', 'fig_spectrum', 'fig_fresnel', 'fig_acquisition', 'fig_variants', 'fig_autofocus', 'fig_flows', 'fig_filter', 'fig_scores',
+ALL = ['fig_setup', 'fig_spectrum', 'fig_fresnel', 'fig_acquisition', 'fig_variants', 'fig_autofocus', 'fig_flows', 'fig_filter', 'fig_prop', 'fig_stack', 'fig_scores',
        'fig_enroll', 'fig_cost', 'fig_full_frame', 'fig_robustness']
 
 

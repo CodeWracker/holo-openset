@@ -12,13 +12,16 @@ INK, MUTED, GRID = '#0b0b0b', '#52514e', '#e4e3df'
 COLORS = {  # entity -> colour, never by rank
     'raw': '#7d7b75', 'learned': '#2a78d6', 'complex': '#eb6834', 'wiener': '#1baf7a', 'rec_z0': '#6250d6',
     'rec_af': '#e87ba4', 'rec_edf': '#008300', 'rec_twin': '#e34948', 'oracle_pixel': '#eda100',
+    'prop': '#0097a7', 'bank_w3': '#556b2f',
 }
 LABELS = {'raw': 'hologram crops', 'learned': 'learned layer (real)', 'complex': 'learned layer (complex)',
-          'wiener': 'Wiener filter', 'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus',
+          'wiener': 'Wiener filter', 'prop': 'propagation layer', 'bank_w3': 'focal stack (7)',
+          'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus',
           'rec_edf': 'per-object focus', 'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
-SHORT = {'raw': 'crops', 'learned': 'layer', 'complex': 'complex', 'wiener': 'Wiener', 'rec_z0': 'rec. $z_0$',
+SHORT = {'raw': 'crops', 'learned': 'layer', 'complex': 'complex', 'wiener': 'Wiener', 'prop': 'prop.',
+         'bank_w3': 'stack', 'rec_z0': 'rec. $z_0$',
          'rec_af': 'autofocus', 'rec_edf': 'per-object', 'rec_twin': 'twin-free', 'oracle_pixel': 'pixel oracle'}
-ORDER = ['raw', 'learned', 'complex', 'wiener', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
+ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
 KNOWN, UNKNOWN = '#2a78d6', '#eb6834'
 
 

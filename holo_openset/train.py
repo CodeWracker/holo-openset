@@ -37,12 +37,8 @@ class SupConLoss(nn.Module):
 
 
 @torch.no_grad()
-def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41):
-    """The propagation phase alpha (units of the training grid) at which the holograms are sharpest, from the
-    holograms alone: no label and no optical parameter. The sharpness is the Tamura coefficient of the gradient of the
-    back-propagated field (the criterion of the blind autofocus), averaged over the images. Coarse scan on a
-    geometric grid (the same relative step at every distance: 2 mm and 75 mm are both covered), then a fine linear
-    scan between the neighbours of the best coarse value (resolution about 0.3 %)."""
+def alpha_sharpness(imgs_u8, device, alphas):
+    """Mean sharpness (Tamura coefficient of the gradient) of the holograms back-propagated with each alpha."""
     from holo_openset.reconstruct import tog
     x = imgs_u8.to(device).float() / 255.0
     x = x - x.mean(dim=(-2, -1), keepdim=True)
@@ -51,10 +47,18 @@ def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41):
     fy = torch.fft.fftfreq(h, device=device, dtype=torch.float64) * IMAGE_SIZE
     fx = torch.fft.fftfreq(w, device=device, dtype=torch.float64) * IMAGE_SIZE
     q = fx[None, :] ** 2 + fy[:, None] ** 2
+    return [tog(torch.fft.ifft2(A * torch.exp(1j * float(a) * q).to(torch.complex64))).mean().item() for a in alphas]
 
+
+@torch.no_grad()
+def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41):
+    """The propagation phase alpha (units of the training grid) at which the holograms are sharpest, from the
+    holograms alone: no label and no optical parameter. The sharpness is the Tamura coefficient of the gradient of the
+    back-propagated field (the criterion of the blind autofocus), averaged over the images. Coarse scan on a
+    geometric grid (the same relative step at every distance: 2 mm and 75 mm are both covered), then a fine linear
+    scan between the neighbours of the best coarse value (resolution about 0.3 %)."""
     def sharpness(alphas):
-        return [tog(torch.fft.ifft2(A * torch.exp(1j * float(a) * q).to(torch.complex64))).mean().item()
-                for a in alphas]
+        return alpha_sharpness(imgs_u8, device, alphas)
     coarse = np.geomspace(lo, hi, n_coarse)
     k = int(np.argmax(sharpness(coarse)))
     fine = np.linspace(coarse[max(k - 1, 0)], coarse[min(k + 1, n_coarse - 1)], n_fine)
