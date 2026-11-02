@@ -835,10 +835,10 @@ def fig_stack():
         rr = r[(r.flow == f) & (r.variant == 'session_5')]
         if not len(d) or not len(rr):
             continue
-        label = f'{n} dist.' + (f', $\\pm${width} %' if width else '') + (f', jitter {jitter} %' if jitter else '')
+        label = f'{n} / {width if width else "--"} / {jitter if jitter else "--"}'
         pts.append((d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), label, jitter, n))
-    off = {'prop': (-30, 7), 'prop_jit': (5, 3), 'bank': (5, 5), 'bank_jit': (5, 3), 'bank_w3': (5, 3),
-           'bank_w1': (5, 3), 'bank_wide': (-104, 7), 'bank_w2': (-24, -13)}
+    off = {'prop': (-34, 6), 'prop_jit': (6, 2), 'bank': (6, 4), 'bank_jit': (6, 2), 'bank_w3': (6, 2),
+           'bank_w1': (6, 2), 'bank_wide': (6, -10), 'bank_w2': (-36, 2)}
     for (x, y, label, jitter, n), (f, *_) in zip(pts, [s for s in STACKS if len(e[e.flow == s[0]])
                                                       and len(r[(r.flow == s[0]) & (r.variant == 'session_5')])]):
         ax.plot(x, y, 'o', color=COLORS['bank_w3'] if n > 1 else COLORS['prop'], ms=4 + jitter / 3, alpha=0.85)
@@ -852,10 +852,8 @@ def fig_stack():
                         textcoords='offset points', fontsize=6, color=INK)
     x0, x1 = ax.get_xlim()
     ax.set_xlim(x0, x1 + 0.25 * (x1 - x0))
-    ax.set_xlabel('open-set F1 on the calibrated bench')
+    ax.set_xlabel('open-set F1 on the calibrated bench\n(circles: distances / width % / jitter %)')
     ax.set_ylabel('open-set F1, distance drifting by 5 %')
-    ax.text(0.03, 0.97, 'circles: the propagation layer and its stacks\n(size: training jitter); squares: the other flows',
-            transform=ax.transAxes, fontsize=5.6, color=MUTED, va='top')
     save(fig, 'fig_stack')
 
 
