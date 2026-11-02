@@ -17,7 +17,7 @@ FLOWS = {
     'learned': dict(mode='radial', fourier='learned', rec=None),
     'complex': dict(mode='complex', fourier='learned', rec=None),
     'wiener': dict(mode='radial', fourier='wiener', rec=None),
-    # exploration (branch explore/positive-openset): the phase of the propagation, learned
+    # the phase of the propagation: one scalar calibrated on the holograms (the proposed method)
     'prop': dict(mode='prop', fourier='learned', rec=None),
     'prop0': dict(mode='prop', fourier='learned', rec=None, train=dict(alpha_init=0.0, lr_alpha=3e-5)),
     'bank': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5)),
@@ -25,7 +25,7 @@ FLOWS = {
     'bank_jit': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5, alpha_jitter=0.05)),
     'bank_wide': dict(mode='bank', fourier='learned', rec=None,
                       train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.12)),
-    # sweep of the width of the stack against the jitter (repetition 1)
+    # the width of the stack against the jitter (ablation); bank_w3 is the variant of the paper
     'bank_w1': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.08, alpha_jitter=0.08)),
     'bank_w2': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=9, alpha_spread=0.12, alpha_jitter=0.12)),
     'bank_w3': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.05)),

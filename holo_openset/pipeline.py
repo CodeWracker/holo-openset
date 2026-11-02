@@ -21,8 +21,8 @@ from holo_openset.sim.variants import VARIANTS
 REPS = [1, 2, 3, 4, 5]
 PY = [sys.executable, '-m', 'holo_openset']
 ALL = list(FLOWS)
-IDEAL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'rec_z0']
-SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'rec_z0', 'rec_af', 'rec_twin']
+IDEAL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'rec_z0']
+SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']
 
 
 def jobs():
@@ -72,7 +72,7 @@ def jobs():
         for f in ALL:
             add(f'train_{f}_r{r}', 'train', ['train', '--flow', f, '--rep', str(r)], needs(f, r))
             add(f'eval_{f}_r{r}', 'evaluate', ['evaluate', '--flow', f, '--rep', str(r)], [f'train_{f}_r{r}'])
-        for f in ['learned', 'rec_z0']:   # calibration twins of discovery
+        for f in ['learned', 'prop', 'rec_z0']:   # calibration twins of discovery
             add(f'train_{f}_cal_r{r}', 'train', ['train', '--flow', f, '--rep', str(r), '--cal'], needs(f, r, cal=True))
         # ablations of the proposed layer: learning rate of the layer, auxiliary font scenes
         add(f'train_learned_lr_r{r}', 'train', ['train', '--flow', 'learned', '--rep', str(r), '--lr-fourier', '3e-3',
@@ -105,7 +105,7 @@ def jobs():
     add('exp_robustness', 'experiment', ['experiment', 'robustness'], trained + [f'rec_var_{v}' for v in VARIANTS])
     add('exp_oracle', 'experiment', ['experiment', 'oracle', '--workers', '16'], ['sim_variants'], dev='cpu')
     add('exp_discovery', 'experiment', ['experiment', 'discovery'],
-        trained + [f'train_{f}_cal_r{r}' for f in ['learned', 'rec_z0'] for r in REPS])
+        trained + [f'train_{f}_cal_r{r}' for f in ['learned', 'prop', 'rec_z0'] for r in REPS])
     add('exp_full_frames', 'experiment', ['experiment', 'full_frames'], trained + ['sim_full'] +
         [f'yolo_r{r}' for r in REPS])
     add('exp_timing_gpu', 'experiment', ['experiment', 'timing', '--rep', '1'], ['sim_full', 'yolo_r1',
