@@ -25,7 +25,7 @@ FLOWS = {
     'bank_jit': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5, alpha_jitter=0.05)),
     'bank_wide': dict(mode='bank', fourier='learned', rec=None,
                       train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.12)),
-    # the width of the stack against the jitter (ablation); bank_w3 is the variant of the paper
+    # the width of the stack against the jitter (ablation); bank_jit above is the variant of the paper
     'bank_w1': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.08, alpha_jitter=0.08)),
     'bank_w2': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=9, alpha_spread=0.12, alpha_jitter=0.12)),
     'bank_w3': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=7, alpha_spread=0.12, alpha_jitter=0.05)),

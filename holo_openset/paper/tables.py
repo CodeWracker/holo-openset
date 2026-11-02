@@ -15,11 +15,11 @@ from holo_openset.flows import FLOWS
 from holo_openset.sim.variants import BASE as VBASE, VARIANTS
 
 R = paths.RESULTS
-ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
+ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
 NAME = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
-        'prop': 'propagation layer', 'bank_w3': 'focal stack (7)', 'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
+        'prop': 'propagation layer', 'bank_jit': 'focal stack (5)', 'bank_w3': 'focal stack (7)', 'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
         'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
-NEEDS = {'raw': '--', 'learned': '--', 'complex': '--', 'prop': '--', 'bank_w3': '--', 'wiener': '$\\lambda,\\Delta,z_0$',
+NEEDS = {'raw': '--', 'learned': '--', 'complex': '--', 'prop': '--', 'bank_jit': '--', 'bank_w3': '--', 'wiener': '$\\lambda,\\Delta,z_0$',
          'rec_z0': '$\\lambda,\\Delta,z_0,B$', 'rec_af': '$\\lambda,\\Delta,B$', 'rec_edf': '$\\lambda,\\Delta,B$',
          'rec_twin': '$\\lambda,\\Delta,B$', 'oracle_pixel': '$\\lambda,\\Delta,z_0,B$'}
 M = {}   # macros
@@ -193,7 +193,8 @@ def tab_ablation():
     for label, tag, flow in [('propagation layer, $\\alpha$ calibrated on the holograms (proposed)', '', 'prop'),
                              ('propagation layer, $\\alpha$ from the identity (loss alone)', '', 'prop0'),
                              ('focal stack, 5 distances over $\\pm5$\\,\\%, no jitter', '', 'bank'),
-                             ('focal stack, 7 distances over $\\pm12$\\,\\%, jitter 5\\,\\% (proposed)', '', 'bank_w3'),
+                             ('focal stack, 5 distances over $\\pm5$\\,\\%, jitter 5\\,\\% (proposed)', '', 'bank_jit'),
+                             ('focal stack, 7 distances over $\\pm12$\\,\\%, jitter 5\\,\\%', '', 'bank_w3'),
                              ('real layer, $\\mathrm{lr}_F=3\\cdot10^{-1}$', '', 'learned'),
                              ('real layer, $\\mathrm{lr}_F=3\\cdot10^{-3}$', '_lr3e-3', 'learned'),
                              ('real layer, no auxiliary scenes', '_noaux', 'learned'),
@@ -308,6 +309,7 @@ def tab_discovery():
 
 
 # ------------------------------------------------------------------------------------------------ cost
+SAME_LAYER = {'bank_jit': 'bank'}   # the same architecture (5 distances), so the same cost per frame
 STAGE_GROUPS = {'read': ['load', 'normalise'],   # reading the frame (and, for a reconstruction, its blank frame)
                 'compute': ['reconstruct', 'autofocus', 'per_object', 'twin', 'channels', 'layer'],
                 'embed + decide': ['embed', 'decide']}
@@ -322,15 +324,18 @@ def tab_full_frames():
     det = t[t.stage == 'detect'].seconds.median()
     macro('FullDetectS', det, '{:.2f}')
     per = t[t.flow != 'all'].groupby(['flow', 'frame', 'rep', 'stage']).seconds.sum().unstack('stage').fillna(0)
+    timed = set(per.index.get_level_values(0))
     for f in ORDER:
-        if f not in per.index.get_level_values(0):
+        src = f if f in timed else SAME_LAYER.get(f)   # not timed yet: the times of a flow with the same layer
+        if src not in timed:
             continue
-        p = per.loc[f]
+        p = per.loc[src]
+        name = NAME[f] + ('' if src == f else '$^\\dagger$')
         g = {k: p[[c for c in v if c in p]].sum(1).median() for k, v in STAGE_GROUPS.items()}
         a = acc[acc.flow == f]
         gt, dt = a[a.boxes == 'gt'], a[a.boxes == 'det']
         total = det + sum(g.values())
-        lines.append(f"{NAME[f]} & {g['read'] * 1e3:.0f} & {g['compute'] * 1e3:.1f} & {g['embed + decide'] * 1e3:.0f} & "
+        lines.append(f"{name} & {g['read'] * 1e3:.0f} & {g['compute'] * 1e3:.1f} & {g['embed + decide'] * 1e3:.0f} & "
                      f"{total:.2f} & {ms(gt.novel_auroc, std=False)} & {ms(gt.novel_open_macro_f1, std=False)} & "
                      f"{ms(dt.novel_open_macro_f1, std=False)} & {ms(dt.fp_rejected, std=False)} \\\\")
         k = ''.join(w.capitalize() for w in f.split('_'))
@@ -350,7 +355,7 @@ def tab_full_frames():
 
 STAGES = [('flat_field', 'flat field $\\sqrt{I/B}$'), ('layer_real', 'learned layer (real)'),
           ('layer_complex', 'learned layer (complex)'), ('layer_prop', 'propagation layer'),
-          ('layer_bank_w3', 'focal stack, 7 distances'), ('backprop', 'one back-propagation'),
+          ('layer_bank', 'focal stack, 5 distances'), ('backprop', 'one back-propagation'),
           ('autofocus', 'autofocus (114 reconstructions)'), ('per_object', 'per-object focus (25 more)'),
           ('twin', 'twin removal (50 passes)'), ('channels', 'channels of the network input'),
           ('yolo_tiled', 'YOLO localiser, tiles'), ('embed', 'ResNet18 embedding, all boxes'),
@@ -454,7 +459,7 @@ def tab_scale():
     sets = [('realistic', '45--125\\,px, 19.25\\,mm'), ('small_z0', '12--36\\,px, 19.25\\,mm'),
             ('small_near', '12--36\\,px, 2\\,mm')]
     data = {s: evals(s) for s, _ in sets}
-    for f in ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']:
+    for f in ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']:
         cells = []
         for s, _ in sets:
             d = data[s][data[s].flow == f] if len(data[s]) else pd.DataFrame()

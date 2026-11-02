@@ -22,7 +22,7 @@ REPS = [1, 2, 3, 4, 5]
 PY = [sys.executable, '-m', 'holo_openset']
 ALL = list(FLOWS)
 IDEAL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'rec_z0']
-SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']
+SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']
 
 
 def jobs():

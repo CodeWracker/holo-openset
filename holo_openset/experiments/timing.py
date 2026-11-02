@@ -62,7 +62,7 @@ def main(argv=None):
     full = torch.from_numpy(np.array(src.holo[src.row[i]])).to(dev)
     bg = torch.from_numpy(np.array(src.bg[src.session[i]])).to(dev)
     m_learned, m_complex, m_raw = model('learned', rep, dev), model('complex', rep, dev), model('rec_z0', rep, dev)
-    extra = {f'layer_{f}': model(f, rep, dev) for f in ('prop', 'bank', 'bank_w1', 'bank_w3')}   # exploration flows, when trained
+    extra = {f'layer_{f}': model(f, rep, dev) for f in ('prop', 'bank', 'bank_jit', 'bank_w1', 'bank_w3')}   # exploration flows, when trained
     extra = {k: m for k, m in extra.items() if m is not None}
     yolo = YoloDetector(paths.yolo_weights(rep), device=dev)
     gal = torch.nn.functional.normalize(torch.randn(5000, 128, device=dev), dim=1)

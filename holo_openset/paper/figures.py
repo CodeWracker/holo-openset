@@ -463,7 +463,7 @@ def fig_flows(image_id=None, rep=1):
     holo = dataset('raw').image(image_id)
     panels = [(amp, 'object: amplitude'), (ph, 'object: phase'), (holo, 'hologram')]
     for f, t in [('learned', 'learned layer'), ('complex', 'complex layer, |y|'), ('wiener', 'Wiener filter'),
-                 ('prop', 'prop. layer, |y|'), ('bank_w3', 'stack, |y| centre')]:
+                 ('prop', 'prop. layer, |y|'), ('bank_jit', 'stack, |y| centre')]:
         m = _model(f, rep)
         if m is not None:
             panels.append((_view(m, holo), t))
@@ -653,7 +653,7 @@ def fig_cost(rep=None):
     c, g, acc, t = load_csv('timing_cpu'), load_csv('timing_gpu'), load_csv('full_frames'), load_csv('full_frames_time')
     fig, axs = plt.subplots(1, 3, figsize=(7.16, 2.6), gridspec_kw=dict(wspace=0.34))
     stages = [('layer_real', 'real layer', COLORS['learned']), ('layer_prop', 'propagation layer', COLORS['prop']),
-              ('layer_bank_w3', 'focal stack (7)', COLORS['bank_w3']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
+              ('layer_bank', 'focal stack (5)', COLORS['bank_jit']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
               ('autofocus', 'autofocus', COLORS['rec_af']), ('twin', 'twin removal', COLORS['rec_twin']),
               ('yolo_tiled', 'YOLO (tiles)', COLORS['raw'])]
     for ax, df, title, key in [(axs[0], c, '(a) one CPU core', 'median_s'), (axs[1], g, '(b) one GPU', 'min_s')]:
@@ -812,7 +812,7 @@ def fig_prop(rep=1):
     c = slice(160, 480)
     show(fig.add_subplot(bot[0, 0]), holo[c, c], '(c) hologram of a letter that\nabsorbs and delays the light')
     show(fig.add_subplot(bot[0, 1]), _view(m, h8)[c, c], '(d) after the propagation\nlayer, |y|')
-    mb = _model('bank_w3', rep)
+    mb = _model('bank_jit', rep)
     if mb is not None:
         show(fig.add_subplot(bot[0, 2]), _view(mb, h8)[c, c], '(e) after the focal stack,\n|y| at the central distance')
     with torch.no_grad():
