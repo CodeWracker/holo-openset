@@ -8,10 +8,13 @@ size, the frame itself. Each stage is timed alone, after warm-up:
 Stages: flat field, learned layer (real; one transform pair, inference path), complex layer, one back-propagation,
 blind autofocus (114 reconstructions), per-object focus (25 more), twin-image removal (50 passes), channels of the
 network input, YOLO in tiles, ResNet18 embedding of the boxes, gallery search (5k gallery). Nothing is extrapolated.
+The distance study adds the propagation layers of every focal stack that has a model, every search of the distance of
+reconstruct.FOCUS that runs on one hologram (autofocus_<name>: from the amplitude to the distance, with its binning
+and its mask) and the per-object focus over the wide range.
 
     python -m holo_openset experiment timing --device cpu      (one core)
     python -m holo_openset experiment timing --device cuda:N
-Output: results/holo_openset/timing.csv
+Output: results/holo_openset/timing_cpu.csv, timing_gpu.csv
 """
 import time
 
@@ -23,7 +26,7 @@ from holo_openset import paths
 from holo_openset.detect import YoloDetector
 from holo_openset.experiments.common import device, model, parser, save
 from holo_openset.experiments.full_frames import embed_boxes
-from holo_openset.reconstruct import Holograms, autofocus, backprop, channels, per_object, remove_twin
+from holo_openset.reconstruct import EDF, FOCUS, Holograms, autofocus, backprop, channels, per_object, remove_twin
 
 SIZES = [(640, 640), (1280, 1280), (2048, 2048), (2748, 3840)]
 
@@ -52,17 +55,19 @@ def main(argv=None):
                                                         'iterative stages on the CPU above 1 MP)')
     ap.add_argument('--sizes', nargs='+', default=None, help='HxW')
     ap.add_argument('--stages', nargs='+', default=None, help='only these stages (default: all)')
+    ap.add_argument('--frames-set', default='full_frames', help='set of full frames under data/ (simulate full --name)')
     a = ap.parse_args(argv)
     a.threads = 1 if a.device == 'cpu' else a.threads
     dev = device(a)
     rep = a.rep[0]
-    src = Holograms(paths.dataset('full_frames'))
-    ann = pd.read_csv(paths.dataset('full_frames') / 'annotations.csv')
+    src = Holograms(paths.dataset(a.frames_set))
+    ann = pd.read_csv(paths.dataset(a.frames_set) / 'annotations.csv')
     i = int(src.ids[0])
     full = torch.from_numpy(np.array(src.holo[src.row[i]])).to(dev)
     bg = torch.from_numpy(np.array(src.bg[src.session[i]])).to(dev)
     m_learned, m_complex, m_raw = model('learned', rep, dev), model('complex', rep, dev), model('rec_z0', rep, dev)
-    extra = {f'layer_{f}': model(f, rep, dev) for f in ('prop', 'bank', 'bank_jit', 'bank_w1', 'bank_w3')}   # exploration flows, when trained
+    extra = {f'layer_{f}': model(f, rep, dev) for f in ('prop', 'bank', 'bank_jit', 'bank_w1', 'bank_w3', 'bank_wide',
+                                                        'bank_w2')}   # the propagation layers that have a model
     extra = {k: m for k, m in extra.items() if m is not None}
     yolo = YoloDetector(paths.yolo_weights(rep), device=dev)
     gal = torch.nn.functional.normalize(torch.randn(5000, 128, device=dev), dim=1)
@@ -89,7 +94,10 @@ def main(argv=None):
                 **{k: (lambda m=m: m.filtered(holo[None]), n) for k, m in extra.items()},
                 'backprop': (lambda: backprop(amp, [z]), n),
                 'autofocus': (lambda: autofocus(amp, src.z0), n_iter),
+                **{f'autofocus_{k}': (lambda f=f: autofocus(amp, src.z0, f, b), n_iter) for k, f in FOCUS.items()
+                   if f.every == 1},
                 'per_object': (lambda: per_object(amp, z, g), n_iter),
+                'per_object_wide': (lambda: per_object(amp, z, g, *EDF['edfw']), n_iter),
                 'twin': (lambda: remove_twin(amp, z), n_iter),
                 'channels': (lambda: channels(u), n),
                 'yolo_tiled': (lambda: yolo(holo.cpu().numpy()), n),

@@ -9,32 +9,64 @@ split itself.
 
     python -m holo_openset experiment robustness --device cuda:N [--rep ...] [--variants ...] [--flows ...]
 Output: results/holo_openset/robustness.csv
+
+--by-session also writes robustness_sessions.csv: the accuracy on the seen classes and the rejection of the unseen
+ones in each test session, at the same threshold (a distance found once per session is right or wrong for a whole
+session). --own evaluates a flow of the distance study with a model trained on its own images instead of the model
+it borrows (rows saved as <flow>+own).
 """
 import numpy as np
 import pandas as pd
 
 from holo_openset import paths
 from holo_openset.data import embed_annotations
+from holo_openset.evaluate import IDX, nn_scores
 from holo_openset.experiments.common import KEEP, device, fmt, model, parser, save, strict
-from holo_openset.flows import FLOWS, array_name, dataset
-from holo_openset.sim.variants import VARIANTS
+from holo_openset.flows import PAPER_FLOWS, array_name, dataset
+from holo_openset.protocol import classes
+from holo_openset.sim.variants import ALL, VARIANTS
+
+
+def sessions(emb, ann, rep, threshold, session_of):
+    """Per test session: accepted-and-correct share of the seen-class patterns, rejected share of the unseen ones
+    (gallery: the seen classes of the validation split, as in the strict protocol)."""
+    seen = [IDX[c] for c in classes(rep)[0]]
+    labels = ann.classe.map(IDX).to_numpy()
+    split = ann.split.to_numpy()
+    gal = np.where((split == 'val') & np.isin(labels, seen))[0]
+    q = np.where(split == 'test')[0]
+    pred, score = nn_scores(emb[q], emb[gal], labels[gal])
+    known = np.isin(labels[q], seen)
+    ses = ann.image_id.map(session_of).to_numpy()[q]
+    out = []
+    for s in np.unique(ses):
+        k, u = (ses == s) & known, (ses == s) & ~known
+        out.append(dict(session=int(s), n_known=int(k.sum()), n_unknown=int(u.sum()),
+                        known_acc=float(((pred == labels[q]) & (score >= threshold))[k].mean()),
+                        unknown_rejection=float((score < threshold)[u].mean()) if u.any() else np.nan))
+    return out
 
 
 def main(argv=None):
-    ap = parser(__doc__, list(FLOWS))
+    ap = parser(__doc__, list(PAPER_FLOWS))
     ap.add_argument('--variants', nargs='+', default=['base'] + list(VARIANTS))
+    ap.add_argument('--by-session', action='store_true', help='also robustness_sessions.csv')
+    ap.add_argument('--own', action='store_true', help="the flow's own checkpoint instead of the one it borrows")
     a = ap.parse_args(argv)
     dev = device(a)
     base = dataset('raw')
     ann = base.ann
     val, test = (ann.split == 'val').to_numpy(), (ann.split == 'test').to_numpy()
     ref = ann[test].reset_index(drop=True)
+    meta = pd.read_csv(base.root / 'metadata.csv')
+    session_of = dict(zip(meta.image_id, meta.session))
     for r in a.rep:
-        rows = []
+        rows, srows = [], []
         for flow in a.flows:
-            m = model(flow, r, dev)
+            m = model(flow, r, dev, own=a.own)
             if m is None:
                 continue
+            name = f'{flow}+own' if a.own else flow
             emb_val = embed_annotations(m, dataset(flow), ann[val])
             for v in a.variants:
                 root = paths.dataset(paths.BASE if v == 'base' else f'variants/{v}')
@@ -49,8 +81,13 @@ def main(argv=None):
                 emb[val] = emb_val
                 emb[test] = embed_annotations(m, dataset(flow, root, ann=vann), ref)
                 res = strict(m, base, r, emb)
-                effect, value, _ = VARIANTS.get(v, ('base', 'base', {}))
-                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=flow,
+                effect, value, _ = ALL.get(v, ('base', 'base', {}))
+                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=name,
                                  **{k: res[k] for k in KEEP if k in res}))
                 print(fmt(rows[-1]), flush=True)
+                if a.by_session:
+                    srows += [dict(rep=r, variant=v, flow=name, threshold=res['threshold'], **x)
+                              for x in sessions(emb, ann, r, res['threshold'], session_of)]
         save(rows, 'robustness', keys=['rep', 'variant', 'flow'])
+        if srows:
+            save(srows, 'robustness_sessions', keys=['rep', 'variant', 'flow', 'session'])

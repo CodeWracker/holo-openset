@@ -39,34 +39,37 @@ def _set(a):
 def cmd_simulate(a):
     from holo_openset.sim import generate as G
     from holo_openset.sim.physics import IDEAL
-    from holo_openset.sim.variants import VARIANTS
+    from holo_openset.sim.variants import ALL, VARIANTS
     dev = _device(a)
     base = paths.dataset(paths.BASE)
     sets = G.parse_sets(a.set_physics)
     if a.what == 'base':
-        G.generate(base, phys=sets, n_images=a.n_images, workers=a.workers, dev=dev)
+        G.generate(base, phys=sets, n_images=a.n_images or 5000, workers=a.workers, dev=dev)
     elif a.what == 'ideal':
         G.generate(paths.dataset(paths.IDEAL), phys={**IDEAL, **sets}, like=base, workers=a.workers, dev=dev)
     elif a.what in ('variant', 'variants'):
-        names = a.names or list(VARIANTS)
+        names = a.names or list(VARIANTS)   # without names: the robustness sets of the paper
         for v in names:
-            out = paths.dataset(f'variants/{v}')
+            # the test scenes go to variants/<name>, as in the paper; another split to variants_<split>/<name>
+            out = paths.dataset(f'variants/{v}' if a.split == 'test' else f'variants_{a.split}/{v}')
             if (out / 'physics.json').exists() and not a.force:
                 print('exists', out)
                 continue
-            G.generate(out, phys=VARIANTS[v][2], like=base, split='test', workers=a.workers, dev=dev)
+            G.generate(out, phys=ALL[v][2], like=base, split=a.split, workers=a.workers, dev=dev)
     elif a.what == 'aux':
         for r in a.rep:
             G.aux(paths.dataset(a.set), paths.dataset(a.set) / 'aux', r, n_images=a.aux_images, workers=a.workers,
                   dev=dev)
     elif a.what == 'full':
-        G.full_frames(base, paths.dataset('full_frames'), n_images=a.n_images or 40, phys=sets, workers=a.workers,
-                      dev=dev)
+        out = paths.dataset(f'full_frames_{a.name}' if a.name else 'full_frames')
+        if (out / 'physics.json').exists() and not a.force:
+            raise SystemExit(f'{out} exists: pass --name for another set of full frames, or --force to overwrite it')
+        G.full_frames(base, out, n_images=a.n_images or 40, phys=sets, workers=a.workers, dev=dev)
     elif a.what == 'small':
         from holo_openset.sim.physics import Z0
         for name, z in [('small_z0', Z0), ('small_near', 2e-3)]:   # letters of 20-60 um at 19 mm and at 2 mm
             if not (paths.dataset(name) / 'physics.json').exists() or a.force:
-                G.generate(paths.dataset(name), phys=dict(sets, z0=z), n_images=a.n_images, workers=a.workers,
+                G.generate(paths.dataset(name), phys=dict(sets, z0=z), n_images=a.n_images or 5000, workers=a.workers,
                            dev=dev, layout='small')
 
 
@@ -111,13 +114,14 @@ def cmd_train(a):
 
 def cmd_evaluate(a):
     from holo_openset.evaluate import evaluate
-    from holo_openset.flows import dataset
+    from holo_openset.flows import dataset, weights_of
     from holo_openset.model import load_model
     dev = _device(a)
     out_dir = paths.RESULTS / 'eval' / a.set
     out_dir.mkdir(parents=True, exist_ok=True)
     for r in a.rep:
-        model = load_model(Path(a.model) if a.model else paths.weights(a.flow, r, a.train_set or a.set, a.tag), dev)[0]
+        model = load_model(Path(a.model) if a.model else paths.weights(weights_of(a.flow), r, a.train_set or a.set,
+                                                                        a.tag), dev)[0]
         res = evaluate(model, dataset(a.flow, _set(a)), r)
         res.update(flow=a.flow, set=a.set, train_set=a.train_set or a.set, tag=a.tag)
         name = f'{a.flow}{a.tag}' + (f'_from_{a.train_set}' if a.train_set else '')
@@ -144,8 +148,9 @@ def cmd_paper(a):
 
 # ------------------------------------------------------------------------------------------------ use
 def _model(a, dev):
+    from holo_openset.flows import weights_of
     from holo_openset.model import load_model
-    return load_model(Path(a.model) if a.model else paths.weights(a.flow, a.rep[0], a.set), dev)[0]
+    return load_model(Path(a.model) if a.model else paths.weights(weights_of(a.flow), a.rep[0], a.set), dev)[0]
 
 
 def _images(a):
@@ -238,16 +243,20 @@ def main(argv=None):
     p = sub.add_parser('simulate', parents=[common], help='simulate an acquisition')
     p.add_argument('what', choices=['base', 'ideal', 'variant', 'variants', 'aux', 'full', 'small'])
     p.add_argument('names', nargs='*', help='variant names (default: all)')
-    p.add_argument('--n-images', type=int, default=5000)
+    p.add_argument('--n-images', type=int, default=None, help='default: 5000 (base, small), 40 (full)')
     p.add_argument('--aux-images', type=int, default=2000)
     p.add_argument('--rep', type=int, nargs='+', default=[1, 2, 3, 4, 5])
     p.add_argument('--set-physics', nargs='*', default=[], help='physics overrides key=value (sim/physics.py)')
     p.add_argument('--workers', type=int, default=8)
     p.add_argument('--force', action='store_true')
+    p.add_argument('--split', default='test', choices=['train', 'val', 'test'],
+                   help='variant: the split of the base scenes recorded again (test -> variants/, val -> variants_val/)')
+    p.add_argument('--name', help='full: write data/full_frames_<name> instead of data/full_frames')
     p.set_defaults(fn=cmd_simulate)
 
     p = sub.add_parser('reconstruct', parents=[common], help='conventional reconstruction caches of a set')
-    p.add_argument('--methods', nargs='*', help='z0 af edf twin (default: all)')
+    p.add_argument('--methods', nargs='*', help='z0 af edf twin (default: these four), or a search of the distance '
+                                                'study (reconstruct.FOCUS), which writes autofocus_<method>.csv')
     p.add_argument('--aux', nargs='*', help='auxiliary scenes instead (r1 r1_cal ...)')
     p.set_defaults(fn=cmd_reconstruct)
 

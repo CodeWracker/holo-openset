@@ -17,7 +17,7 @@ from holo_openset import paths
 from holo_openset.data import embed_annotations
 from holo_openset.detect import YoloDetector, match
 from holo_openset.experiments.common import KEEP, device, fmt, model, parser, save, strict
-from holo_openset.flows import FLOWS, dataset
+from holo_openset.flows import PAPER_FLOWS, dataset
 from holo_openset.reconstruct import Holograms, channels, per_object
 
 
@@ -122,7 +122,7 @@ def run(rep, flows, dev):
 
 
 def main(argv=None):
-    a = parser(__doc__, list(FLOWS)).parse_args(argv)
+    a = parser(__doc__, list(PAPER_FLOWS)).parse_args(argv)
     dev = device(a)
     for r in a.rep:
         save(run(r, a.flows, dev), 'e2e', keys=['rep', 'flow'])
