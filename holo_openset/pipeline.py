@@ -15,12 +15,12 @@ import time
 from pathlib import Path
 
 from holo_openset import paths
-from holo_openset.flows import FLOWS
+from holo_openset.flows import FLOWS, PAPER_FLOWS
 from holo_openset.sim.variants import VARIANTS
 
 REPS = [1, 2, 3, 4, 5]
 PY = [sys.executable, '-m', 'holo_openset']
-ALL = list(FLOWS)
+ALL = list(PAPER_FLOWS)   # the flows of the distance study borrow these models and are not part of the queue
 IDEAL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'rec_z0']
 SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']
 

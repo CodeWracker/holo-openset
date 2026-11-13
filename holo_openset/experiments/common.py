@@ -31,8 +31,11 @@ def device(a):
     return dev
 
 
-def model(flow, rep, dev, train_set=paths.BASE, tag=''):
-    w = paths.weights(flow, rep, train_set, tag)
+def model(flow, rep, dev, train_set=paths.BASE, tag='', own=False):
+    """The trained model of a flow: its own checkpoint, or that of the flow it borrows from (flows.weights_of) unless
+    own is set."""
+    from holo_openset.flows import weights_of
+    w = paths.weights(flow if own else weights_of(flow), rep, train_set, tag)
     if not w.exists():
         print('missing', w, flush=True)
         return None

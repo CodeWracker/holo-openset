@@ -8,9 +8,15 @@
   rec_af    back-propagation at the distance found by the blind autofocus of each hologram (114 reconstructions)
   rec_edf   each object at the distance at which it is sharpest (per-object focus; needs boxes)
   rec_twin  autofocus + iterative twin-image removal (the complete conventional reconstruction)
+
+The distance study (docs/exp_distancia) adds flows that find the distance another way (reconstruct.FOCUS: once per
+session, every M images, a narrow range, a coarser grid, a robust sharpness) and a per-object focus over a wide range.
+The network was trained on reconstructions in focus and only the search of the distance changes, so these flows have
+no model of their own: 'weights' names the flow of the paper whose model they use (`weights_of`).
 """
 from holo_openset import paths
 from holo_openset.data import Array, Dataset
+from holo_openset.reconstruct import FOCUS
 
 FLOWS = {
     'raw': dict(mode='none', fourier='learned', rec=None),
@@ -34,6 +40,10 @@ FLOWS = {
     'rec_edf': dict(mode='none', fourier='learned', rec='edf'),
     'rec_twin': dict(mode='none', fourier='learned', rec='twin'),
 }
+STUDY = {f'rec_{m}': dict(mode='none', fourier='learned', rec=m, weights='rec_af') for m in FOCUS}
+STUDY['rec_edfw'] = dict(mode='none', fourier='learned', rec='edfw', weights='rec_edf')
+PAPER_FLOWS = list(FLOWS)   # what the queue of the paper trains and its experiments run by default
+FLOWS.update(STUDY)
 HOLOGRAM_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'prop0', 'bank', 'prop_jit', 'bank_jit', 'bank_wide', 'bank_w1', 'bank_w2', 'bank_w3']
 LABELS = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
           'prop': 'learned propagation', 'prop0': 'learned propagation, from the identity',
@@ -41,6 +51,11 @@ LABELS = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'compl
           'bank_jit': 'learned focal stack, distance jitter', 'bank_wide': 'learned focal stack, 7 distances over 12 %',
           'rec_z0': 'reconstruction at z0', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
           'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
+
+
+def weights_of(flow):
+    """The flow whose trained model `flow` uses: itself, unless it borrows the model of a flow of the paper."""
+    return FLOWS[flow].get('weights', flow)
 
 
 def array_name(flow):
@@ -62,4 +77,5 @@ def aux_scenes(flow, rep, root=None, cal=False):
     return images, root / 'aux' / f'{name}_boxes.csv'
 
 
-__all__ = ['FLOWS', 'HOLOGRAM_FLOWS', 'LABELS', 'array_name', 'dataset', 'aux_scenes', 'Array']
+__all__ = ['FLOWS', 'PAPER_FLOWS', 'STUDY', 'HOLOGRAM_FLOWS', 'LABELS', 'weights_of', 'array_name', 'dataset',
+           'aux_scenes', 'Array']

@@ -16,8 +16,18 @@
 The network receives three channels of q = U - 1: real part, imaginary part and modulus (an object that absorbs
 appears in the real part, one that delays the light in the imaginary part).
 
+The distance study (docs/exp_distancia) asks what the autofocus costs when it is done as a laboratory would do it, not
+at its most expensive. `Focus` describes one way of finding the distance, and FOCUS names the ones compared:
+  when      every hologram (the blind autofocus above), once per session with the distance reused, or every M images;
+  where     the blind range, or a narrow range around the nominal distance with fewer candidates;
+  on what   the amplitude as recorded, or averaged in blocks (the source of the bench leaves little above 70 cycles/mm,
+            so a coarser grid loses little), with the pixel pitch scaled accordingly;
+  how       the sharpness of the whole field, or only where the blank frame says there was light, on a smoothed field.
+Each has its cache rec_<name>.npy and its log autofocus_<name>.csv; autofocus.csv stays the log of the blind autofocus.
+
 Everything works on any image size (a 640 x 640 window or a full 3840 x 2748 frame) and in complex64.
 """
+import dataclasses
 import json
 import math
 from pathlib import Path
@@ -25,8 +35,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as F
 
-from holo_openset.sim.physics import WAVELENGTH, Z0, freq_sq
+from holo_openset.sim.physics import PIXEL, WAVELENGTH, Z0, freq_sq
 from holo_openset.spectrum import fast_pad
 
 COARSE = np.linspace(0.004, 0.04, 73) / 0.01925   # candidate distances, in units of z0
@@ -38,10 +49,10 @@ CDT = torch.complex64
 _Q = {}
 
 
-def _q(shape, dev):
-    key = (tuple(shape), str(dev))
+def _q(shape, dev, pixel=PIXEL):
+    key = (tuple(shape), str(dev), pixel)
     if key not in _Q:
-        _Q[key] = freq_sq(shape, dev)
+        _Q[key] = freq_sq(shape, dev, pixel)
     return _Q[key]
 
 
@@ -53,10 +64,11 @@ def normalise(holo, bg, intensity=True):
     return torch.sqrt((h / bg.float().clamp(min=1.0)).clamp(min=0))
 
 
-def kernel(shape, zs, dev, sign=+1):
-    """exp(sign i pi lambda z |f|^2) for each z of zs -> [K, h, w] complex64 (sign +1 = back-propagation)."""
+def kernel(shape, zs, dev, sign=+1, pixel=PIXEL):
+    """exp(sign i pi lambda z |f|^2) for each z of zs -> [K, h, w] complex64 (sign +1 = back-propagation), on a
+    grid sampled every `pixel` metres."""
     z = torch.as_tensor(np.asarray(zs, dtype=np.float64), device=dev)[:, None, None]
-    return torch.exp(sign * 1j * math.pi * WAVELENGTH * z * _q(shape, dev)[None]).to(CDT)
+    return torch.exp(sign * 1j * math.pi * WAVELENGTH * z * _q(shape, dev, pixel)[None]).to(CDT)
 
 
 def backprop(a, zs):
@@ -66,13 +78,14 @@ def backprop(a, zs):
     return torch.fft.ifft2(torch.fft.fft2(p)[None] * kernel(p.shape[-2:], zs, a.device))[..., :h, :w]
 
 
-def tog(u, boxes=None):
-    """Tamura coefficient of the gradient modulus of complex fields u [K, h, w] -> [K] (or [K, nb] in boxes)."""
+def tog(u, boxes=None, mask=None):
+    """Tamura coefficient of the gradient modulus of complex fields u [K, h, w] -> [K] (or [K, nb] in boxes).
+    mask: bool [h, w], the pixels that count (default: all)."""
     gx = u[..., :, 1:] - u[..., :, :-1]
     gy = u[..., 1:, :] - u[..., :-1, :]
     g = torch.sqrt(gx[..., :-1, :].abs() ** 2 + gy[..., :, :-1].abs() ** 2)
     if boxes is None:
-        g = g.flatten(1)
+        g = g.flatten(1) if mask is None else g[:, mask[:-1, :-1]]
         return torch.sqrt(g.std(1) / g.mean(1))
     out = []
     for x0, y0, x1, y1 in boxes:
@@ -85,22 +98,80 @@ def _chunk(shape):
     return max(1, int(1.5e8 // (shape[-1] * shape[-2])))
 
 
-def scan(a, zs):
-    """Sharpness (ToG) of the reconstruction of a at every distance of zs (one FFT of a, one inverse per z)."""
+def scan(a, zs, pixel=PIXEL, mask=None, sigma=0.0):
+    """Sharpness (ToG) of the reconstruction of a at every distance of zs (one FFT of a, one inverse per z).
+    pixel: the sampling of a (m); mask: the pixels that count; sigma: Gaussian smoothing of every reconstruction, in
+    sensor pixels (it commutes with the propagation, so it is applied once, to the spectrum of a)."""
     h, w = a.shape[-2:]
     A = torch.fft.fft2(fast_pad(a).to(CDT))[None]
+    if sigma > 0:
+        A = A * torch.exp(-2 * math.pi ** 2 * (sigma * PIXEL) ** 2 * _q(A.shape[-2:], a.device, pixel)).to(CDT)
     c = _chunk(a.shape)
-    return torch.cat([tog(torch.fft.ifft2(A * kernel(A.shape[-2:], zs[k:k + c], a.device))[..., :h, :w])
-                      for k in range(0, len(zs), c)])
+    return torch.cat([tog(torch.fft.ifft2(A * kernel(A.shape[-2:], zs[k:k + c], a.device, pixel=pixel))[..., :h, :w],
+                          mask=mask) for k in range(0, len(zs), c)])
 
 
-def autofocus(a, z0=Z0):
-    """Blind autofocus of one hologram a [h, w] -> z (m) and the number of reconstructions it took. The candidates
-    span 0.2-2.1 times the nominal distance z0 of the set-up."""
-    c = float(COARSE[int(scan(a, z0 * COARSE).argmax())])
-    step = COARSE[1] - COARSE[0]
-    fine = np.linspace(c - step, c + step, N_FINE)
-    return z0 * float(fine[int(scan(a, z0 * fine).argmax())]), len(COARSE) + N_FINE
+@dataclasses.dataclass(frozen=True)
+class Focus:
+    """One way of finding the distance of a hologram. The defaults are the blind autofocus of the paper."""
+    lo: float = None       # search range in units of z0 (None: the blind grid COARSE, 0.2-2.1 z0)
+    hi: float = None
+    n_coarse: int = len(COARSE)
+    n_fine: int = N_FINE   # candidates of the second pass, between the neighbours of the best coarse one (0: none)
+    bin: int = 1           # the amplitude is averaged in bin x bin blocks before the search
+    mask: float = 0.0      # sharpness only where the blank frame is above this fraction of its maximum (0: everywhere)
+    fill: bool = False     # with mask: the amplitude outside it is set to 1 (no object) before it is propagated
+    sigma: float = 0.0     # Gaussian smoothing of the reconstructed field before its gradient (sensor pixels)
+    every: int = 1         # 1: every hologram; 0: once per session; M > 1: every M images of a session
+    first: int = 1         # with every != 1: the median of the search on the first `first` images of each block
+
+    @property
+    def candidates(self):
+        return COARSE if self.lo is None else np.linspace(self.lo, self.hi, self.n_coarse)
+
+    @property
+    def n(self):
+        """Reconstructions of one search."""
+        return len(self.candidates) + max(self.n_fine, 0)
+
+    @property
+    def cost(self):
+        """Reconstructions of one search in units of one reconstruction of the whole image (the search runs on
+        1 / bin^2 of the pixels)."""
+        return self.n / self.bin ** 2
+
+
+BLIND = Focus()
+
+
+def autofocus(a, z0=Z0, focus=None, bg=None):
+    """Autofocus of one hologram a [h, w] -> z (m) and the number of reconstructions it took. By default blind: the
+    candidates span 0.2-2.1 times the nominal distance z0 of the set-up. focus: another search (Focus; its `every`
+    and `first` are the business of the caller); bg: the blank frame of the session, for a masked sharpness."""
+    f = focus or BLIND
+    coarse = f.candidates
+    x, pixel, mask = a, PIXEL, None
+    if f.mask > 0:
+        if bg is None:
+            raise ValueError('a masked sharpness needs the blank frame')
+        b = torch.as_tensor(np.asarray(bg) if not torch.is_tensor(bg) else bg, device=a.device).float()
+        mask = b >= f.mask * b.max()
+        if f.fill:
+            x = torch.where(mask, x, torch.ones_like(x))
+    if f.bin > 1:
+        x = F.avg_pool2d(x[None, None], f.bin)[0, 0]
+        pixel = PIXEL * f.bin
+        if mask is not None:
+            mask = F.avg_pool2d(mask[None, None].float(), f.bin)[0, 0] > 0.999
+
+    def best(cand):
+        return int(scan(x, z0 * cand, pixel, mask, f.sigma).argmax())
+    c = float(coarse[best(coarse)])
+    if f.n_fine <= 0:
+        return z0 * c, len(coarse)
+    step = coarse[1] - coarse[0]
+    fine = np.linspace(c - step, c + step, f.n_fine)
+    return z0 * float(fine[best(fine)]), len(coarse) + f.n_fine
 
 
 def int_boxes(xyxy, shape, buffer=0.25):
@@ -110,22 +181,22 @@ def int_boxes(xyxy, shape, buffer=0.25):
     return [(max(0, x0), max(0, y0), min(w, x1), min(h, y1)) for x0, y0, x1, y1 in b]
 
 
-def per_object(a, z, xyxy):
-    """Extended depth of field: each box taken from the reconstruction (+-1.2 % of z, 25 steps) in which it is
-    sharpest. -> composite U [h, w], the distance chosen for each box."""
-    zs = z * (1 + np.linspace(-EDF_REL, EDF_REL, EDF_N))
+def per_object(a, z, xyxy, rel=EDF_REL, n=EDF_N):
+    """Extended depth of field: each box taken from the reconstruction (+-1.2 % of z, 25 steps, unless rel and n say
+    otherwise) in which it is sharpest. -> composite U [h, w], the distance chosen for each box."""
+    zs = z * (1 + np.linspace(-rel, rel, n))
     boxes = int_boxes(xyxy, a.shape)
     h, w = a.shape[-2:]
     A = torch.fft.fft2(fast_pad(a).to(CDT))[None]
     c = _chunk(a.shape)
     best = [-1.0] * len(boxes)
-    kbest = [EDF_N // 2] * len(boxes)
+    kbest = [n // 2] * len(boxes)
     region = [None] * len(boxes)
     out = None
-    for k in range(0, EDF_N, c):   # the stack is scanned in chunks: on a full frame it does not fit at once
+    for k in range(0, n, c):   # the stack is scanned in chunks: on a full frame it does not fit at once
         u = torch.fft.ifft2(A * kernel(A.shape[-2:], zs[k:k + c], a.device))[..., :h, :w]
-        if k <= EDF_N // 2 < k + c:
-            out = u[EDF_N // 2 - k].clone()
+        if k <= n // 2 < k + c:
+            out = u[n // 2 - k].clone()
         if boxes:
             v, j = tog(u, boxes).max(0)
             for b, (vb, jb) in enumerate(zip(v.tolist(), j.tolist())):
@@ -168,7 +239,15 @@ def channels(u):
     return torch.stack(out)
 
 
-METHODS = ('z0', 'af', 'edf', 'twin')
+METHODS = ('z0', 'af', 'edf', 'twin')   # the reconstructions of the paper
+
+# The ways of finding the distance compared in the distance study, by cache name (rec_<name>.npy). The free choices
+# (how many images a session is focused on, how often a drifting distance is refocused, the cheap and the robust
+# searches) were made on the VALIDATION split and frozen before any of them met the test split: see
+# docs/exp_distancia/CADERNO.md for the sweep, the rules and the dates.
+FOCUS = {}
+# per-object focus over a range wide enough for a tilted slide: name -> (relative half range, steps)
+EDF = {'edf': (EDF_REL, EDF_N), 'edfw': (0.06, 49)}
 
 
 class Holograms:
@@ -198,6 +277,9 @@ class Holograms:
         self.boxes = {i: g[['x0', 'y0', 'x1', 'y1']].to_numpy() for i, g in ann.groupby('image_id')}
         self.row = {int(i): k for k, i in enumerate(self.ids)}
 
+    def blank(self, i, dev):
+        return torch.from_numpy(np.array(self.bg[self.session.get(i, 0)])).to(dev)
+
     def amplitude(self, i, dev):
         h = torch.from_numpy(np.array(self.holo[self.row[i]])).to(dev)
         b = torch.from_numpy(np.array(self.bg[self.session.get(i, 0)])).to(dev)
@@ -217,12 +299,67 @@ def reconstruct(a, method, z_af=None, boxes=None, z0=Z0):
     raise ValueError(method)
 
 
+def focus_blocks(ids, session, focus):
+    """Who is focused and who reuses the distance: [(images that share one distance, the ones it is searched on)].
+    Images are taken in the order of their ids within each session (ids are contiguous per session), so the first
+    image of a session is the one with the smallest id of that session in the set."""
+    ids = [int(i) for i in ids]
+    if focus.every == 1:
+        return [([i], [i]) for i in ids]
+    by = {}
+    for i in sorted(ids):
+        by.setdefault(session[i], []).append(i)
+    out = []
+    for members in by.values():
+        size = len(members) if focus.every == 0 else focus.every
+        out += [(members[k:k + size], members[k:k + size][:focus.first]) for k in range(0, len(members), size)]
+    return out
+
+
+def distances(src, focus, dev, ids=None, log=None):
+    """The distance at which each hologram of src is reconstructed under a way of focusing -> one row per image, in
+    the order of ids: image_id, session, true_z, z_af (the distance used) and n_reconstructions (what the search cost
+    on THIS image: 0 when it reuses the distance found on another)."""
+    ids = [int(i) for i in (src.ids if ids is None else ids)]
+    rows = {}
+    for b, (members, focused) in enumerate(focus_blocks(ids, src.session, focus)):
+        found = {}
+        for i in focused:
+            found[i] = autofocus(src.amplitude(i, dev), src.z0, focus, src.blank(i, dev) if focus.mask > 0 else None)
+        z = float(np.median([v[0] for v in found.values()]))
+        for i in members:
+            rows[i] = dict(image_id=i, session=src.session.get(i), true_z=src.true_z.get(i), z_af=z,
+                           n_reconstructions=found[i][1] if i in found else 0)
+        if log and b % 500 == 0:
+            log(f'focus {len(rows)}/{len(ids)}')
+    return [rows[i] for i in ids]
+
+
 def build_caches(root, methods, dev, aux=None, log=print):
     """Write <root>/rec_<method>.npy (or <root>/aux/<aux>_rec_<method>.npy), uint8 [N, 3, h, w], and the autofocus
-    log (autofocus.csv / aux/<aux>_autofocus.csv). The per-object method uses the annotated boxes."""
+    log (autofocus.csv / aux/<aux>_autofocus.csv). The per-object method uses the annotated boxes.
+    The methods of FOCUS write their own log, autofocus_<method>.csv, and leave autofocus.csv alone."""
+    unknown = [m for m in methods if m not in METHODS and m not in FOCUS]
+    if unknown:
+        raise SystemExit(f'unknown reconstruction {unknown}: one of {list(METHODS) + list(FOCUS)}')
+    study = [m for m in methods if m in FOCUS]
+    methods = [m for m in methods if m in METHODS]
     src = Holograms(root, aux)
     pre = f"{src.root / 'aux' / aux}_" if aux else f'{src.root}/'
     h, w = src.holo.shape[1:]
+    for m in study:
+        if aux and FOCUS[m].every != 1:
+            raise SystemExit(f'{m} reuses a distance within a session; the auxiliary scenes are not acquired in order')
+        arr = np.lib.format.open_memmap(f'{pre}rec_{m}.npy', mode='w+', dtype=np.uint8, shape=(len(src.ids), 3, h, w))
+        rows = distances(src, FOCUS[m], dev, log=log)
+        for k, r in enumerate(rows):
+            arr[k] = channels(backprop(src.amplitude(r['image_id'], dev), [r['z_af']])[0]).cpu().numpy()
+            if k % 500 == 0:
+                log(f'{m} {k}/{len(rows)}')
+        arr.flush()
+        pd.DataFrame(rows).to_csv(f'{pre}autofocus_{m}.csv', index=False)
+    if not methods:
+        return
     arrs = {m: np.lib.format.open_memmap(f'{pre}rec_{m}.npy', mode='w+', dtype=np.uint8, shape=(len(src.ids), 3, h, w))
             for m in methods}
     rows = []
