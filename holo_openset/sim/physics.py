@@ -17,6 +17,8 @@ Every step of an acquisition is simulated and can be switched off (`IDEAL` switc
             depth z_s + d: a sample of finite thickness.
   session   images are acquired in sessions (one sample mounted on the microscope): the sample-to-sensor distance
             z_s ~ z0 (1 + N(0, session_z_std)) and the illumination profile change from session to session.
+            Off in the base set: the distance can also change from image to image within a session (independently,
+            `frame_z_std`, or as a slow drift, `frame_z_walk`), and the sample plane can be tilted (`tilt_deg`).
   dust      particles on the two glass surfaces around the sample (other depths, per image) and on the window of
             the sensor (fixed for the camera, 0.5 mm from the pixels).
   source    partial temporal coherence (a Gaussian spectrum of FWHM `bandwidth`, as a sum of intensity holograms
@@ -64,6 +66,10 @@ class Physics:
     depth_std: float = 50e-6      # m, per object, around the distance of the session
     depth_max: float = 150e-6
     session_z_std: float = 0.005  # relative
+    # the distance within a session and a tilted slide (off in the base set: 0 leaves every hologram as it was)
+    frame_z_std: float = 0.0      # relative; each image at z_session (1 + N(0, frame_z_std)), independent per image
+    frame_z_walk: float = 0.0     # relative; step of a random walk of z along the images of a session (slow drift)
+    tilt_deg: float = 0.0         # tilt of the sample plane (degrees): a depth proportional to the position
     # dust
     dust_density: float = 2.0     # particles per mm^2 of each glass surface around the sample
     dust_depths: tuple = (1.0e-3, -0.2e-3)   # m from the sample plane: far side of the slide, top of the coverslip
@@ -109,10 +115,10 @@ def physics_from_dict(d):
     return Physics(**{k: tuple(v) if isinstance(v, list) else v for k, v in d.items()})
 
 
-def freq_sq(shape, dev):
-    """|f|^2 (1/m^2) on the FFT grid of a field of shape (height, width)."""
-    fy = torch.fft.fftfreq(shape[0], d=PIXEL, device=dev, dtype=torch.float64)
-    fx = torch.fft.fftfreq(shape[1], d=PIXEL, device=dev, dtype=torch.float64)
+def freq_sq(shape, dev, pixel=PIXEL):
+    """|f|^2 (1/m^2) on the FFT grid of a field of shape (height, width) sampled every `pixel` metres."""
+    fy = torch.fft.fftfreq(shape[0], d=pixel, device=dev, dtype=torch.float64)
+    fx = torch.fft.fftfreq(shape[1], d=pixel, device=dev, dtype=torch.float64)
     return fx[None, :] ** 2 + fy[:, None] ** 2
 
 

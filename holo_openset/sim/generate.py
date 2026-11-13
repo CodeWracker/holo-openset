@@ -13,9 +13,15 @@ Splits are drawn by SESSION (35 / 7 / 8 of 50 sessions of 100 images): the test 
 
 A set made `like` another records the same scenes again with other physics (same ids, same rows): the idealised set
 (all splits) and the robustness variants (test split only).
+
+Every draw comes from a generator seeded for it alone, in a fixed order, which is what lets a scene be recorded again.
+The effects added after the base set (the distance of each image within its session, the tilt of the slide) draw from
+generators of their own, so switching them on never moves a scene, and switching them off (the default) leaves every
+hologram as it was.
 """
 import dataclasses
 import json
+import math
 import random
 from multiprocessing import Pool
 from pathlib import Path
@@ -26,7 +32,7 @@ import torch
 from PIL import Image
 
 from holo_openset.sim.letters import AUX_FONTS, CLASSES, FONTS, write_yolo_label
-from holo_openset.sim.physics import FULL_FRAME, Physics, physics_from_dict, record, sensor_intensity
+from holo_openset.sim.physics import FULL_FRAME, PIXEL, Physics, physics_from_dict, record, sensor_intensity
 from holo_openset.sim.scene import Layout, SmallLayout, camera, make_scene, object_maps, session
 
 CAMERA_SEED = 7
@@ -83,6 +89,52 @@ def blank(ses, phys, cam, dev, seed):
     return np.mean([record(inten, ses, phys, cam, g, dev).astype(np.float32) for _ in range(N_BLANKS)], 0)
 
 
+def session_walk(seed_s, n, step):
+    """Relative drift of the distance along the n images of a session: a random walk that starts at 0 (the first image
+    is at the distance of the session) and moves by N(0, step) from one image to the next. Its own generator."""
+    rng = random.Random(seed_s + 600_000)
+    out, x = [], 0.0
+    for _ in range(n):
+        out.append(x)
+        x += step * rng.gauss(0.0, 1.0)
+    return out
+
+
+def frame_session(ses, phys, frame_seed, drift=0.0):
+    """The session as one image sees it: the same beam, and the distance of the session moved by the effects that act
+    image by image (independent jitter, slow drift). With both off, the session itself. The jitter has its own
+    generator, seeded from the seed of the scene, and never touches the draws of the scene."""
+    if phys.frame_z_std <= 0 and phys.frame_z_walk <= 0:
+        return ses
+    out = dict(ses)
+    if phys.frame_z_std > 0:
+        out['z'] = out['z'] * (1 + phys.frame_z_std * random.Random(frame_seed + 800_000_000).gauss(0.0, 1.0))
+    if phys.frame_z_walk > 0:
+        out['z'] = out['z'] * (1 + drift)
+    return out
+
+
+def apply_tilt(sc, phys, seed_s):
+    """A tilted slide, to first order: every object of the sample (letters inside and outside the window, dust on the
+    glass around the sample) gets a depth proportional to its position along the tilt direction, measured from the
+    centre of the field. The azimuth is drawn per session by its own generator. The term is added after the depth
+    spread and is not clipped by depth_max; the dust on the sensor window does not tilt. The annotations keep the new
+    depth."""
+    if phys.tilt_deg == 0:
+        return
+    phi = random.Random(seed_s + 650_000).uniform(0, 2 * math.pi)
+    t = math.tan(math.radians(phys.tilt_deg))
+    H, W = phys.canvas
+    for o in sc['objects'] + sc['dust']:
+        h, w = o['mask'].shape
+        r = ((o['x'] + w / 2 - W / 2) * math.cos(phi) + (o['y'] + h / 2 - H / 2) * math.sin(phi)) * PIXEL
+        o['depth'] += t * r
+    letters = [o for o in sc['objects'] if o['kind'] == 'letter']
+    assert len(letters) == len(sc['rows']) and all(o['classe'] == r['classe'] for o, r in zip(letters, sc['rows']))
+    for row, o in zip(sc['rows'], letters):
+        row['depth'] = o['depth']
+
+
 def split_sessions(n_sessions, seed):
     order = random.Random(seed).sample(range(n_sessions), n_sessions)
     n_tr, n_va = round(0.7 * n_sessions), round(0.14 * n_sessions)
@@ -131,6 +183,8 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
     cam = camera(CAMERA_SEED, phys)
     sessions = {s: session(seed * 1000 + s, phys) for s in range(n_sessions)}
     used = sorted({int(i) // per_session for i in ids})
+    walk = {s: session_walk(seed * 1000 + s, per_session, phys.frame_z_walk) for s in used} if phys.frame_z_walk > 0 \
+        else {}
     h, w = phys.window
 
     bg = np.zeros((n_sessions, h, w), np.float32)
@@ -145,7 +199,10 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
     for k, (i, sc) in enumerate(zip(ids, scenes(seeds, phys, workers, lay=LAYOUTS[layout]))):
         i = int(i)
         s = i // per_session
-        ses, sp = sessions[s], split_of_session[i // per_session]
+        sp = split_of_session[i // per_session]
+        # the blank frame stays that of the session: it is recorded before the sample is mounted
+        ses = frame_session(sessions[s], phys, seeds[k], walk[s][i % per_session] if walk else 0.0)
+        apply_tilt(sc, phys, seed * 1000 + s)
         sc['sensor_dust'] = cam['dust']
         g = torch.Generator(device=dev).manual_seed(seed * 1_000_000 + i + 700_000_000)
         img = record(sensor_intensity(sc, ses, phys, dev), ses, phys, cam, g, dev)
@@ -236,9 +293,12 @@ def full_frames(base, out, n_images=40, phys=None, workers=8, dev='cpu', log=pri
     holo = np.lib.format.open_memmap(out / 'holograms.npy', mode='w+', dtype=np.uint8, shape=(n_images, h, w))
     meta_rows, ann_rows, dust_rows = [], [], []
     seeds = [seed * 1_000_000 + 400_000_000 + k for k in range(n_images)]
+    per = -(-n_images // len(test_sessions))   # frames of one session: frame k is its (k // sessions)-th
+    walk = {s: session_walk(seed * 1000 + s, per, p.frame_z_walk) for s in test_sessions} if p.frame_z_walk > 0 else {}
     for k, sc in enumerate(scenes(seeds, p, workers, lay=lay, chunk=4)):
         s = test_sessions[k % len(test_sessions)]
-        ses = sessions[s]
+        ses = frame_session(sessions[s], p, seeds[k], walk[s][k // len(test_sessions)] if walk else 0.0)
+        apply_tilt(sc, p, seed * 1000 + s)
         sc['sensor_dust'] = cam['dust']
         g = torch.Generator(device=dev).manual_seed(seeds[k] + 700_000_000)
         holo[k] = record(sensor_intensity(sc, ses, p, dev), ses, p, cam, g, dev)
