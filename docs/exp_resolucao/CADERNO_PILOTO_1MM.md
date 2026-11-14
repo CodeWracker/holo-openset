@@ -854,7 +854,7 @@ O comando de gravação é o do `pilot_1mm.sh record` (`DEPTH=2.6 DENSITY=base`)
   maior ao quadrado, 12,23 % contra 12,38 %. O "≈ 11,6 %" do brief é a mediana do lado ao quadrado × 8 do base
   (77² × 8 / 640² = 11,58 %); as duas medidas por imagem dão 10,7 % e 12,4 %.
 - Sanidade (só treino): lados de caixa e de tinta iguais aos do piloto (as mesmas letras); nível médio 99,63 (piloto
-  101,49: mais letras cobrem mais área); quadros em branco 101,51; ruído rebuilt das sementes: média 0,002–0,006
+  101,49: mais letras cobrem mais área); quadros em branco 101,51; ruído refeito das sementes: média 0,002–0,006
   níveis, rms 2,069–2,081.
 - Folha de contato `docs/exp_resolucao/img/bench_1mm_dense_examples.png` (mesmo estilo de `bench_1mm_examples.png`):
   janela cheia de padrões de anéis; as caixas anotadas são 3–18 entre ~150 letras.
