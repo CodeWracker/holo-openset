@@ -119,6 +119,27 @@ muito próxima do sensor, só não encosta porque o sensor aquece; "z é da orde
 - Anotar: o aquecimento do sensor torna plausível o drift de z durante a sessão (`walk_05`).
 - A decisão de regravar continua sendo dele.
 
+## 4c. SEGUNDA ATUALIZAÇÃO (2026-11-14, ≈ 14:10): como contar a história, e mais três itens no Checkpoint Z
+
+Na íntegra no fim de `PROTOCOLO_Z.md`. Linha do paper: **a simulação faz parte do método, porque os valores dos
+parâmetros mudam as conclusões**; todos os parâmetros são fixados e declarados, cada um com referência. Duas
+evidências a apresentar bem: (1) idealizado × bancada (Tabela 12: Wiener de melhor, 0,988, a pior, 0,910; ranking
+inverte; modelo treinado no idealizado não transfere, 0,358) — "só precisa de uma figura clara"; (2) a distância
+amostra–sensor: a 19,25 mm a fonte apaga as franjas finas e a redução 4× funcionaria; a ≈ 1 mm não — "um parâmetro
+decidiu se havia ganho computacional".
+
+O Checkpoint Z passa a levar também:
+- **tabela de todos os parâmetros do simulador**, com valor e fonte de cada um (artigo, datasheet ou suposição nossa);
+- **comparação base (19,25 mm) × `small_near` (2 mm)**: F1 e rejeição de crops, `prop` e `rec_z0`, e quanto o padrão
+  vaza para fora do crop;
+- **uma figura simples "o que muda com o setup"**, que sirva para o paper e para o resumo ao prof. Sobieranski.
+
+Confirmado pelo prof. Sobieranski: sem inclinação (só deformidades locais pequenas); brilho por shutter e ganho
+analógico ajustados à mão; LED UV de 385 nm (M385L2, 10 nm FWHM no datasheet).
+
+Tom do texto (vale para B e C): o gerador da Manu foi "**evoluído**", não "estava errado"; o CBMS 2024 é trabalho
+nosso que **corrigimos com medição**.
+
 ## 5. Plano
 
 Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqueado/aguardando o orientador.
@@ -138,6 +159,10 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
       fração do padrão dentro do crop contra z para os tamanhos de letra do base e dos pequenos; se o simulador grava
       direito a ≈ 1 mm (amostragem, faixa do α, spread de profundidade relativo, faixas do autofocus); inventário e
       custo de regravar e retreinar; configurações candidatas na ferramenta do envelope.
+- [~] Z7. Tabela de todos os parâmetros do simulador com valor e fonte (`docs/exp_resolucao/PARAMETROS.md` + csv) —
+      subagente "levantamento-z" (retomado), que leu o artigo de 2015, o suplemento e as folhas de dados.
+- [~] Z8. Comparação base × `small_near` (métricas + vazamento do padrão) e a figura "o que muda com o setup" —
+      subagente "piloto", junto com Z6.
 - [ ] Z5. Proposta de configuração + coerência com as resoluções reportadas + consequências (eu, com Z3 e Z4).
 - [!] **Checkpoint Z**: mandar tudo ao orientador e **parar**; A só anda com a aprovação dele.
 
@@ -242,4 +267,7 @@ errado".
     orientador, que pediu página.
   - Não acessados: Isikman 2011 PNAS, Repetto 2004, McLeod & Ozcan 2016 (sem cópia aberta).
   Aguardando: Z6 do "piloto" (consequências; já commitou a prévia dos três conjuntos, `2cf9d00`) e "levantamento-c".
+- 2026-11-14, 14:10: segunda atualização do orientador (seção 4c): mais três itens no Checkpoint Z (tabela de
+  parâmetros com fonte; comparação base × `small_near`; figura "o que muda com o setup") e o tom do texto. Z7 para o
+  "levantamento-z", Z8 para o "piloto".
 

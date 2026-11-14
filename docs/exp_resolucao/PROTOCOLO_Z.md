@@ -48,3 +48,24 @@ Atualização: o Sobieranski confirmou que a lamínula fica muito próxima do se
 
 Consequências pra já: a parte A (redução 4×) não se aplica a essa distância (b_max = 1), então fica suspensa. Na proposta do checkpoint Z, inclui também o que muda se o conjunto base for regravado na distância certa: quais conclusões precisam ser checadas de novo (principalmente o espalhamento do padrão para fora do crop e a vantagem da camada sobre os crops) e o custo de regravar e retreinar. O small_near (2 mm) já dá uma prévia. E anota que o aquecimento do sensor torna plausível o drift de z durante a sessão (walk_05).
 
+---
+
+## Segunda atualização do orientador (2026-11-14, ≈ 14:10), copiada na íntegra
+
+Mais uma coisa para ter em mente, porque define como vamos contar a história no paper e no resumo para o Sobieranski.
+
+O Sobieranski acha que o setup físico "nem precisaria" na simulação, e que é comum só simular e declarar os parâmetros. Concordamos com a segunda parte: vamos fixar e declarar todos os parâmetros, cada um com referência. Mas a linha do paper é que a simulação faz parte do método, porque esses valores mudam as conclusões. Temos duas evidências e precisamos delas bem apresentadas:
+
+1. Idealizado contra bancada (Tabela 12): o Wiener vai de melhor (0,988) a pior (0,910), o ranking inverte, e o modelo treinado no idealizado não transfere (0,358). Já existe; só precisa de uma figura clara.
+
+2. A distância amostra–sensor: ele confirmou que a lamínula fica muito perto do sensor (sem encostar porque aquece), então z é da ordem de 1 mm, não 19,25 mm. A 19,25 mm a fonte apaga as franjas finas e a redução 4× funcionaria; a ~1 mm não. Um parâmetro decidiu se havia ganho computacional.
+
+No checkpoint Z, além da tabela do levantamento e da proposta de z, traga:
+- uma tabela com todos os parâmetros do simulador, o valor e a fonte de cada um (artigo, datasheet ou suposição nossa);
+- uma comparação base (19,25 mm) contra small_near (2 mm) nas métricas principais (F1 e rejeição de crops, prop e rec_z0) e no quanto o padrão vaza para fora do crop, para mostrar o efeito de z antes de regravar;
+- uma figura simples de "o que muda com o setup", que sirva tanto para o paper quanto para o resumo ao Sobieranski.
+
+Ele também confirmou: sem inclinação (só deformidades locais pequenas), brilho por shutter e ganho analógico ajustados à mão, LED UV de 385 nm (M385L2, 10 nm FWHM no datasheet).
+
+No texto, o gerador da Manu foi "evoluído", não "estava errado"; e o CBMS 2024 é trabalho nosso que corrigimos com medição.
+
