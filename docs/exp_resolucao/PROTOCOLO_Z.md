@@ -1,0 +1,41 @@
+# Antes da parte A: definir um z razoável
+
+> Instrução do orientador (Rodrigo), recebida em 2026-11-14 por volta das 13:15, depois de `PROTOCOLO.md`, e copiada
+> aqui na íntegra, sem alteração. Ela muda a ordem: a parte A fica suspensa até o Checkpoint Z.
+
+## Antes da parte A: definir um z razoável
+
+Uma mudança de ordem: **segura a parte A (redução) até fecharmos isto.** O resto (parte C, Related Work, e o teste pareado do enrollment) pode andar em paralelo.
+
+### O problema
+
+O z = 19,25 mm do simulador vem de ler o "z = 50k" da rotina como 50 000 λ. Mas o artigo de 2015 (Sobieranski et al., Light Sci Appl 4:e346) diz que "the distance between sample and electronic detector is as small as possible", sem dar número. E ele precisa de 49 quadros com super-resolução de pixel para chegar a 1,55 µm, o que só faz sentido se o holograma tiver detalhe mais fino que o pixel, ou seja, z pequeno. A legenda da Fig. 2 diz "z = [30k, 45k, 60k, 70k] (k = ×1000), conforme a Eq. (S3)", e a unidade não está no texto principal.
+
+Isso importa porque a parte A depende inteiramente de z. Pelas minhas contas com a eq. (5) (LED de 10 nm, pinhole de 100 µm a 15 cm, corte em E < 0,1):
+
+| z | borrão da fonte | corte do contraste | b_max |
+|---|---|---|---|
+| 19,25 mm | 12,8 µm | 73 ciclos/mm | 4 |
+| 5 mm | 3,3 µm | 170 ciclos/mm | 1 |
+| 2 mm | 1,3 µm | 278 ciclos/mm | 1 |
+| 1 mm | 0,7 µm | 397 ciclos/mm | 1 |
+
+O Nyquist do sensor é 299 ciclos/mm. Com a amostra a poucos mm, o sensor subamostra o holograma, e a redução não se aplica. Refaça essas contas para conferir.
+
+Não estamos reproduzindo uma bancada exata, e sim simulando uma bancada razoável. Então o z certo é o que a literatura de microscopia lensless on-chip sustenta, com referência.
+
+### O que fazer
+
+1. **Unidade do z no código.** Confira no gerador original (o da Manu, que já temos) e no nosso `sim/physics.py` como o z entra no kernel de Fresnel, e se o "50k" é mesmo 50 000 λ. Anote no caderno com o trecho de código.
+2. **Levantamento.** Junte de 8 a 15 trabalhos de holografia in-line sem lente com LED e pinhole e sensor CMOS de pixel de 1–2 µm (comece pelo grupo do Ozcan: Mudanyali 2010 Lab Chip, Bishara 2010, Greenbaum 2012 Nat Methods; e pelo próprio Sobieranski 2015). Monte uma tabela com: referência, λ e largura de banda, diâmetro do pinhole, distância pinhole–amostra (L), distância amostra–sensor (z), pixel, se usa super-resolução de pixel, e a resolução reportada. Só entra na tabela valor que esteja escrito no artigo, com página.
+3. **Proposta de configuração.** Com a tabela, proponha um z (e, se for o caso, D e L) razoável para a bancada simulada, com as referências que o sustentam. Confira a coerência: o E(f) dessa configuração tem de ser compatível com as resoluções reportadas (com e sem super-resolução).
+4. **Consequências, sem regravar nada.** Calcule o E(f) e o b_max da configuração proposta e escreva o que muda: se o conjunto base a 19,25 mm vira uma "configuração distante" e o `small_near` (2 mm) fica mais perto do realista; se a parte A vale e com que b; e o que teria de ser regravado e retreinado. **A decisão de regravar fica comigo.**
+
+### O que o Sobieranski confirmou (para usar no texto)
+
+- **Inclinação:** não havia na bancada. Havia só pequenas deformidades do material, ou seja, variações locais de profundidade. Isso já é o spread de profundidade por objeto que simulamos e que não custa nada. O experimento de inclinação vira uma frase no paper.
+- **Iluminação:** brilho da fonte e shutter do sensor eram ajustados à mão, então a iluminação e a exposição variam por sessão. Isso justifica o blank frame e o perfil de feixe por sessão do simulador.
+- **Aquisição:** na super-resolução, a fonte era deslocada à mão para cada um dos 49 quadros, e um conjunto levava muito tempo. O tempo de processamento só pesa no uso com quadro único: o sensor entrega 3,2 quadros por segundo (312 ms por quadro), a GPU já acompanha (~0,2 s por quadro) e um core de CPU não (~24 s). Qualquer argumento de velocidade tem de ser enquadrado assim.
+- **Hologramas reais:** não vai ter. Tudo continua simulado, e a limitação continua no paper.
+
+**Checkpoint Z:** me mande a tabela do levantamento, a unidade do z no código e a proposta de configuração com as consequências. Só depois disso a parte A anda.
