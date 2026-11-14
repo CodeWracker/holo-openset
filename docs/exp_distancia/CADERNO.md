@@ -1018,3 +1018,13 @@ sem a detecção (0,178 s, comum a todos): `rec_z0` 0,0256, `rec_af` 0,1483, `re
 0,0144. O estágio `normalise` (ler e normalizar o quadro) é 0,018 s nos fluxos de reconstrução; `load` 0,003 s nos de
 camada. Para `rec_afs`/`rec_afsc` o estágio `autofocus` só aparece no primeiro quadro de cada sessão.
 
+### Fim da Etapa 3: conferências
+
+- `own_aux` (simulação das cenas auxiliares da r1) terminou às 23:38:02 com saída 0: `r1` 15813 letras, `r1_cal`
+  16422 letras (load 31,6 no fim). Nenhum job nosso ficou rodando.
+- `env -u HOLO_RESULTS python -m pytest -q`: 20 passed.
+- `env -u HOLO_RESULTS python -m holo_openset reproduce check`: 12/12 arquivos idênticos a `expected/`.
+- `git status`: limpo; nada em `results/`, `expected/`, `models/` ou `data/full_frames` mudou. Caches novos (todos em
+  `data/`, fora do git): `rec_{afs,afM,afc,afr,afsc}.npy` e `autofocus_<método>.csv` nos oito conjuntos de janelas,
+  `data/realistic/rec_edfw.npy` e `autofocus_edfw.csv`, `data/realistic/aux/` (r1, r1_cal, `r1_rec_afc.npy`,
+  `r1_autofocus_afc.csv`); modelo `models_exp_distancia/realistic/rec_afc_r1.pt`.
