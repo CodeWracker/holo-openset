@@ -182,27 +182,36 @@ conjunto `bench_1mm`; 5000 imagens em 50 sessões, como os conjuntos pequenos; p
 base.
 
 - [x] P0. Pré-registro no caderno do piloto (`15bfea7`), antes de qualquer código.
-- [!] P1. **Perguntado ao orientador (2026-11-14, ≈ 16:00), aguardando:** (i) letras por janela: 8 por janela 640 × 640
-      como no base e nos pequenos (minha recomendação: é o precedente do `small_near` e é o teste conservador para a
-      tese) ou a densidade relativa do base (≈ 154 por janela); (ii) espalhamento de profundidade por objeto: escalar
-      com z (2,6 µm rms, equivalência exata com o base; minha recomendação, com 50 µm como robustez sem retreinar) ou
-      manter 50 µm (1,7× a profundidade de campo a 1 mm). A gravação do conjunto espera a resposta.
-- [~] P2. Subagente "simulador" (lançado ≈ 15:55): S1 gravação sobreamostrada (`Physics.oversample`, s = 1 idêntico
-      ao de hoje; cena definida em unidades físicas; layout novo `fresnel`); S2 teste de convergência
-      (`scripts/exp_resolucao/oversampling_convergence.py` → `results_exp_resolucao/oversampling_convergence.csv`);
-      S3 preparar SEM RODAR o script do piloto (`scripts/exp_resolucao/pilot_1mm.sh`), a robustez a 0,7 mm e a faixa
-      do `calibrate_alpha`. Ele para depois do S3 e me devolve o relatório. **Revisar o diff e os números antes de
-      gravar.**
-- [ ] P3. Depois de P1 e da revisão de P2: registrar as respostas no caderno (entrada P1), gravar `bench_1mm`
-      (tmux `res_*`), reconstruir z0, treinar e avaliar r1 de `raw`, `prop`, `rec_z0` (`--no-aux`), gravar e avaliar a
-      robustez a 0,7 mm (a) e (b). Só validação para escolhas; teste lido uma vez.
+- [x] P1. Respostas do orientador (≈ 16:25, pelo diálogo): **8 letras por janela** (como no base e no `small_near`) e
+      **profundidade 2,6 µm rms (máx. 7,8), com 50 µm como robustez sem retreinar**. Registrado no caderno do piloto,
+      entrada P1 (`6c90557`), junto com as minhas decisões: s = 4, margem 394 / alcance 233, receita de treino do
+      paper sem mudança, leitura (b) literal como principal e a variante por razão ao lado, poeira coincidente a
+      0,7 mm declarada.
+- [x] P2. Subagente "simulador": S1–S3 feitos (`c1092ff`, `629424d`, `77b29f7`, `28539f7`, `2c9e3d4`): gravador
+      sobreamostrado (`Physics.oversample`; s = 1 bit a bit igual), cena em unidades físicas (`FresnelLayout`,
+      raster mestre 16×), convergência: (2, 4) falha (1,04–1,78 %), (4, 8) passa (≤ 0,46 %) → **s = 4**;
+      `scripts/exp_resolucao/pilot_1mm.sh <GPU> <passo>`; pytest 54, `reproduce check` 13/13 (conferi eu). Revisei o
+      diff de `sim/physics.py`: achei que a poeira fora do plano da amostra era pré-propagada só no comprimento de
+      onda central (a 1 mm isso deixa a poeira a 2 mm nítida demais) e mandei corrigir no caminho fino (R1).
+- [~] P3. Subagente "simulador" retomado às ≈ 16:35 com R1–R5: R1 correção do plano de poeira + teste + par (4, 8)
+      de novo; R2 conferência cruzada com `sim_sampling.py::fine_recording`; R3 passo `record_depth50` e linhas da
+      variante por razão; R4 **rodar o piloto em r1** (tmux `res_pilot_*`: record, reconstruct, train, evaluate,
+      record_07, robust_a, robust_b, depth50); R5 vazamento do padrão no conjunto novo e
+      `results_exp_resolucao/sets_by_fresnel.csv`. **Ao voltar: conferir os números do relatório dele nos arquivos
+      (`results_exp_resolucao/eval/bench_1mm/*_r1.json`, `robustness_bench_1mm.csv`), olhar a folha de exemplos
+      (`docs/exp_resolucao/img/bench_1mm_examples.png`), rodar pytest e `reproduce check`.**
 - [ ] P4. Vazamento do padrão para fora do crop no conjunto novo (mesma medida do Z6.2) e figura/tabela dos conjuntos
       pelo N_F (base, `small_z0`, `small_near`, `bench_1mm`).
 - [ ] P5. **Checkpoint do piloto**: mandar r1 ao orientador (F1 e rejeição de crops/prop/rec_z0, convergência,
       robustez a 0,7 mm, custo das 5 repetições) e **PARAR**. As 5 repetições só com a aprovação dele.
-- [~] C-extra. Subagente "cbms" (lançado ≈ 15:55): ler o CBMS 2024 completo (PDF que o orientador mandou,
-      `../referencias/c/rockembach2024_full/`) e atualizar a entrada [11] de `LEVANTAMENTO_C.md` (a p. 365 usa
-      "iterative"; conferir se mede tempo). A pendência "páginas 365–369" está resolvida.
+- [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
+      afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
+      reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
+      conjunto fechado de 26 letras (mAP50 0,986 do v8 na Tabela I; os 96,8 % de precisão só aparecem no resumo), sem
+      conjunto de teste e sem baseline de reconstrução; os próprios autores adiam o tempo real (p. 369). Para a parte
+      B: `02-related.tex` descreve [11] como classificação (é detecção); a leitura "z = 50k = 5·10⁴ λ" é nossa (pelo
+      código); a descrição do conjunto público em `03b-bench.tex` não se confere pelo texto do artigo, só pelo
+      código do gerador. Tom: trabalho nosso, corrigido por medição.
 
 ### Fase A: experimento da resolução
 
