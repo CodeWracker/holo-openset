@@ -276,6 +276,33 @@ def test_distance_criterion_reads_the_phrase_two_ways():
     assert D.criterion(dict(rec_af=0.97), 'bank_jit', gpu, cpu) is None   # the stack has no F1
 
 
+def test_distance_report_gives_reading_a_and_keeps_reading_b(tmp_path, monkeypatch):
+    import pandas as pd
+    from holo_openset.paper import distance as D
+    assert D.PRIMARY == 'A'
+    # the invented case above, through the csv files: rec_z0 (front 6) qualifies in A and is cheaper than the stack (7);
+    # in B only rec_af and rec_afc (front 18) qualify, and the stack is cheaper
+    t = dict(flat_field=1.0, backprop=2.0, channels=3.0, autofocus=120.0, autofocus_afc=12.0, layer_bank_jit=7.0)
+    (tmp_path / 'e5').mkdir()
+    for dev in ['gpu', 'cpu']:
+        pd.DataFrame([dict(device=dev, height=2748, width=3840, stage=k, n=20, median_s=v, min_s=v)
+                      for k, v in t.items()]).to_csv(tmp_path / 'e5' / f'timing_{dev}.csv', index=False)
+    f1 = dict(rec_z0=0.955, rec_af=0.970, rec_afc=0.969, bank_jit=0.960)
+    pd.DataFrame([dict(rep=r, variant='base', flow=f, novel_open_macro_f1=v) for r in (1, 2) for f, v in f1.items()]
+                 ).to_csv(tmp_path / 'robustness.csv', index=False)
+    _no_dist_env(monkeypatch, tmp_path, tmp_path / 'out')
+    D.main()
+    num = (tmp_path / 'out' / 'distance' / 'numbers_distancia.tex').read_text()
+    for line in ['\\newcommand{\\DistCritBaseBankJitVerdict}{not cheaper}',
+                 '\\newcommand{\\DistCritBaseBankJitVerdictA}{not cheaper}',
+                 '\\newcommand{\\DistCritBaseBankJitVerdictB}{met (GPU and CPU)}',
+                 '\\newcommand{\\DistCritBaseBankJitCheapestGpu}{\\texttt{rec\\_z0}}',
+                 '\\newcommand{\\DistCritMetCount}{0}', '\\newcommand{\\DistCritMetCountB}{1}']:
+        assert line in num, line
+    md = (tmp_path / 'out' / 'distance' / 'tables' / 'tab_dist_criterion.md').read_text()
+    assert 'verdict (reading A)' in md and 'B (alternative): verdict' in md
+
+
 def test_distance_break_even_says_when_the_measurement_does_not_resolve_it():
     import math
     from holo_openset.paper import distance as D

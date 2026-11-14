@@ -676,6 +676,7 @@ def tab_dist_breakeven():
 
 READINGS = {'A': 'conventional flows with F1 >= best - 0.02 (the tolerance given to the stack)',
             'B': 'conventional flows with F1 >= the F1 of the stack'}
+PRIMARY = 'A'   # the reading reported (advisor's review of 2026-11-14); B stays computed as the alternative
 
 
 def criterion(f1, stack, gpu, cpu, tol=F1_TOL):
@@ -683,7 +684,8 @@ def criterion(f1, stack, gpu, cpu, tol=F1_TOL):
     and one stack. f1: {flow: mean F1}; gpu, cpu: {flow: front end}. The stack must have F1 >= best - tol, best being
     the highest mean F1 among the conventional flows (CONV_FLOWS), and a front end cheaper than the cheapest
     conventional flow 'that reaches this F1', which reads two ways, both computed: A, the conventional flows with
-    F1 >= best - tol; B, those with F1 >= the F1 of the stack. Cheapest on the GPU and on the CPU separately.
+    F1 >= best - tol (PRIMARY, the one reported); B, those with F1 >= the F1 of the stack (the alternative). Cheapest
+    on the GPU and on the CPU separately.
     -> {'best', 'f1_ok', 'A' | 'B': {'gpu': flow | None, 'cpu': flow | None, 'cheaper_gpu', 'cheaper_cpu', 'verdict'}};
     None if the stack or no conventional flow has an F1."""
     conv = {f: f1[f] for f in CONV_FLOWS if ok(f1.get(f))}
@@ -743,11 +745,13 @@ def tab_dist_criterion():
                 for r in 'AB':
                     cells += [cost(c[r]['gpu'], gpu, 1e3, 'ms'), cost(c[r]['cpu'], cpu, 1, 's'), c[r]['verdict']]
                     met[r] += c[r]['verdict'] == 'met (GPU and CPU)'
-                    macro(f'{k}Verdict{r}', c[r]['verdict'])
-                    for dev, cc, scale, fmt in [('Gpu', gpu, 1e3, '{:.2f}'), ('Cpu', cpu, 1, '{:.2f}')]:
-                        fl = c[r][dev.lower()]
-                        macro(f'{k}Cheapest{dev}{r}', tt(fl) if fl else 'none')
-                        macro(f'{k}Cheapest{dev}{r}Cost', cc[fl] * scale if fl and ok(cc.get(fl)) else None, fmt)
+                    for suffix in [r] + ([''] if r == PRIMARY else []):   # no suffix: the primary reading
+                        macro(f'{k}Verdict{suffix}', c[r]['verdict'])
+                        for dev, cc, scale, fmt in [('Gpu', gpu, 1e3, '{:.2f}'), ('Cpu', cpu, 1, '{:.2f}')]:
+                            fl = c[r][dev.lower()]
+                            macro(f'{k}Cheapest{dev}{suffix}', tt(fl) if fl else 'none')
+                            macro(f'{k}Cheapest{dev}{suffix}Cost', cc[fl] * scale if fl and ok(cc.get(fl)) else None,
+                                  fmt)
                 macro(f'{k}Best', tt(c['best']))
                 macro(f'{k}Diff', m, '{:+.4f}')
                 macro(f'{k}Sign', sign if len(diff) else None)
@@ -756,17 +760,19 @@ def tab_dist_criterion():
             md.append([set_label(v, False) if j == 0 else '', s] + cells)
     for r in 'AB':
         macro(f'CritMetCount{r}', met[r], '{}')
+    macro('CritMetCount', met[PRIMARY], '{}')
     macro('CritRows', len(SETS) * len(STACKS), '{}')
     g, c_ = map(rel, timing_dirs())
     write('tab_dist_criterion', lines,
           ['set', 'stack', 'best conventional (F1)', 'stack F1', 'stack − best: mean (same sign)',
            f'F1 within {F1_TOL}', 'stack front end: GPU / CPU', 'A: cheapest qualified, GPU',
-           'A: cheapest qualified, CPU', 'A: verdict', 'B: cheapest qualified, GPU', 'B: cheapest qualified, CPU',
-           'B: verdict'], md,
+           'A: cheapest qualified, CPU', 'verdict (reading A)', 'B: cheapest qualified, GPU',
+           'B: cheapest qualified, CPU', 'B (alternative): verdict'], md,
           notes=['The criterion of section 3 of the protocol, applied mechanically: the stack has F1 within '
                  f'{F1_TOL} of the best conventional flow ({", ".join(CONV_FLOWS)}; prop is neither) and a front end '
                  'cheaper than the cheapest conventional flow "that reaches this F1", on the GPU and on the CPU. That '
-                 f'phrase reads two ways, both shown: A = {READINGS["A"]}; B = {READINGS["B"]}. F1: open-set F1 of the '
+                 f'phrase reads two ways: A = {READINGS["A"]}, the reading reported (adopted on the review of '
+                 f'2026-11-14); B = {READINGS["B"]}, kept as the alternative. F1: open-set F1 of the '
                  'test windows, mean over the repetitions; stack − best: paired difference per repetition, mean and the '
                  'repetitions with the sign of the mean. Cost: front end per FULL FRAME as a sum of measured stage '
                  f'times (GPU minimum, {g}; CPU one core, median, {c_}); flows that reuse a distance amortised over '
@@ -774,7 +780,7 @@ def tab_dist_criterion():
           comment=['set & stack & best conventional (F1) & stack F1 & stack - best mean (same sign) & F1 within 0.02 & '
                    'stack front end GPU / CPU & A cheapest GPU & A cheapest CPU & A verdict & B cheapest GPU & '
                    'B cheapest CPU & B verdict',
-                   f'A: {READINGS["A"]}; B: {READINGS["B"]}', f'timing: GPU {g}, CPU {c_}'])
+                   f'A (reported): {READINGS["A"]}; B (alternative): {READINGS["B"]}', f'timing: GPU {g}, CPU {c_}'])
 
 
 STAGE_GROUPS = {'read': ['load', 'normalise'],
