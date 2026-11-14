@@ -689,7 +689,7 @@ contra 0,18 s sem.
 Gravação: `bash scripts/exp_resolucao/controls_1mm.sh 5 dense_record` (tmux `res_ctrl_dense_record`, 17:51).
 
 
-## 2026-11-14, 18:25 — P2-A: repetições r2–r5 do `bench_1mm` e o critério do P0 (execução)
+## 2026-11-14, 18:21 — P2-A: repetições r2–r5 do `bench_1mm` e o critério do P0 (execução)
 
 Commits `47514f5` (script com a repetição como parâmetro), `0ec3790` (resumo), `28c0244` (resultados).
 `pilot_1mm.sh` ganhou `REP=1..5` e o passo `rep` (train, evaluate, robust_a, robust_b, robust_depth50 da repetição);
@@ -700,7 +700,7 @@ repetição e foram reaproveitados; o α treinado de cada repetição é o que m
 
 Comando (tmux `res_pilot_reps`, GPU 5, um processo por vez):
 `for R in 2 3 4 5; do REP=$R bash scripts/exp_resolucao/pilot_1mm.sh 5 rep; done` — 17:42 a 18:12; por repetição
-424 / 473 / 442 / ~470 s (treino 276–309 s, avaliação 43–52 s, robustez 17–58 s por passo). Resumo:
+424 / 473 / 442 / 443 s (treino 276–309 s, avaliação 43–52 s, robustez 17–58 s por passo). Resumo:
 `python scripts/exp_resolucao/pilot_five_reps.py` → `results_exp_resolucao/pilot_five_reps.csv`,
 `pilot_five_reps_robustness.csv` (e `_rows.csv`), `pilot_five_reps_alpha.csv`.
 
@@ -752,7 +752,7 @@ sorteou)
 
 (r1–r4 sortearam os mesmos 32 hologramas: quase toda imagem tem uma letra vista, e o sorteio é sobre as imagens.)
 
-## 2026-11-14, 18:25 — P2-B referência: o base em disco treinado em r1 com a receita do piloto (execução)
+## 2026-11-14, 18:21 — P2-B referência: o base em disco treinado em r1 com a receita do piloto (execução)
 
 `bash scripts/exp_resolucao/reference_noaux.sh 5` (tmux `res_pilot_reference`, 18:12:41–18:19:31, 410 s; commits
 `0ec3790` e `7694b72`). O script imprime os seis alvos antes de escrever e recusa rodar se `HOLO_MODELS`/`HOLO_RESULTS`
