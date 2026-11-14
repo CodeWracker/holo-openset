@@ -371,3 +371,65 @@ critério: diferença de F1 ≤ 0,01 em todos.
 
 O primeiro run de qualquer método novo no teste só acontece depois do commit que registra as escolhas em
 `reconstruct.FOCUS`, com data neste caderno.
+
+---
+
+## 2026-11-13 — Timing de referência na GPU mais livre (adendo à Etapa 1)
+
+Às 21:43 nenhuma GPU estava a 0 % (ver acima). Às 21:55 a GPU 4 alternava: em 20 amostras de 1 s, 0 % em 13 e 34–89 %
+nas outras 7 (outro usuário com rajadas curtas; 26,9 GB ocupados por outros). Como o `timing` reporta o **mínimo** de 20
+repetições, que pega as janelas ociosas, rodei nela e julguei a validade pela regra 8.1 (crescimento com o tamanho):
+
+```bash
+HOLO_RESULTS=$PWD/results_exp_distancia/etapa1_timing_idle python -m holo_openset experiment timing --device cuda:4 --rep 1
+```
+
+21:56:30–21:57:06 (código novo; os estágios do paper mais `layer_bank_wide`, `layer_bank_w2`, `per_object_wide`).
+Antes: load 48,9; GPU 4 a 0 %, as outras a 70–100 %. Depois: load 42,6; GPU 4 a 46 %. Log
+`logs/exp_distancia/etapa1_timing_idle.log`.
+
+Razão nosso/paper por estágio (`min_s`, GPU; tempos em ms):
+
+| estágio | 640 nosso | 640 paper | razão | 2048 razão | quadro inteiro nosso | paper | razão |
+|---|---|---|---|---|---|---|---|
+| flat_field | 0,029 | 0,055 | 0,52 | 1,01 | 0,177 | 0,180 | 0,98 |
+| layer_real | 0,089 | 0,169 | 0,53 | 0,94 | 0,568 | 0,567 | 1,00 |
+| layer_complex | 0,131 | 0,250 | 0,53 | 0,97 | 1,082 | 1,084 | 1,00 |
+| layer_prop | 0,135 | 0,284 | 0,47 | 0,92 | 1,093 | 1,103 | 0,99 |
+| layer_bank | 0,189 | 0,293 | 0,65 | 0,97 | 3,513 | 3,531 | 0,99 |
+| layer_bank_jit | 0,188 | 0,370 | 0,51 | 0,97 | 3,508 | 3,662 | 0,96 |
+| layer_bank_w1 | 0,231 | 0,308 | 0,75 | 0,98 | 5,757 | 4,814 | 1,20 |
+| layer_bank_w3 | 0,230 | 0,307 | 0,75 | 0,97 | 5,785 | 4,758 | 1,22 |
+| backprop | 0,089 | 0,166 | 0,53 | 0,94 | 0,968 | 0,976 | 0,99 |
+| autofocus | 4,78 | 4,89 | 0,98 | 1,23 | 151,5 | 123,7 | 1,22 |
+| per_object | 1,66 | 1,75 | 0,95 | 1,11 | 54,5 | 48,2 | 1,13 |
+| twin | 5,78 | 8,53 | 0,68 | 1,20 | 104,2 | 85,8 | 1,21 |
+| channels | 0,519 | 0,689 | 0,75 | 1,45 | 2,02 | 1,79 | 1,13 |
+| yolo_tiled | 9,70 | 12,96 | 0,75 | 0,76 | 163,9 | 221,7 | 0,74 |
+| embed | 1,63 | 2,24 | 0,73 | 0,66 | 2,38 | 2,44 | 0,98 |
+| decide | 0,070 | 0,100 | 0,70 | 0,75 | 0,108 | 0,118 | 0,92 |
+
+Estágios novos (`min_s`, ms; 640 / 1280 / 2048 / quadro inteiro): `layer_bank_wide` 0,229 / 0,776 / 1,826 / 5,767;
+`layer_bank_w2` 0,281 / 0,961 / 2,292 / 7,026; `per_object_wide` 2,50 / 12,2 / 35,3 / 103,4.
+
+Razões entre estágios (estágio / backprop), nosso contra paper:
+
+| razão | 640 nosso | paper | 2048 nosso | paper | quadro inteiro nosso | paper |
+|---|---|---|---|---|---|---|
+| autofocus / backprop | 53,8 | 29,4 | 165,1 | 125,5 | 156,4 | 126,7 |
+| layer_bank / backprop | 2,13 | 1,76 | 3,75 | 3,61 | 3,63 | 3,62 |
+| layer_bank_jit / backprop | 2,11 | 2,23 | 3,75 | 3,62 | 3,62 | 3,75 |
+| layer_prop / backprop | 1,52 | 1,70 | 1,07 | 1,09 | 1,13 | 1,13 |
+| yolo_tiled / backprop | 109,2 | 77,9 | 168,8 | 208,4 | 169,2 | 227,1 |
+| twin / backprop | 65,1 | 51,3 | 106,9 | 83,6 | 107,7 | 87,9 |
+
+**Veredito, regra 8.1: válido a partir de 2048 × 2048 e no quadro inteiro.** O `backprop` cresce 2,0 / 4,1 / 10,9×
+de 640 a 1280 / 2048 / quadro inteiro (paper 1,18 / 2,32 / 5,86×) e o autofocus 4,0 / 12,5 / 31,7× (paper 3,9 / 9,9 /
+25,3×); no quadro inteiro os estágios de uma chamada batem com o paper a 1–4 % (backprop 0,968 contra 0,976 ms,
+layer_bank_jit 3,51 contra 3,66 ms) e as razões entre estágios também (layer_bank_jit/backprop 3,62 contra 3,75).
+Ressalvas: (1) a 640 × 640 os estágios de uma chamada saem a ≈ 0,5× do paper, o que faz o autofocus/backprop subir para
+54 contra 29: o backprop de 0,09 ms está perto do custo fixo de lançamento, e a razão nesse tamanho é sensível a isso;
+(2) três entradas de 1280 × 1280 estão contaminadas pelas rajadas do outro usuário mesmo no mínimo de 20 (flat_field
+0,304 ms, layer_real 0,384 ms, layer_prop 2,566 ms, contra 0,06–0,32 no paper e contra os valores vizinhos); (3) o
+autofocus, o twin e o per_object (iterativos, centenas de kernels) saem 13–22 % mais caros que no paper no quadro inteiro.
+A GPU não estava ociosa o tempo todo, então isto é uma referência, não a medição final (E5).
