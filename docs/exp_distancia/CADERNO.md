@@ -862,3 +862,36 @@ saem dos caches `rec_z0.npy`/`rec_af.npy` reconstruídos neste build).
 | bank_wide | 5 | 0,9401 ± 0,0062 | 0,8307 | 0,9967 | 0,8830 |
 | bank_w2 | 5 | 0,9436 ± 0,0123 | 0,8453 | 0,9967 | 0,8817 |
 
+### E2, quadros inteiros: `full_frames_frame5` (distância por quadro, 5 %)
+
+O driver terminou os sete conjuntos de quadros inteiros às 23:13:46 (`full_frames_frame5`, `full_frames_tilt{0,1,2,5,10,15}`;
+tmux `ed_dados` encerrado sozinho). Script novo `scripts/exp_distancia/ff_run.sh <cuda:N> <conjunto> <fluxos>`:
+`uptime`/`nvidia-smi` antes e depois e o `full_frames --frames-set` (cinco repetições, o padrão).
+
+```bash
+# tmux ff_frame5, cuda:1, 22:57:20 -> 23:15:41 (log logs/exp_distancia/ff_frame5.log); load 48,3 -> 57,2; GPU 1 a 100 % com outro usuário
+bash scripts/exp_distancia/ff_run.sh cuda:1 full_frames_frame5 rec_z0 rec_af rec_afs rec_afsc rec_afc rec_afr prop bank_jit bank_wide bank_w2
+#  = python -m holo_openset experiment full_frames --device cuda:1 --frames-set full_frames_frame5 --flows <os dez>
+```
+
+Saída `results_exp_distancia/full_frames_frame5{,_time,_focus}.csv`. Tempos por estágio: GPU compartilhada, não são E5.
+
+`full_frames_frame5.csv`, caixas detectadas (`boxes == det`), média ± dp sobre as repetições:
+
+| fluxo | reps | open-set F1 | rejeição | recall do detector | falsos positivos rejeitados |
+|---|---|---|---|---|---|
+| rec_z0 | 5 | 0,8617 ± 0,0083 | 0,9410 | 0,9964 | 0,9704 |
+| rec_af | 5 | 0,9747 ± 0,0055 | 0,9141 | 0,9964 | 0,9582 |
+| rec_afs | 5 | 0,8354 ± 0,0071 | 0,9285 | 0,9964 | 0,9689 |
+| rec_afsc | 5 | 0,8351 ± 0,0071 | 0,9289 | 0,9964 | 0,9696 |
+| rec_afc | 5 | 0,9751 ± 0,0055 | 0,9164 | 0,9964 | 0,9597 |
+| rec_afr | 5 | 0,9751 ± 0,0058 | 0,9155 | 0,9964 | 0,9603 |
+| prop | 5 | 0,8658 ± 0,0085 | 0,9386 | 0,9964 | 0,9572 |
+| bank_jit | 5 | 0,9302 ± 0,0065 | 0,9298 | 0,9964 | 0,9402 |
+| bank_wide | 5 | 0,9371 ± 0,0094 | 0,8266 | 0,9964 | 0,8726 |
+| bank_w2 | 5 | 0,9397 ± 0,0125 | 0,8396 | 0,9964 | 0,8830 |
+
+Erro de distância por quadro (`full_frames_frame5_focus.csv`, |z − z verdadeiro|, µm, 40 quadros × 5 repetições):
+mediana / p90 / máximo: `rec_af` 10,3 / 24,9 / 32,3; `rec_afc` 30,1 / 59,2 / 67,5; `rec_afr` 11,9 / 22,2 / 29,5;
+`rec_afs` 491,4 / 2174 / 2877; `rec_afsc` 503,9 / 2137 / 2879; `rec_z0` 650,3 / 1676 / 1868.
+
