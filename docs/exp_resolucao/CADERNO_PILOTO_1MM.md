@@ -442,3 +442,133 @@ média no pixel e o recorte da janela.
 - `robust_b` ganhou a variante por razão: α treinado × α_cal(0,7)/α_cal(1,0) (`--alpha-mode ratio`) e `rec_z0` em
   1,0 mm × a mesma razão (`z_ratio` do json, cache `rec_z0_recal_ratio.npy`), linhas `prop+recal_ratio` e
   `rec_z0+recal_ratio`.
+
+## 2026-11-14, 17:19 — R4: o piloto em r1 rodado (gravação, treino, avaliação, robustez) (execução)
+
+GPU 5 (H100, compartilhada), um processo por vez, 4 threads, sessões tmux `res_pilot_*`, logs
+`logs/exp_resolucao/pilot_<passo>.log` (início, fim, segundos). Escolhas do P1: `DEPTH=2.6 DENSITY=base`.
+
+| passo | comando | parede |
+|---|---|---|
+| record | `DEPTH=2.6 DENSITY=base bash scripts/exp_resolucao/pilot_1mm.sh 5 record` | 1029 s |
+| sanidade | `python scripts/exp_resolucao/bench_sanity.py --set bench_1mm --ref realistic --device cuda:5` | — |
+| reconstruct | `pilot_1mm.sh 5 reconstruct` | 65 s |
+| train | `pilot_1mm.sh 5 train` (raw 81 s, prop 92 s, rec_z0 101 s) | 274 s |
+| validação | `python scripts/exp_resolucao/val_openset.py --set bench_1mm --flows raw prop rec_z0 --rep 1 --device cuda:5` | — |
+| evaluate | `pilot_1mm.sh 5 evaluate` | 34 s |
+| record_07 | `pilot_1mm.sh 5 record_07` | 207 s |
+| robust_a / robust_b | `pilot_1mm.sh 5 robust_a`, `... robust_b` | 37 s / 89 s |
+| depth50 | `pilot_1mm.sh 5 record_depth50`, `... robust_depth50` | 110 s / 48 s |
+
+Disco: `data/bench_1mm` 8,7 GB (hologramas 2,0 GB, PNG 1,0 GB, `rec_z0.npy` 6,1 GB), `bench_1mm_robust/z07` 3,1 GB,
+`z07_val` 0,28 GB, `depth50` 1,3 GB, modelos 134 MB.
+
+**Erro meu no script, corrigido antes de gravar qualquer coisa do passo:** `record_07` montava o nome da saída com
+`$([ $SP = val ] && echo _val)`, que falha sob `set -e` para o split de teste; a primeira chamada saiu logo depois do
+cabeçalho, sem gravar nada (commit `e3c6db5`). Nenhum outro passo foi repetido.
+
+### O conjunto (`results_exp_resolucao/bench_1mm_sanity.json`, só o split de treino lido)
+
+- 5000 imagens, 3500 / 700 / 800 (treino / validação / teste, por sessão), 40 309 letras, 8,06 por imagem (3–18):
+  as mesmas contagens do base (mesmas sementes; o sorteio do número e das classes vem antes de qualquer tamanho).
+- Lado da caixa inteira p5 / p50 / p95 = 14 / 18 / 24 px (N_F 0,355 / 0,587 / 1,043); lado da tinta 12,81 / 17,38 /
+  23,29 px (N_F 0,297 / 0,547 / 0,982). Base: 57 / 77 / 103 px (N_F 0,306 / 0,558 / 0,998).
+- Exposição: nível médio de 100 hologramas de treino 101,49 (base 99,49; as letras pequenas cobrem menos área); quadros
+  em branco 101,51 (base 101,50).
+- Ruído: 4 hologramas de treino reconstruídos das sementes e gravados de novo sem ruído (mesma cena, sessão, câmera,
+  PRNU): armazenado − sem ruído tem média 0,001–0,006 níveis (o conjunto se refaz exatamente das sementes) e rms
+  2,091–2,102 níveis (base 2,069–2,096).
+- Folha de contato `docs/exp_resolucao/img/bench_1mm_examples.png` (4 imagens de treino e 4 recortes de 192 px, caixas
+  em metade): letras como padrões em anéis, caixas no centro dos padrões, poeira da janela como anéis concêntricos,
+  feixe e ruído como no base. Nada me pareceu fora do lugar.
+
+### α da camada de propagação (r1)
+
+- Calibrado em 32 hologramas de treino (grade estendida 12 passos): α = 0,0010587 → **0,99986 mm** (as 32 imagens têm z
+  médio verdadeiro 1,00081 mm). Depois do treino (`lr_alpha = 1e-5`): α = 0,0010332 → **0,97582 mm** (−2,4 %).
+
+### Resultados de r1 (`results_exp_resolucao/eval/bench_1mm/<fluxo>_r1.json`; teste lido uma vez)
+
+| fluxo | F1 teste | rejeição teste | acurácia fechada teste | acurácia conhecidas | AUROC | limiar |
+|---|---|---|---|---|---|---|
+| raw | 0,9283 | 0,6224 | 0,9780 | 0,9540 | 0,9447 | 0,8732 |
+| prop | 0,9770 | 0,9952 | 0,9975 | 0,9612 | 0,9940 | 0,9931 |
+| rec_z0 | 0,9765 | 1,0000 | 0,9984 | 0,9591 | 0,9975 | 0,9915 |
+
+- prop − raw: F1 **+0,0486**, rejeição **+0,3728**. rec_z0 − prop: F1 −0,0004, rejeição +0,0048.
+- Em r1, a rejeição passa a marca do P0 (≥ 0,30) e o F1 não (≥ 0,10). É uma repetição; o critério não se aplica a ela.
+- Comparando com r1 dos conjuntos antigos (`sets_by_fresnel.csv`): o que mudou foi o raw, muito mais forte aqui (F1
+  0,928, rejeição 0,622, contra 0,785 / 0,105 no base e 0,794 / 0,097 no small_near); prop e rec_z0 ficaram no nível
+  de antes (0,977 / 0,995 e 0,977 / 1,000).
+- Validação (`results_exp_resolucao/eval/bench_1mm/val_openset_r1.csv`, as 4 dobras da calibração de evaluate, classes
+  vistas retiradas da galeria fazendo papel de desconhecidas, média): raw F1 0,9665, rejeição 0,9827, fechada 0,9773;
+  prop 0,9713 / 1,0000 / 0,9972; rec_z0 0,9710 / 1,0000 / 0,9987. **Cuidado ao ler:** as "desconhecidas" da validação
+  são classes de treino, então a rejeição ali não mede o mesmo que a do teste (classes nunca vistas); o evaluate não
+  produz uma rejeição de validação com classes novas.
+
+### Robustez (r1, modelos, galeria e limiar de `bench_1mm`; `results_exp_resolucao/robustness_bench_1mm.csv`)
+
+| linha | raw F1 / rej. | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|
+| base (1,0 mm) | 0,9283 / 0,6224 | 0,9770 / 0,9952 | 0,9765 / 1,0000 |
+| 0,7 mm, (a) como está | 0,8965 / 0,6087 | 0,0148 / 1,0000 | 0,0148 / 1,0000 |
+| 0,7 mm, (b) literal | — | 0,5453 / 1,0000 | 0,9562 / 1,0000 |
+| 0,7 mm, (b) razão | — | 0,9125 / 0,9992 | 0,9577 / 1,0000 |
+| 50 µm, como está | 0,9288 / 0,6296 | 0,7732 / 0,9968 | 0,8014 / 1,0000 |
+
+- (a): prop e rec_z0 rejeitam tudo (acurácia das conhecidas 0, fechada 0,20 e 0,21): a 0,7 mm a camada e a
+  reconstrução focam 0,3 mm longe, 30 % de z. O raw perde pouco.
+- (b), calibração (`results_exp_resolucao/recal_bench_1mm_z07.json`, 32 hologramas de validação a 0,7 mm, sem rótulo):
+  α = 0,00074214 → z = **0,70092 mm** (sessões a 0,7 mm × (1 ± 0,5 %)); nos mesmos ids a 1,0 mm, α_ref = 0,0010616 →
+  1,00263 mm; razão 0,69908 → z_razão = **0,69908 mm**. Literal: α do prop 0,0010332 → 0,0007421; razão: → 0,0007223.
+  O literal do prop fica em 0,545 porque o α treinado se afastou 2,4 % do calibrado e a substituição desfaz esse
+  deslocamento; a razão o preserva (0,913). O rec_z0 recupera nas duas (0,956 e 0,958). Que (b) recupere também diz
+  que (a) não é um defeito dos dados regravados.
+- Profundidade 50 / 150 µm (`bench_1mm_robust/depth50`): as anotações do teste são idênticas às do conjunto principal
+  em todas as colunas a menos de `depth` e `z` (6371 letras; profundidades na razão exata 50/2,6, desvio 2,60 →
+  49,97 µm), a poeira também (conferido no csv além do teste unitário). prop e rec_z0 caem para 0,773 e 0,801 em F1
+  (rejeição mantida); raw não muda (0,929).
+
+## 2026-11-14, 17:19 — R5: vazamento para fora do crop e os conjuntos pelo número de Fresnel (execução)
+
+### (i) Vazamento (`python scripts/exp_resolucao/pattern_in_crop_1mm.py --set bench_1mm --device cuda:5`)
+
+Mesma definição de `pattern_in_crop.py` (uma letra absorvente, a = 0,6, no centro, sem poeira nem ruído, fonte do
+conjunto, energia (I − 1)², quadrado de lado × 1,25), com o gravador sobreamostrado (s = 4), letras F, A, O, W
+desenhadas na grade mestra com o lado da tinta = p5 / p50 / p95 do conjunto. Janela 1024 (e 512: os mesmos valores
+até a 4ª casa, a janela basta). `results_exp_resolucao/pattern_in_crop_bench_1mm.csv` e `_summary.csv`.
+
+| tamanho | lado da tinta | N_F a 1,0 mm | fora do crop (tinta) | fora (caixa inteira) | a 0,7 mm |
+|---|---|---|---|---|---|
+| p5 | 12,81 px | 0,297 | 0,609 (0,555–0,661) | 0,609 | 0,557 |
+| p50 | 17,38 px | 0,547 | 0,547 (0,525–0,575) | 0,509 | 0,445 |
+| p95 | 23,31 px | 0,984 | 0,395 (0,341–0,467) | 0,381 | 0,292 |
+
+Base a 19,25 mm (`setup_comparison.csv`): 0,595 / 0,511 / 0,387. O vazamento ficou o do base, como o mesmo N_F prevê.
+
+### (ii) Conjuntos pelo número de Fresnel (`python scripts/exp_resolucao/sets_by_fresnel.py` → `sets_by_fresnel.csv`)
+
+| conjunto | z₀ | N_F p5 / p50 / p95 | fora do crop p5 / p50 / p95 | reps | F1 raw / prop / rec_z0 | rejeição raw / prop / rec_z0 |
+|---|---|---|---|---|---|---|
+| realistic | 19,25 | 0,306 / 0,558 / 0,998 | 0,595 / 0,511 / 0,387 | média 5 | 0,781 / 0,964 / 0,964 | 0,104 / 0,924 / 0,923 |
+| realistic | | | | r1 | 0,785 / 0,960 / 0,952 | 0,105 / 0,852 / 0,836 |
+| small_z0 | 19,25 | 0,021 / 0,074 / 0,166 | 1,000 / 0,982 / 0,805 | média 5 | 0,050 / 0,845 / 0,842 | 0,003 / 0,333 / 0,302 |
+| small_z0 | | | | r1 | 0,055 / 0,852 / 0,846 | 0,001 / 0,320 / 0,325 |
+| small_near | 2,0 | 0,204 / 0,710 / 1,597 | 0,761 / 0,487 / 0,277 | média 5 | 0,793 / 0,972 / 0,974 | 0,153 / 0,963 / 0,970 |
+| small_near | | | | r1 | 0,794 / 0,971 / 0,971 | 0,097 / 0,942 / 0,962 |
+| bench_1mm | 1,0 | 0,297 / 0,547 / 0,982 (tinta) | 0,609 / 0,547 / 0,395 | **r1 só** | 0,928 / 0,977 / 0,977 | 0,622 / 0,995 / 1,000 |
+
+N_F do bench_1mm pela caixa inteira: 0,355 / 0,587 / 1,043. Os conjuntos antigos têm caixas iguais à tinta. As médias
+de 5 vêm de `setup_comparison.csv`, os r1 dos antigos de `results/eval/<conjunto>/<fluxo>_r1.json` (só lidos).
+
+### O que parece estranho ou merece olhar (para o responsável)
+
+1. O crop do holograma (raw) é muito melhor a 1,0 mm que no base com o mesmo N_F e o mesmo vazamento (F1 0,928 contra
+   0,785; rejeição 0,622 contra 0,105, r1). Com o mesmo N_F, o padrão difere em coerência (o pinhole borra 0,67 µm a
+   1 mm e 13 µm a 19,25 mm) e no pixel (a letra tem 17 px, não 77): o recorte de ~22 px ampliado para 64 parece servir
+   mais ao raw. Não investiguei a causa.
+2. A 0,7 mm "como está" a camada e o rec_z0 rejeitam tudo, enquanto o raw quase não perde: o modelo de crops é o mais
+   robusto à distância nesta repetição.
+3. O α treinado (0,9758 mm) se afasta 2,4 % do calibrado (0,9999 mm), e isso decide o (b) literal (0,545) contra o
+   por razão (0,913).
+4. Profundidade de 50 µm: prop e rec_z0 perdem ~0,2 em F1 (a 1,0 mm, 50 µm é 5 % de z, como 1 mm no base).
