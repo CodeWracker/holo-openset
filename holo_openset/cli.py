@@ -1,7 +1,8 @@
 """Command line interface:  python -m holo_openset <command> [options]
 
 Build the data and the models (each command uses ONE device, --device cpu | cuda:N):
-  simulate      simulate an acquisition: base | ideal | variant NAME | variants | aux --rep R | full | small
+  simulate      simulate an acquisition: base | ideal | variant NAME | variants | aux --rep R | full | small |
+                fresnel --name N (the layout of the pilot at 1.0 mm) | like --like SET --name N (its scenes again)
   reconstruct   conventional reconstructions of a set (back-propagation, autofocus, per-object focus, twin removal)
   reduce        a new set with every image averaged over b x b pixels (the resolution the source allows)
   yolo          train the class-agnostic YOLO localiser of a repetition
@@ -72,13 +73,27 @@ def cmd_simulate(a):
             if not (paths.dataset(name) / 'physics.json').exists() or a.force:
                 G.generate(paths.dataset(name), phys=dict(sets, z0=z), n_images=a.n_images or 5000, workers=a.workers,
                            dev=dev, layout='small')
+    elif a.what in ('fresnel', 'like'):
+        # a new set with the layout of the pilot at 1.0 mm (letters with the Fresnel number of the base set, scenes in
+        # physical units; z0, oversample, margin, reach... through --set-physics), or the scenes of an existing set
+        # recorded again with other physics (--like, --split)
+        if not a.name or (a.what == 'like' and not a.like):
+            raise SystemExit(f'simulate {a.what} needs --name' + (' and --like' if a.what == 'like' else ''))
+        out = paths.dataset(a.name)
+        if (out / 'physics.json').exists() and not a.force:
+            raise SystemExit(f'{out} exists: pass --force to overwrite it')
+        if a.what == 'fresnel':
+            G.generate(out, phys=sets, n_images=a.n_images or 5000, per_session=100, workers=a.workers, dev=dev,
+                       layout='fresnel', layout_params={k: float(v) for k, v in (x.split('=', 1) for x in a.layout)})
+        else:
+            G.generate(out, phys=sets, like=paths.dataset(a.like), split=a.split, workers=a.workers, dev=dev)
 
 
 def cmd_reconstruct(a):
     from holo_openset.reconstruct import METHODS, build_caches
     dev = _device(a)
     for aux in ([None] if not a.aux else a.aux):
-        build_caches(_set(a), a.methods or METHODS, dev, aux=aux)
+        build_caches(_set(a), a.methods or METHODS, dev, aux=aux, z0=a.z0, tag=a.tag)
 
 
 def cmd_reduce(a):
@@ -112,7 +127,7 @@ def cmd_train(a):
         aux = aux_scenes(a.flow, r, _set(a), cal=a.cal) if not a.no_aux else None
         model = train(dataset(a.flow, _set(a)), seen, steps=a.steps, mode=f['mode'], fourier=f['fourier'],
                       lr_fourier=a.lr_fourier, aux_scenes=aux, threads=a.threads, seed=a.seed, device=dev,
-                      **f.get('train', {}))
+                      alpha_extend=a.alpha_extend, **f.get('train', {}))
         save_checkpoint(model, out, flow=a.flow, set=a.set, classes=seen, rep=r, steps=a.steps,
                         lr_fourier=a.lr_fourier, cal=a.cal, aux=not a.no_aux)
         print(f'saved {out}', flush=True)
@@ -253,7 +268,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest='cmd', required=True)
 
     p = sub.add_parser('simulate', parents=[common], help='simulate an acquisition')
-    p.add_argument('what', choices=['base', 'ideal', 'variant', 'variants', 'aux', 'full', 'small'])
+    p.add_argument('what', choices=['base', 'ideal', 'variant', 'variants', 'aux', 'full', 'small', 'fresnel', 'like'])
     p.add_argument('names', nargs='*', help='variant names (default: all)')
     p.add_argument('--n-images', type=int, default=None, help='default: 5000 (base, small), 40 (full)')
     p.add_argument('--aux-images', type=int, default=2000)
@@ -263,13 +278,22 @@ def main(argv=None):
     p.add_argument('--force', action='store_true')
     p.add_argument('--split', default='test', choices=['train', 'val', 'test'],
                    help='variant: the split of the base scenes recorded again (test -> variants/, val -> variants_val/)')
-    p.add_argument('--name', help='full: write data/full_frames_<name> instead of data/full_frames')
+    p.add_argument('--name', help='full: write data/full_frames_<name> instead of data/full_frames; fresnel, like: '
+                                  'the new set, data/<name>')
+    p.add_argument('--like', help='like: the set whose scenes are recorded again (its physics, overridden by '
+                                  '--set-physics; with --split, that split only)')
+    p.add_argument('--layout', nargs='*', default=[], help='fresnel: parameters of sim.scene.FresnelLayout, key=value '
+                                                           '(letters_mean, letters_std, letters_min, letters_max, ...)')
     p.set_defaults(fn=cmd_simulate)
 
     p = sub.add_parser('reconstruct', parents=[common], help='conventional reconstruction caches of a set')
     p.add_argument('--methods', nargs='*', help='z0 af edf twin (default: these four), or a search of the distance '
                                                 'study (reconstruct.FOCUS), which writes autofocus_<method>.csv')
     p.add_argument('--aux', nargs='*', help='auxiliary scenes instead (r1 r1_cal ...)')
+    p.add_argument('--z0', type=float, help="'z0' only: the distance of the back-propagation (m) instead of the "
+                                            "set's nominal z0 (physics.json): the distance the system was set up for")
+    p.add_argument('--tag', default='', help="suffix of the caches and of the log: rec_<method><tag>.npy, "
+                                             "autofocus<tag>.csv")
     p.set_defaults(fn=cmd_reconstruct)
 
     p = sub.add_parser('reduce', parents=[common], help='a set averaged over b x b pixels (holo_openset.resolution)')
@@ -290,6 +314,9 @@ def main(argv=None):
     p.add_argument('--lr-fourier', type=float, default=3e-1)
     p.add_argument('--cal', action='store_true', help='calibration twin: without the held-out seen classes')
     p.add_argument('--no-aux', action='store_true', help='without the auxiliary font scenes')
+    p.add_argument('--alpha-extend', type=int, default=0,
+                   help='prop, bank: extra steps of the calibration grid of alpha below its lower limit (0.944 mm), '
+                        'with the same relative step (train.calibrate_alpha)')
     p.add_argument('--seed', type=int, default=0)
     p.add_argument('--out')
     p.add_argument('--force', action='store_true')

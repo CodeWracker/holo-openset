@@ -54,12 +54,18 @@ def alpha_sharpness(imgs_u8, device, alphas, size=IMAGE_SIZE):
 
 
 @torch.no_grad()
-def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41, size=IMAGE_SIZE):
+def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41, size=IMAGE_SIZE, extend=0):
     """The propagation phase alpha (units of the training grid) at which the holograms are sharpest, from the
     holograms alone: no label and no optical parameter. The sharpness is the Tamura coefficient of the gradient of the
     back-propagated field (the criterion of the blind autofocus), averaged over the images. Coarse scan on a
     geometric grid (the same relative step at every distance: 2 mm and 75 mm are both covered), then a fine linear
-    scan between the neighbours of the best coarse value (resolution about 0.3 %)."""
+    scan between the neighbours of the best coarse value (resolution about 0.3 %). At the pixel of the sensor, lo and
+    hi are 0.944 mm and 75.5 mm. extend: that many more steps of the coarse grid below lo, with the same relative
+    step (the grid keeps its points and gains lower ones; 12 steps reach 0.485 mm, for the sets at 1.0 and 0.7 mm)."""
+    if extend > 0:
+        r = (hi / lo) ** (1 / (n_coarse - 1))
+        lo, n_coarse = lo / r ** extend, n_coarse + extend
+
     def sharpness(alphas):
         return alpha_sharpness(imgs_u8, device, alphas, size)
     coarse = np.geomspace(lo, hi, n_coarse)
@@ -70,7 +76,7 @@ def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41, 
 
 def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.05, lr=3e-4, lr_fourier=3e-1,
           aux_weight=0.5, mode='radial', aux_scenes=None, threads=12, seed=0, fourier='learned', device='cpu', distance_error=0.0,
-          n_dist=1, alpha_init='calib', lr_alpha=1e-5, alpha_jitter=0.0, alpha_spread=0.05, log=print):
+          n_dist=1, alpha_init='calib', lr_alpha=1e-5, alpha_jitter=0.0, alpha_spread=0.05, alpha_extend=0, log=print):
     """classes: list of letters to train on (the seen classes). aux_scenes: optional (images_npy, boxes_csv).
     fourier: 'learned' (default) or a deterministic-reconstruction baseline, 'fresnel' / 'wiener': the layer is
     set to the physical transfer function and frozen, so the embedding is trained on reconstructed images.
@@ -78,7 +84,8 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
     (calibrate_alpha), a number sets it directly (0 = start from the identity); the bank spreads n_dist distances
     over +-alpha_spread of it; lr_alpha is the learning rate of alpha; alpha_jitter scales every distance of the layer by a
     random factor in 1 +- alpha_jitter at each training step (the sample is mounted at a different distance), so the
-    network learns to read a focal stack whose focus moves."""
+    network learns to read a focal stack whose focus moves. alpha_extend: steps added below the calibration grid
+    (calibrate_alpha, extend)."""
     torch.manual_seed(seed)
     rng = np.random.RandomState(seed)
     torch.set_num_threads(threads)
@@ -105,7 +112,7 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
     if mode in ('prop', 'bank'):
         if alpha_init == 'calib':
             ids = rng.choice(np.unique(tr[tr.src == 'set'].image_id), 32, replace=False)
-            a0 = calibrate_alpha(dataset.images(ids), device, size=size)
+            a0 = calibrate_alpha(dataset.images(ids), device, size=size, extend=alpha_extend)
         else:
             a0 = float(alpha_init)
         k = model.fourier.alpha.numel()
@@ -113,7 +120,7 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
             torch.zeros(1, dtype=torch.float64)
         model.fourier.alpha.data = a0 * (1 + spread)
         log(f'alpha {a0:.6f} ({"calibrated on 32 training holograms" if alpha_init == "calib" else "given"}); '
-            f'the bench would be {np.pi * WAVELENGTH * Z0 / (IMAGE_SIZE * PIXEL) ** 2:.6f}')
+            f'the bench would be {np.pi * WAVELENGTH * getattr(dataset, "z0", Z0) / (IMAGE_SIZE * PIXEL) ** 2:.6f}')
     if fourier != 'learned':
         model.fourier.weight.requires_grad_(False)
         model.fourier.weight.copy_(physics_weights(model.fourier.q_values, fourier, distance_error=distance_error,

@@ -351,9 +351,12 @@ def distances(src, focus, dev, ids=None, log=None):
     return [rows[i] for i in ids]
 
 
-def build_caches(root, methods, dev, aux=None, log=print):
+def build_caches(root, methods, dev, aux=None, log=print, z0=None, tag=''):
     """Write <root>/rec_<method>.npy (or <root>/aux/<aux>_rec_<method>.npy), uint8 [N, 3, h, w], and the autofocus
     log (autofocus.csv / aux/<aux>_autofocus.csv). The per-object method uses the annotated boxes.
+    z0 (method 'z0' only): the distance of the back-propagation instead of the nominal z0 of the set, e.g. a set
+    recorded at another distance read by a system set up for its own; tag: suffix of the caches and of the log
+    (rec_<method><tag>.npy, autofocus<tag>.csv).
     The methods of FOCUS write their own log, autofocus_<method>.csv, and leave autofocus.csv alone; so do the
     per-object methods of the study in EDF (edfw: blind autofocus, then the per-object focus over its own range, as
     on the full frames)."""
@@ -363,7 +366,12 @@ def build_caches(root, methods, dev, aux=None, log=print):
         raise SystemExit(f'unknown reconstruction {unknown}: one of {list(METHODS) + list(FOCUS) + list(EDF)}')
     study = [m for m in methods if m in FOCUS]
     methods = [m for m in methods if m in METHODS]
+    if (z0 is not None or tag) and (set(methods) != {'z0'} or wide or study):
+        raise SystemExit('--z0 and --tag apply to the back-propagation at z0 alone')
     src = Holograms(root, aux)
+    if z0 is not None:
+        log(f'back-propagation at {z0 * 1e3:.4f} mm (the nominal z0 of the set is {src.z0 * 1e3:.4f} mm)')
+        src.z0 = z0
     if src.pixel != PIXEL and (set(methods) - {'z0'} or wide or study):
         raise SystemExit(f'{root} is reduced (pixel {src.pixel * 1e6:.2f} um): only the back-propagation at z0 '
                          'uses the effective pixel so far')
@@ -397,8 +405,8 @@ def build_caches(root, methods, dev, aux=None, log=print):
         pd.DataFrame(rows).to_csv(f'{pre}autofocus_{m}.csv', index=False)
     if not methods:
         return
-    arrs = {m: np.lib.format.open_memmap(f'{pre}rec_{m}.npy', mode='w+', dtype=np.uint8, shape=(len(src.ids), 3, h, w))
-            for m in methods}
+    arrs = {m: np.lib.format.open_memmap(f'{pre}rec_{m}{tag}.npy', mode='w+', dtype=np.uint8,
+                                         shape=(len(src.ids), 3, h, w)) for m in methods}
     rows = []
     for k, i in enumerate(src.ids):
         i = int(i)
@@ -417,7 +425,7 @@ def build_caches(root, methods, dev, aux=None, log=print):
             log(f'{k}/{len(src.ids)}')
     for v in arrs.values():
         v.flush()
-    pd.DataFrame(rows).to_csv(f'{pre}autofocus.csv', index=False)
+    pd.DataFrame(rows).to_csv(f'{pre}autofocus{tag}.csv', index=False)
 
 
 def fidelity(root, dev, n=None, out=None):

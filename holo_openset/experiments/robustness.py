@@ -18,15 +18,25 @@ it borrows (rows saved as <flow>+own).
 --set, --variants-root and --out run the same experiment on another base set and its own recordings of the
 variants, e.g. a set reduced b x b (holo_openset.resolution): --set realistic_b4 --variants-root variants_b4
 --out robustness_b4 (models of models/<set>, test scenes of data/variants_b4/<name>).
+
+The front end recalibrated without labels (the pilot at 1.0 mm, docs/exp_resolucao/CADERNO_PILOTO_1MM.md, P0 (b)):
+--alpha-json FILE sets the alpha of the propagation layer ('prop', 'bank': the value 'alpha' of the file, written by
+scripts/exp_resolucao/recalibrate_distance.py; a bank keeps its spread around it) for the TEST embeddings of the
+variants; --rec-tag T makes the flows of a reconstruction read rec_<method>T.npy of the variants (a cache
+back-propagated at the recalibrated distance: reconstruct --z0 Z --tag T). The weights, the gallery (the validation
+split of --set, embedded as the model was trained) and the threshold do not change.
 """
+import json
+
 import numpy as np
 import pandas as pd
+import torch
 
 from holo_openset import paths
-from holo_openset.data import embed_annotations
+from holo_openset.data import Dataset, embed_annotations
 from holo_openset.evaluate import IDX, nn_scores
 from holo_openset.experiments.common import KEEP, device, fmt, model, parser, save, strict
-from holo_openset.flows import PAPER_FLOWS, array_name, dataset
+from holo_openset.flows import FLOWS, PAPER_FLOWS, array_name, dataset
 from holo_openset.protocol import classes
 from holo_openset.sim.variants import ALL, VARIANTS
 
@@ -59,7 +69,10 @@ def main(argv=None):
     ap.add_argument('--set', default=paths.BASE, help='the base set: its models, gallery and thresholds')
     ap.add_argument('--variants-root', default='variants', help='where the variants of that set are (data/<root>/<v>)')
     ap.add_argument('--out', default='robustness', help='name of the csv (and of <out>_sessions.csv)')
+    ap.add_argument('--alpha-json', help="the variants' test patterns embedded with the alpha of this file (prop, bank)")
+    ap.add_argument('--rec-tag', default='', help="the variants' reconstructions read from rec_<method><tag>.npy")
     a = ap.parse_args(argv)
+    alpha_new = float(json.load(open(a.alpha_json))['alpha']) if a.alpha_json else None
     dev = device(a)
     broot = paths.dataset(a.set)
     base = dataset('raw', broot)
@@ -76,10 +89,15 @@ def main(argv=None):
                 continue
             name = f'{flow}+own' if a.own else flow
             emb_val = embed_annotations(m, dataset(flow, broot), ann[val])
+            recal = alpha_new is not None and hasattr(m.fourier, 'alpha')
+            alpha_trained = m.fourier.alpha.detach().clone() if recal else None
             for v in a.variants:
                 root = broot if v == 'base' else paths.dataset(f'{a.variants_root}/{v}')
-                if not (root / array_name(flow)).exists():
-                    print('missing', root / array_name(flow), flush=True)
+                arr = array_name(flow)
+                if v != 'base' and a.rec_tag and FLOWS[flow]['rec']:
+                    arr = arr.replace('.npy', f'{a.rec_tag}.npy')
+                if not (root / arr).exists():
+                    print('missing', root / arr, flush=True)
                     continue
                 vann = pd.read_csv(root / 'annotations.csv')
                 vtest = vann[vann.split == 'test'].reset_index(drop=True)
@@ -87,14 +105,21 @@ def main(argv=None):
                         ref[['image_id', 'x0', 'y0', 'x1', 'y1', 'classe']].values).all(), f'{v}: not the same scenes'
                 emb = np.zeros((len(ann), 128), np.float32)
                 emb[val] = emb_val
-                emb[test] = embed_annotations(m, dataset(flow, root, ann=vann), ref)
+                if recal and v != 'base':   # the propagation of the layer moved to the recalibrated distance
+                    with torch.no_grad():
+                        m.fourier.alpha.copy_(alpha_trained * (alpha_new / float(alpha_trained.mean())))
+                emb[test] = embed_annotations(m, Dataset(root, arr, ann=vann), ref)
+                if recal:
+                    with torch.no_grad():
+                        m.fourier.alpha.copy_(alpha_trained)
                 res = strict(m, base, r, emb)
-                effect, value, _ = ALL.get(v, ('base', 'base', {}))
-                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=name,
+                effect, value, _ = ALL.get(v, ('base', 'base', {}) if v == 'base' else (v, v, {}))   # a set's own
+                moved = v != 'base' and (recal or bool(a.rec_tag and FLOWS[flow]['rec']))
+                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=f'{name}+recal' if moved else name,
                                  **{k: res[k] for k in KEEP if k in res}))
                 print(fmt(rows[-1]), flush=True)
                 if a.by_session:
-                    srows += [dict(rep=r, variant=v, flow=name, threshold=res['threshold'], **x)
+                    srows += [dict(rep=r, variant=v, flow=rows[-1]['flow'], threshold=res['threshold'], **x)
                               for x in sessions(emb, ann, r, res['threshold'], session_of)]
         save(rows, a.out, keys=['rep', 'variant', 'flow'])
         if srows:

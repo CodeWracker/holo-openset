@@ -141,3 +141,17 @@ def test_a_fresnel_set_and_its_recording_at_another_distance(tmp_path):
     assert all(pd.api.types.is_integer_dtype(a[c]) for c in ['x0', 'y0', 'x1', 'y1'])
     assert ((a.x0 <= a.bx0) & (a.bx1 <= a.x1) & (a.y0 <= a.by0) & (a.by1 <= a.y1)).all()
     assert (tmp_path / 'a' / 'labels' / '000000.txt').exists()
+
+
+def test_the_extended_calibration_grid_keeps_its_points_and_reaches_0_7_mm():
+    import math
+    from holo_openset.sim.physics import PIXEL, WAVELENGTH
+    from holo_openset.train import calibrate_alpha
+    lo, hi, n, k = 0.001, 0.08, 80, 12
+    r = (hi / lo) ** (1 / (n - 1))
+    ext = np.geomspace(lo / r ** k, hi, n + k)
+    assert np.allclose(ext[k:], np.geomspace(lo, hi, n), rtol=1e-12, atol=0)
+    z = ext[0] * (640 * PIXEL) ** 2 / (math.pi * WAVELENGTH)
+    assert 0.48e-3 < z < 0.49e-3   # 0.7 mm and 1.0 mm well inside
+    x = torch.randint(0, 255, (2, 64, 64), dtype=torch.uint8)
+    assert calibrate_alpha(x, DEV, n_fine=3) == calibrate_alpha(x, DEV, n_fine=3, extend=0)
