@@ -245,7 +245,18 @@ METHODS = ('z0', 'af', 'edf', 'twin')   # the reconstructions of the paper
 # (how many images a session is focused on, how often a drifting distance is refocused, the cheap and the robust
 # searches) were made on the VALIDATION split and frozen before any of them met the test split: see
 # docs/exp_distancia/CADERNO.md for the sweep, the rules and the dates.
-FOCUS = {}
+FOCUS = {
+    # when: the blind search of the paper, once per session on its first image, or every 10 images of a session
+    'afs': Focus(every=0, first=1),
+    'afM': Focus(every=10),
+    # how, on every hologram: the cheapest search that finds the distance on validation (+-10 % of z0, 7 + 11
+    # candidates, amplitude averaged 4 x 4), which is also the cheapest that resists noise and a narrow beam; and the
+    # one with the fewest gross failures under noise (+-15 %, 15 + 21, averaged 2 x 2, field smoothed by 2 px)
+    'afc': Focus(lo=0.90, hi=1.10, n_coarse=7, n_fine=11, bin=4),
+    'afr': Focus(lo=0.85, hi=1.15, n_coarse=15, n_fine=21, bin=2, sigma=2.0),
+    # the cheap search once per session
+    'afsc': Focus(lo=0.90, hi=1.10, n_coarse=7, n_fine=11, bin=4, every=0, first=1),
+}
 # per-object focus over a range wide enough for a tilted slide: name -> (relative half range, steps)
 EDF = {'edf': (EDF_REL, EDF_N), 'edfw': (0.06, 49)}
 

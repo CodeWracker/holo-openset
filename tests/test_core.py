@@ -183,6 +183,16 @@ def test_reusing_a_distance_follows_the_order_of_the_images_in_a_session():
     assert focus_blocks(ids, session, Focus(every=2))[:3] == [([100, 101], [100]), ([102, 103], [102]), ([104], [104])]
 
 
+def test_frozen_searches_are_candidates_of_the_validation_sweep():
+    import dataclasses
+    from holo_openset.experiments.focus import GRID
+    from holo_openset.reconstruct import BLIND, FOCUS
+    assert FOCUS['afc'] == GRID['r10b-b4-tog'] and FOCUS['afr'] == GRID['r15b-b2-s2']
+    assert FOCUS['afsc'] == dataclasses.replace(FOCUS['afc'], every=0, first=1)
+    assert FOCUS['afs'] == dataclasses.replace(BLIND, every=0, first=1) and FOCUS['afM'] == dataclasses.replace(BLIND, every=10)
+    assert (FOCUS['afc'].n, FOCUS['afc'].cost, FOCUS['afr'].n, FOCUS['afr'].cost) == (18, 1.125, 36, 9.0)
+
+
 def test_study_flows_borrow_a_model_and_stay_out_of_the_queue_of_the_paper():
     from holo_openset.flows import FLOWS, PAPER_FLOWS, STUDY, weights_of
     from holo_openset.pipeline import ALL, jobs
