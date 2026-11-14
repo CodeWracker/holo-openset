@@ -220,7 +220,7 @@ base.
       **18:58 — "repeticoes" terminou e eu conferi nos JSON** (`eval/bench_1mm/*_r?.json`, `eval/realistic/*_r1.json`,
       `eval/bench_1mm_depth50/*_r1.json`):
       - **A, critério do orientador: 0 de 5 repetições cumprem as duas condições** (F1 ≥ 0,10: 0 de 5; rejeição
-        ≥ 0,30: 1 de 5, só r1). Médias de 5: raw 0,938 / 0,730; prop 0,977 / 0,998; rec_z0 0,979 / 0,998; prop − raw
+        ≥ 0,30: 1 de 5, só r1). Médias de 5: raw 0,938 / 0,730; prop 0,977 / 0,997; rec_z0 0,979 / 0,998; prop − raw
         +0,039 F1 (0,031 a 0,049) e +0,268 rejeição (0,170 a 0,373). Tabelas: `pilot_five_reps{,_robustness,_alpha}.csv`.
         Robustez média de 5: 0,7 mm como está prop/rec 0,015; recalibrado por razão prop 0,914, rec 0,964; 50 µm como
         está prop 0,784, rec 0,823, raw 0,939.
@@ -228,12 +228,25 @@ base.
         rec_z0 0,956 / 0,862. Tirar as cenas auxiliares quase não muda o base.
       - **D** (treinado com 50 µm, r1): testado em 50 µm prop 0,977 / 0,998, rec_z0 0,975 / 0,994, raw 0,924 / 0,605;
         testado em 2,6 µm prop 0,984, rec_z0 0,976. A perda de 0,2 de F1 era do treino com amostra plana.
-      **Falta: "controles" (C gravando, depois B).** Ao voltar dele: conferir `controls.csv` nos JSON, ler pela regra
-      do P2 (crops mais perto de R_ant = (0,774; 0,073) ou de R_pil = (0,928; 0,622)), pytest e `reproduce check`
-      (com `HOLO_RESULTS` e `HOLO_MODELS` fora do ambiente), conferir que nada de `models/`, `results/`, `expected/`,
-      `data/realistic` mudou, escrever o relatório do piloto completo (documento + PDF) e mandar ao orientador.
-      **O critério falhou: pelas palavras dele, "a tese muda e a gente reescreve". A reescrita (parte B) só com o
-      pedido dele, depois do relatório.**
+      **20:42 — "controles" terminou e eu conferi nos JSON** (`eval/{base_newrec,bench_1mm_dense}/*_r1.json`,
+      `controls.csv`, `controls_reading.json`); entrada P3 do caderno do piloto (`bee10e2`):
+      - **B (código):** `base_newrec` crops 0,763 / 0,061 (camada 0,960 / 0,867; rec 0,957 / 0,840): mais perto de
+        R_ant nas duas → **o código novo reproduz o antigo.** Desvio declarado: fator mestre 4 (piloto 16), s = 2.
+      - **C (vizinhança):** `bench_1mm_dense` (as mesmas 40 309 letras anotadas + enchimento até 154 por janela,
+        10,5 % de área coberta) crops 0,796 / 0,080; camada 0,960 / 0,899; rec 0,968 / 0,952: mais perto de R_ant nas
+        duas → **a vizinhança explica a melhora dos crops.** Pareado denso − esparso: crops −0,133 / −0,543; camada
+        −0,017 / −0,096; rec −0,009 / −0,048.
+      pytest 64, `reproduce check` 13/13; pastas do paper intactas (só `results/data_summary.json` reescrito com o
+      mesmo conteúdo pelo `reproduce check`).
+- [x] P6 concluído. Relatório completo: `docs/exp_resolucao/RELATORIO_PILOTO_1MM.md` (PDF no scratchpad,
+      `entrega/relatorio_piloto_1mm.pdf`), enviado ao orientador às ≈ 20:50.
+- [ ] P7. **PARADO, esperando o orientador.** Decisões pedidas no relatório (seção 8): (1) como a tese muda (minha
+      recomendação: condicionada à densidade; amostra densa → o crop falha e a camada recupera, a 1,0 como a
+      19,25 mm; esparsa → o crop reconhece as conhecidas e a vantagem fica na rejeição das não vistas, 0,997 contra
+      0,730); (2) cinco repetições no conjunto denso (4 × ≈ 8 min); (3) densidades intermediárias em r1 (2–3
+      gravações de 30–50 min); (4) perguntar ao prof. Sobieranski a densidade típica das amostras (parâmetro sem
+      fonte: esparso = 7 objetos/mm², denso = 135/mm²); (5) começar a parte B. **Nada disso roda sem a resposta
+      dele; qualquer rodada nova pede pré-registro no caderno do piloto antes.**
 - [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
       afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
       reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
@@ -422,3 +435,10 @@ errado".
   Os crops a 1 mm ficam em 0,938 / 0,730 (média de 5); a camada passa por +0,039 de F1 e +0,268 de rejeição. Falta o
   subagente dos controles (C gravando até ≈ 19:20, depois treino; depois B). **Próximo passo ao voltar: esperar o
   relatório dele, conferir, escrever o relatório do piloto completo e mandar. Nada de reescrita antes do pedido.**
+
+- **2026-11-14, ≈ 20:50 — RELATÓRIO DO PILOTO COMPLETO ENTREGUE. PARADO.** Critério do orientador: 0 de 5 (camada −
+  crops +0,039 F1, +0,268 rejeição). Controles (r1): o código novo a 19,25 mm reproduz o base; com a densidade
+  relativa do base a 1,0 mm os crops voltam a 0,796 / 0,080 e a camada fica +0,164 / +0,820 acima. Leitura minha: o
+  que derruba o crop é o padrão das vizinhas, não o vazamento do próprio padrão nem a distância. Treino com 50 µm
+  recupera a perda de profundidade. **Próximo passo ao voltar: ler a resposta do orientador às cinco decisões da
+  seção 8 de `RELATORIO_PILOTO_1MM.md` (ver P7). Sem resposta, não rodar nada nem reescrever.**

@@ -995,7 +995,7 @@ conjunto do piloto**. Reporto como está.
 
 ### Controles (regras do P2, só crops, r1)
 
-- **B (código):** `base_newrec` (0,763; 0,061) fica a 0,011 / 0,012 de R_ant = (0,774; 0,073) e a 0,166 / 0,561 de
+- **B (código):** `base_newrec` (0,763; 0,061) fica a 0,011 / 0,012 de R_ant = (0,774; 0,073) e a 0,165 / 0,561 de
   R_pil = (0,928; 0,622). Mais perto de R_ant nas duas métricas: **o código novo reproduz o antigo; a melhora a
   1,0 mm não é efeito do código.** O braço extra não é necessário.
 - **C (vizinhança):** `bench_1mm_dense` (0,796; 0,080) fica a 0,022 / 0,006 de R_ant e a 0,133 / 0,543 de R_pil. Mais
@@ -1006,7 +1006,7 @@ conjunto do piloto**. Reporto como está.
 1. **Fator mestre 4 no `base_newrec`** (o piloto usa 16). O pré-registro não fixava esse número; eu tinha autorizado
    4 no pedido ao executor, por custo (46 min contra ≈ 6,5 h). Em relação ao tamanho da letra, as duas definições
    se equivalem: 4 × 77 px = 308 células mestras no lado mediano a 19,25 mm; 16 × 17,4 px = 278 a 1,0 mm. O efeito
-   isolado do raster na gravação é 1,1–1,6 % do padrão. As distâncias da regra (0,011 contra 0,166; 0,012 contra
+   isolado do raster na gravação é 1,1–1,6 % do padrão. As distâncias da regra (0,011 contra 0,165; 0,012 contra
    0,561) estão longe de depender disso; é julgamento meu, não medida.
 2. **Sobreamostragem 2 no `base_newrec`**, como pré-registrado, depois de (2, 4) passar a 19,25 mm (máx. 0,051 %).
 3. **Uma falha de ambiente** (memória da GPU compartilhada) na conferência do `base_newrec`; repetida sem mudança.
@@ -1024,7 +1024,7 @@ conjunto do piloto**. Reporto como está.
 - **A distância não muda o resultado quando o número de Fresnel e a densidade relativa são iguais.** Base a 19,25 mm
   (crops 0,774 / 0,073; camada 0,959 / 0,869) e denso a 1,0 mm (crops 0,796 / 0,080; camada 0,960 / 0,899) dão o
   mesmo quadro, com coerência e amostragem muito diferentes.
-- **No esparso sobra a rejeição das não vistas:** crops 0,730 contra 0,998 da camada (média de 5).
+- **No esparso sobra a rejeição das não vistas:** crops 0,730 contra 0,997 da camada (média de 5).
 - **A perda com 50 µm de profundidade era do treino com amostra plana:** treinando com 50 µm, camada 0,977 / 0,998 e
   reconstrução 0,975 / 0,994.
 
@@ -1032,7 +1032,7 @@ conjunto do piloto**. Reporto como está.
 
 - Os controles são uma repetição. No base, r1 e a média de cinco diferem em até 0,09 na rejeição.
 - Não há densidade intermediária: não sei a partir de que densidade o crop cai.
-- Não tenho fonte para a densidade de objetos na bancada. Esparso = 7 objetos por mm² (0,5 % da área coberta); denso
+- Não tenho fonte para a densidade de objetos na bancada. Esparso = 7 objetos por mm² (0,6 % da área coberta); denso
   = 135 por mm² (10,5 %).
 - No denso, a reconstrução fica 0,052 acima da camada em rejeição (r1). No base r1 a diferença tem o sinal
   contrário (−0,016). Não concluo nada com uma repetição.
