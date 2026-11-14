@@ -880,3 +880,92 @@ R_pil = (0,9283; 0,6224) (`eval/bench_1mm/raw_r1.json`); R_ant = (0,7742; 0,0733
 a referência sem auxiliares do P2-B, do outro executor). Controle C (raw): (0,7957; 0,0797). Distâncias: F1 0,0215
 a R_ant contra 0,1326 a R_pil; rejeição 0,0064 contra 0,5427. **Mais perto de R_ant nas duas: pela regra, a
 vizinhança explica a melhora.** (`results_exp_resolucao/controls.csv`, `controls_reading.json`.)
+
+## 2026-11-14, 20:36 — K3: controle B (código) rodado: convergência a 19,25 mm, fator mestre, `base_newrec` gravado, treinado e avaliado em r1; tabela dos controles (execução, controles)
+
+| passo | comando | parede |
+|---|---|---|
+| newrec_converge | `MASTER=4 bash scripts/exp_resolucao/controls_1mm.sh 5 newrec_converge` | 21 s |
+| newrec_master | `... 5 newrec_master` e `controls_checks.py raster [--coarse 8]` | 99 s + ≈ 3 + 3 min |
+| newrec_record | `MASTER=4 ... 5 newrec_record` | 2753 s |
+| newrec_verify | `... 5 newrec_verify` (`bench_sanity.py --ref realistic`) | 20 s |
+| newrec_reconstruct | `... 5 newrec_reconstruct` | 74 s |
+| newrec_train | `... 5 newrec_train` (raw 92 s, prop 102 s, rec_z0 124 s; prop com a grade padrão de α) | 318 s |
+| newrec_evaluate | `... 5 newrec_evaluate` | 69 s |
+
+Gravação: `simulate fresnel --name base_newrec --n-images 5000 --workers 3 --set-physics oversample=2 margin=1728
+reach=1024 depth_std=50e-6 depth_max=150e-6 --layout scale=1 factor=4 letters_mean=8 letters_std=3 letters_min=3
+letters_max=18` (z₀ = o padrão, 19,25 mm; o resto da física é o padrão = a do `realistic`). Disco: `data/base_newrec`
+8,7 GB, modelos 134 MB. **Uma falha de ambiente:** a primeira chamada de `newrec_verify` caiu com "CUDA error: out of
+memory" ao alocar 0,5 GB numa GPU com 8,6 GB de 80 em uso (memória da GPU compartilhada no instante); repetida sem
+mudança 18 s depois, rodou (as duas no mesmo log).
+
+### Convergência (2, 4) a 19,25 mm (`results_exp_resolucao/oversampling_convergence_base_newrec.csv`)
+
+Mesma medida do `oversampling_convergence.py` (sem ruído; rms(I₂ − I₄) / rms do padrão), 4 das 8 cenas (imagens 0,
+1250, 2500, 3750), 50 µm, **margem 1728** (coube a s = 4: pico 26,25 GiB, 1,0 s por gravação), alcance 1024, layout
+do `base_newrec` (fator mestre 4): rel_rms 0,051 / 0,041 / 0,024 / 0,031 % (máx. **0,051 %**; diferença máxima
+0,074 níveis; 0,9 % do ruído). **Passa** na tolerância de 1 % do P0, com folga de 20×.
+
+### Fator do raster mestre (`base_newrec_master.csv`, `base_newrec_master_raster.csv`)
+
+- Custo de uma cena (um processo, 4 cenas): fator 16: 11,6–17,2 s (≈ 15 s; raster mestre de 156–199 Mpx por cena);
+  fator 8: 3,6–5,3 s; fator 4: 1,2–1,8 s. Com 3 construtores, a gravação levaria ≈ 6,5 h com 16 e levou 46 min
+  com 4.
+- Efeito na gravação (s = 2, sem ruído), cena a cena contra o fator 16: fator 8 1,8–2,4 %, fator 4 3,4–5,3 % do
+  padrão. **Mas essas cenas não são as mesmas letras nos mesmos lugares:** o sorteio da posição usa o tamanho do
+  raster mestre (`uniform(borda, w − fw − borda)`), e o mesmo número uniforme cai uma fração de pixel noutro lugar
+  (as caixas inteiras mudam em 3 das 4 cenas). Isso mistura raster e posição.
+- Raster isolado (`raster`): a MESMA cena do fator 16, com o raster de cada letra (anotadas e de fora) trocado pelo
+  mesmo glifo desenhado a 4× (ou 8×), cada célula repetida, posto com o centroide da tinta no do raster 16× (a
+  1/16 px; poeira intocada): fator 4: rel_rms **1,14–1,60 %** (máscara: diferença L1 1,6–2,0 %); fator 8:
+  0,62–1,11 % (máscara 0,8–1,0 %). Parte disso é o alinhamento residual (≤ 1/32 px).
+- **Escolha: fator 4** (o brief autorizava 4). Desvio a registrar: o efeito do raster sozinho (≈ 1,1–1,6 % do
+  padrão) passa da tolerância de 1 % que o P0 usa para o gravador; não é convergência do gravador, é a definição do
+  glifo (o antialias do Pillow a 4× contra a média de 16×; o código antigo desenha a 1×). Se o responsável quiser o
+  fator 16, é regravar com `MASTER=16` (≈ 6,5 h de construção de cenas).
+
+### O conjunto (`results_exp_resolucao/base_newrec_sanity.json`, só treino)
+
+- 5000 imagens, 3500 / 700 / 800, 8,06 letras por imagem (3–18): as mesmas contagens do base.
+- Lado da caixa inteira p5 / p50 / p95 = **57 / 76 / 102 px**, N_F **0,306 / 0,543 / 0,979**; lado da tinta 56 /
+  75,25 / 101 px (N_F 0,295 / 0,533 / 0,960). Base: 57 / 77 / 103 px, N_F 0,306 / 0,558 / 0,998. (Fonte contínua em
+  70–118 contra inteira; caixa de tinta da média da grade mestra contra a do antialias a 1×.)
+- Exposição: nível médio 99,60 (base 99,49), quadros em branco 101,51 (101,50); ruído refeito das sementes: média
+  0,001–0,008 níveis, rms 2,062–2,096 (base 2,069–2,096). Folha de contato `docs/exp_resolucao/img/base_newrec_examples.png`.
+
+### α (prop, r1, grade padrão)
+
+Calibrado: 0,020411 → **19,277 mm** (o log diz "the bench would be 0,020382", isto é, 19,25 mm). Depois do treino:
+0,0202025 → **19,080 mm** (−1,0 %).
+
+### Resultados de r1 (`results_exp_resolucao/eval/base_newrec/<fluxo>_r1.json`; teste lido uma vez)
+
+| fluxo | F1 | rejeição | fechada | conhecidas | limiar |
+|---|---|---|---|---|---|
+| raw | 0,7629 | 0,0612 | 0,8719 | 0,8670 | 0,5483 |
+| prop | 0,9602 | 0,8672 | 0,9908 | 0,9559 | 0,9706 |
+| rec_z0 | 0,9565 | 0,8398 | 0,9893 | 0,9542 | 0,9724 |
+
+Referência igual com igual (`eval/realistic/*_r1.json`, do outro executor): raw 0,7742 / 0,0733, prop 0,9588 /
+0,8688, rec_z0 0,9562 / 0,8615.
+
+### Regra de leitura do P2 (B), aplicada mecanicamente (só crops)
+
+Controle B (raw): (0,7629; 0,0612). Distâncias: F1 0,0113 a R_ant contra 0,1655 a R_pil; rejeição 0,0121 contra
+0,5612. **Mais perto de R_ant nas duas: pela regra, o código novo reproduz o antigo e a melhora a 1,0 mm não é
+efeito do código.** O braço que separaria as duas peças novas não é necessário pela regra.
+
+### Tabela (`results_exp_resolucao/controls.csv`, `controls_reading.json`; `controls_1mm.sh 5 table`)
+
+| conjunto | raw F1 / rej. | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|
+| realistic, --no-aux (R_ant) | 0,7742 / 0,0733 | 0,9588 / 0,8688 | 0,9562 / 0,8615 |
+| base_newrec (B) | 0,7629 / 0,0612 | 0,9602 / 0,8672 | 0,9565 / 0,8398 |
+| bench_1mm r1 (R_pil) | 0,9283 / 0,6224 | 0,9770 / 0,9952 | 0,9765 / 1,0000 |
+| bench_1mm_dense (C) | 0,7957 / 0,0797 | 0,9595 / 0,8994 | 0,9676 / 0,9517 |
+| C − bench_1mm | −0,1326 / −0,5427 | −0,0174 / −0,0958 | −0,0089 / −0,0483 |
+
+Resultado das duas regras: B → o código não explica; C → a vizinhança explica. Não interpreto além disso.
+
+`pytest`: 64 passam; `reproduce check`: 13/13.
