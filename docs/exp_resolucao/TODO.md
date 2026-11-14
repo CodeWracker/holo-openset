@@ -112,10 +112,11 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
 
 ### Fase Z: definir um z razoável (vem ANTES de A; ver 4a e `PROTOCOLO_Z.md`)
 
-- [~] Z1. Unidade do z no código (gerador original e `sim/physics.py`), com trecho, no caderno — subagente "piloto".
-- [~] Z2. Refazer a tabela do orientador (z = 19,25; 5; 2; 1 mm: borrão, corte, b_max) e explicar as diferenças
+- [x] Z1. (feito, caderno e `07d513e`) Unidade do z no código (gerador original e `sim/physics.py`), com trecho, no caderno — subagente "piloto".
+- [x] Z2. (feito, `results_exp_resolucao/envelope_z.csv`) Refazer a tabela do orientador (z = 19,25; 5; 2; 1 mm: borrão, corte, b_max) e explicar as diferenças
       (ele tem 278 ciclos/mm a 2 mm; o nosso modelo deu 266) — subagente "piloto".
-- [~] Z3. Ferramenta E(f)/b_max para qualquer configuração (CSV de configurações → tabela) — subagente "piloto".
+- [x] Z3. (feito: `holo_openset/sim/envelope.py`, `scripts/exp_resolucao/envelope_table.py --configs <csv> --out <csv>`)
+      Ferramenta E(f)/b_max para qualquer configuração (CSV de configurações → tabela) — subagente "piloto".
 - [~] Z4. Levantamento de 8–15 bancadas lensless, valores com página → `docs/exp_resolucao/LEVANTAMENTO_Z.md`;
       PDFs em `../referencias/z/` (fora do git) — subagente "levantamento-z". Inclui o suplemento do artigo de 2015
       (Eq. S3: unidade do "k").
@@ -176,3 +177,23 @@ errado".
 - 2026-11-14, 13:25: **parte A suspensa** por instrução nova (seção 4a; `PROTOCOLO_Z.md`). Subagente "piloto"
   redirecionado para Z1–Z3; disparados "levantamento-z" (Z4) e "levantamento-c" (C em paralelo). Próximo passo meu:
   juntar Z1–Z4, montar a proposta (Z5) e **parar no Checkpoint Z**.
+- 2026-11-14, 13:45: subagente "piloto" devolveu. **Parte A parada** (commits `02efd17`, `34634ea`): nada treinado,
+  nenhum teste de conjunto reduzido avaliado; em disco só `data/realistic_b1` e `data/variants_val_b1/*` (b = 1,
+  idênticos aos originais); `pytest` 46 passam, `reproduce check` 13/13.
+  **Z1:** no gerador original (`OLD-WRONG-projeto-e-testes/data/matlab_generation/run_z.m`, linha 9:
+  `CV_FR_focus(im, 1.67e-6, 1.67e-6, -385e-9 * 50000, 385e-9)`; kernel em `CV_FR_focus.m` linha 37) e no nosso
+  `sim/physics.py` (linha 46: `Z0 = 385e-9 * 50000`), z está em metros: "50k" = 50 000 λ = 19,25 mm. O suplemento
+  do artigo de 2015 diz "We used z×λ to compute the distance between the object and the detector plane… For HR
+  holograms, a scale factor k is applied to up-sampling the distance z": três leituras possíveis, nenhuma escolhida
+  (z×λ no pixel de 1,67 µm = 19,25 mm; ou valor aplicado a imagens super-resolvidas, o que daria 4,8 / 2,1 / 0,39 mm
+  para fator 2 / 3 / 7; ou só parâmetro de simulação). As resoluções USAF do suplemento (2,76 µm com 1 quadro;
+  2,19 com 9; 1,55 com 49) pedem, pelo envelope, z ≤ 4,3 / 2,8 / 1,3 mm; a 19,25 mm o envelope só deixa 6,9 µm.
+  **Z2:** os números do orientador (73, 170, 278, 397 ciclos/mm) são o nosso modelo SEM o termo da abertura do pixel;
+  com ele (convenção da `eq:envelope` do paper): 72,4 / 167,6 / 266,4 / 362,2; b_max 4 / 1 / 1 / 1; o corte passa do
+  Nyquist (299) para z ≤ 1,56 mm; termo dominante: imagem do pinhole a 19,25 mm, largura de banda de 5 mm para baixo.
+  Convenção de L: o paper diz pinhole a 15 cm do SENSOR; com L = 15 cm − z o corte a 19,25 mm cai para 66,8.
+  **Avisos dele:** `data/realistic/aux/r1_rec_z0.npy` não existe mais (as reconstruções auxiliares do treino de
+  `rec_z0`); a banda de 10 nm é suposição nossa; o limiar 0,1 é convenção.
+  Aguardando: "levantamento-z" (tabela das bancadas e proposta) e "levantamento-c". Depois: avaliar as configurações
+  candidatas com `envelope_table.py`, escrever a proposta e as consequências, e **parar no Checkpoint Z**.
+
