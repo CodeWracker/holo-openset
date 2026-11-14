@@ -18,7 +18,7 @@ COLORS = {  # entity -> colour, never by rank
 LABELS = {'raw': 'hologram crops', 'learned': 'learned layer (real)', 'complex': 'learned layer (complex)',
           'wiener': 'Wiener filter', 'prop': 'propagation layer', 'bank_jit': 'focal stack (5)', 'bank_w3': 'focal stack (7)',
           'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'blind autofocus', 'rec_afc': 'narrow autofocus',
-          'rec_edf': 'per-object focus', 'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
+          'rec_edf': 'per-object focus', 'rec_twin': 'blind autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
 SHORT = {'raw': 'crops', 'learned': 'layer', 'complex': 'complex', 'wiener': 'Wiener', 'prop': 'prop.',
          'bank_jit': 'stack', 'bank_w3': 'stack (7)', 'rec_z0': 'rec. $z_0$',
          'rec_af': 'blind AF', 'rec_afc': 'narrow AF', 'rec_edf': 'per-object', 'rec_twin': 'twin-free', 'oracle_pixel': 'pixel oracle'}

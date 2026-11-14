@@ -21,7 +21,7 @@ ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'r
 NAME = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
         'prop': 'propagation layer', 'bank_jit': 'focal stack (5)', 'bank_w3': 'focal stack (7)',
         'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'blind autofocus', 'rec_afc': 'narrow autofocus',
-        'rec_edf': 'per-object focus', 'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
+        'rec_edf': 'per-object focus', 'rec_twin': 'blind autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
 
 
 def narrow_range_pct(f=FOCUS['afc']):
@@ -265,7 +265,7 @@ def tab_enroll():
                  ['world5_new_class_acc', 'world20_new_class_acc', 'worldall_new_class_acc',
                   'world20_new_class_rank1', 'world20_absent_rejection', 'world20_seen_acc']]
         lines.append(f'{NAME[f]} & ' + ' & '.join(cells) + ' \\\\')
-        if len(d) and f in ('learned', 'rec_z0', 'complex'):
+        if len(d):
             k = ''.join(w.capitalize() for w in f.split('_'))
             for s in ['5', '20', 'all']:
                 macro(f'{k}Enroll{s.capitalize() if s == "all" else {"5": "Five", "20": "Twenty"}[s]}',
@@ -321,7 +321,6 @@ def tab_discovery():
 
 
 # ------------------------------------------------------------------------------------------------ cost
-SAME_LAYER = {'bank_jit': 'bank'}   # the same architecture (5 distances), so the same cost per frame
 # the flows that do not repeat the reconstruction: the detector's share of the computation is quoted over these
 ONE_PASS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'rec_afc']
 STAGE_GROUPS = {'read': ['load', 'normalise'],   # reading the frame (and, for a reconstruction, its blank frame)
@@ -330,22 +329,32 @@ STAGE_GROUPS = {'read': ['load', 'normalise'],   # reading the frame (and, for a
 
 
 def tab_full_frames():
+    """Accuracy and time of every flow of the paper on the full frames, all from ONE run of `experiment full_frames`
+    (accuracy, stage times and the detection time it shares): the files keep rows of flows outside ORDER from older
+    runs (bank, bank_w3, ...), which are never read here; a flow of ORDER that the run did not time gets no row (its
+    time is never borrowed from another flow or run)."""
     acc, t = load_csv('full_frames'), load_csv('full_frames_time')
     lines = []
     if not len(acc) or not len(t):
         write_table('tab_full', ['\\multicolumn{9}{c}{(not run yet)} \\\\'])
         return
-    det = t[t.stage == 'detect'].seconds.median()
+    acc, d_rows = acc[acc.flow.isin(ORDER)], t[(t.flow == 'all') & (t.stage == 'detect')]
+    t = t[t.flow.isin(ORDER)]
+    frames = set(zip(d_rows.rep, d_rows.frame))
+    assert len(d_rows) == len(frames), 'more than one detection time per frame: two runs in the file'
+    for f, x in t.groupby('flow'):   # the run timed every flow on the frames it detected on, and nothing else
+        assert set(zip(x.rep, x.frame)) == frames, f'the times of {f} are not on the frames of the detection'
+    det = d_rows.seconds.median()
     macro('FullDetectS', det, '{:.2f}')
-    per = t[t.flow != 'all'].groupby(['flow', 'frame', 'rep', 'stage']).seconds.sum().unstack('stage').fillna(0)
+    per = t.groupby(['flow', 'frame', 'rep', 'stage']).seconds.sum().unstack('stage').fillna(0)
     timed = set(per.index.get_level_values(0))
     share = {}
     for f in ORDER:
-        src = f if f in timed else SAME_LAYER.get(f)   # not timed in this run: the times of a flow with the same layer
-        if src not in timed:
+        if f not in timed:
+            print(f'tab_full: {f} was not timed in this run: no row')
             continue
-        p = per.loc[src]
-        name = NAME[f] + ('' if src == f else '$^\\dagger$')
+        p = per.loc[f]
+        name = NAME[f]
         g = {k: p[[c for c in v if c in p]].sum(1).median() for k, v in STAGE_GROUPS.items()}
         # the detector's share of the computation of a frame (reading the files from disk left out)
         share[f] = 100 * det / (det + g['compute'] + g['embed + decide'])
@@ -371,7 +380,7 @@ def tab_full_frames():
         macro('FullDetectPctMinFlow', NAME[low])
         macro('FullDetectPctMinOf', len(one), '{}')
     if len(acc[acc.boxes == 'det']):
-        det = acc[(acc.boxes == 'det') & acc.flow.isin(ORDER)]   # a property of the detector: the flows of the paper
+        det = acc[acc.boxes == 'det']   # a property of the detector: the flows of the paper
         macro('FullRecall', det.detector_recall.mean())
         macro('FullFpFrame', det.fp_per_frame.mean(), '{:.1f}')
         macro('FullReps', acc.rep.nunique(), '{}')
@@ -400,10 +409,12 @@ def tab_stages():
         x = df[(df.stage == stage) & (df.height == size[0]) & (df.width == size[1])]
         return float(x[key].iloc[0]) if len(x) else None
 
-    def fmt(v, unit):
+    def fmt(v, unit):   # below 0.05 ms (or 0.005 s) one decimal would print 0.0: then two (or four) decimals
         if v is None:
             return '--'
-        return f'{v * 1e3:.1f}' if unit == 'ms' and v < 10 else f'{v * 1e3:.0f}' if unit == 'ms' else f'{v:.2f}'
+        if unit == 'ms':
+            return f'{v * 1e3:.2f}' if v < 5e-5 else f'{v * 1e3:.1f}' if v < 10 else f'{v * 1e3:.0f}'
+        return f'{v:.4f}' if v < 5e-3 else f'{v:.2f}'
     for st, label in STAGES:
         cs, cb, gs, gb = get(c, st, small), get(c, st, big), get(g, st, small, 'min_s'), get(g, st, big, 'min_s')
         ratio = f'{cb / cs:.0f}' if cs and cb else '--'
@@ -428,6 +439,11 @@ def tab_stages():
 
 
 # ------------------------------------------------------------------------------------------------ robustness
+# the paper says "frame" only for a full frame of the sensor: the sets whose distance changes per window are shown so
+SHOWN_EFFECT = {'distance per frame (%)': 'distance per image (%)',
+                'distance drift per frame (%)': 'distance drift per image (%)'}
+
+
 def robustness_sets():
     """The rows of the robustness table and figure: the base set, then the battery of the paper (VARIANTS) with the
     sets whose distance changes from image to image (frame_2, frame_5, walk_05) right after the distance between
@@ -466,7 +482,7 @@ def tab_robustness():
             else:
                 cells.append(f'{x:.2f}')
         cells.append(f'{opiv[v]:.2f}' if v in opiv else '--')
-        label = 'base (bench)' if v == 'base' else tex(f'{eff}: {val}')
+        label = 'base (bench)' if v == 'base' else tex(f'{SHOWN_EFFECT.get(eff, eff)}: {val}')
         lines.append(f'{label} & ' + ' & '.join(cells) + ' \\\\')
         for f in ORDER:
             if np.isfinite(piv.loc[v].get(f, np.nan)):

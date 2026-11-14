@@ -139,9 +139,11 @@ def test_the_robustness_table_has_the_new_sets_and_column(tables_out):
     rows = _rows(tables_out[0] / 'tab_robustness.tex')
     names = [r.split(' & ')[0] for r in rows]
     k = names.index('distance between sessions (\\%): 5')
-    assert names[k + 1:k + 4] == ['distance per frame (\\%): 2', 'distance per frame (\\%): 5',
-                                  'distance drift per frame (\\%): 0.5']
+    # shown as "image": the paper says "frame" only for a full frame of the sensor
+    assert names[k + 1:k + 4] == ['distance per image (\\%): 2', 'distance per image (\\%): 5',
+                                  'distance drift per image (\\%): 0.5']
     assert all(r.rstrip(' \\').count(' & ') == len(ORDER) + 1 for r in rows)   # label, the flows, the oracle
+    assert not [r for r in rows if '--' in r]   # every flow and the oracle in every set
     M = tables_out[1]
     for v in ['FrameTwo', 'FrameFive', 'WalkZeroFive']:
         assert M[f'Rob{v}RecZZero'] != '?' and M[f'Rob{v}RecAfc'] != '?'
@@ -185,3 +187,23 @@ def test_times_of_the_study_are_machine_dependent():
               'DistCritBaseBankJitDiff', 'DistSessFiveRecZZeroFOneMeasured', 'DistValBlindBOneTogCost']
     assert [k for k in machine if not MACHINE.match(k)] == []
     assert [k for k in method if MACHINE.match(k)] == []
+
+
+def test_the_full_frame_table_is_one_run_of_every_flow(tables_out):
+    from holo_openset.paper.tables import NAME, ORDER
+    rows = _rows(tables_out[0] / 'tab_full.tex')
+    assert [r.split(' & ')[0] for r in rows] == [NAME[f] for f in ORDER]   # no flow missing, no borrowed time
+    M = tables_out[1]
+    assert M['FullDetectPctMinOf'] == '8' and float(M['FullDetectPctMinFloor']) <= float(M['FullDetectPctMin'])
+    for k in ['FullRecAfcComputeMs', 'FullRecAfcTotalS', 'FullRecAfcFone', 'FullRecAfcReadMs']:
+        assert M[k] != '?', k
+
+
+def test_enrollment_macros_for_every_flow(tmp_path, monkeypatch):
+    from holo_openset.paper import tables as T
+    monkeypatch.setattr(paths, 'PAPER', tmp_path)
+    T.M.clear()
+    T.tab_enroll()
+    for f in T.ORDER:
+        k = ''.join(w.capitalize() for w in f.split('_')).replace('0', 'Zero')
+        assert all(T.M.get(f'{k}Enroll{s}', '?') != '?' for s in ['Five', 'Twenty', 'All']), f

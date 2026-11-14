@@ -861,7 +861,7 @@ def fig_stack():
 
 def fig_robustness():
     """Open-set F1 of every flow in every robustness set (models and galleries of the base set)."""
-    from holo_openset.paper.tables import load_csv, robustness_sets
+    from holo_openset.paper.tables import SHOWN_EFFECT, load_csv, robustness_sets
     from holo_openset.sim.variants import ALL as VARIANTS
     d = load_csv('robustness')
     if not len(d):
@@ -881,8 +881,9 @@ def fig_robustness():
     ax.set_xticks(range(len(cols)))
     ax.set_xticklabels([SHORT[c] for c in cols], rotation=60, ha='right', fontsize=6)
     ax.set_yticks(range(len(rows)))
-    ax.set_yticklabels(['base (bench)' if r == 'base' else f'{VARIANTS[r][0].split(" (")[0]}: {VARIANTS[r][1]}'
-                        for r in rows], fontsize=5.5)
+    ax.set_yticklabels(['base (bench)' if r == 'base' else
+                        f'{SHOWN_EFFECT.get(VARIANTS[r][0], VARIANTS[r][0]).split(" (")[0]}: {VARIANTS[r][1]}'
+                        for r in rows], fontsize=5.5)   # "frame" only for full frames: tables.SHOWN_EFFECT
     ax.grid(False)
     save(fig, 'fig_robustness')
 

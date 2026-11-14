@@ -405,6 +405,7 @@ def tab_dist_paired():
 
 def tab_dist_focus():
     """Distance error on the test split per set and search (focus_error.csv)."""
+    macro('GrossPct', 100 * GROSS, '{:g}')   # a gross failure: an error above this share of z0 (%)
     e = load('focus_error')
     lines, md = [], []
     for i, v in enumerate(SETS):
