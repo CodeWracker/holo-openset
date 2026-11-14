@@ -173,3 +173,134 @@ leva horas; fica para a E5).
 - Timing de referência: CPU com razões entre estágios próximas às do paper (custo absoluto ≈ 0,5×); GPU **inválido**
   pela regra 8.1 (GPU saturada, custo fixo por chamada). Carga do servidor: load 83–430, seis GPUs a 96–100 %.
 - Resultados: `results_exp_distancia/etapa0/{robustness,timing_gpu,timing_cpu}.csv`.
+
+---
+
+## 2026-11-13 — Etapa 1: código do estudo e invariância
+
+### Integração do código
+
+O código das Seções 6.2–6.5 foi escrito e testado num worktree à parte (branch `wip/etapa1`, 5 commits sobre
+`3fe514c`), enquanto a Etapa 0 terminava com o código do paper. Como o commit da Etapa 0 (`60b2939`) entrou depois de
+`3fe514c`, o `git merge --ff-only wip/etapa1` recusou (históricos divergentes). Rebaseei os 5 commits sobre `60b2939`
+(sem conflito: os arquivos não se tocam) e então o fast-forward passou; a árvore de código (`holo_openset/`, `tests/`,
+`scripts/`) depois do merge é idêntica byte a byte à de `a620fd9`, a ponta original de `wip/etapa1`
+(`git diff --quiet a620fd9 HEAD -- holo_openset tests scripts`). Os hashes dos 5 commits mudaram (`94eefd3`..`154373f`).
+
+```bash
+git -C <worktree> rebase 60b2939
+git merge --ff-only wip/etapa1          # HEAD 154373f
+git worktree remove <worktree> && git branch -d wip/etapa1
+```
+
+O que mudou (`git diff 3fe514c..HEAD`, só código): simulador com `frame_z_std`, `frame_z_walk` e `tilt_deg` (todos
+desligados por padrão, cada sorteio novo com seu `random.Random`); `reconstruct.py` com `Focus`, `autofocus`
+generalizado, o registro `FOCUS` (vazio por enquanto), `distances` e `build_caches` escrevendo `autofocus_<método>.csv`
+para os métodos do estudo; fluxos do estudo com pesos emprestados; `experiments/focus.py`; `robustness --by-session` e
+`--own`; `full_frames`/`timing --frames-set`; CLI `simulate variant --split` e `simulate full --name`.
+
+### Testes
+
+```bash
+python -m pytest -q                              # 19 passed  (com HOLO_RESULTS desligado; ver nota 1)
+python -m holo_openset reproduce check           # 12/12 files identical to expected/  (idem)
+git status --short                               # results/ intocado
+```
+
+Notas de ambiente (não são mudanças de código):
+
+1. `env.sh` aponta `HOLO_RESULTS` para `results_exp_distancia/`, e tanto `reproduce check` quanto o teste
+   `test_tables_of_the_paper_match_the_results` geram as tabelas a partir de `HOLO_RESULTS`. Com o `env.sh` ativo, o
+   check falhou (entre os que diferem, `tab_scale`, `tab_stack` e `tab_stages`, porque os CSVs do paper não estão lá) e o teste falhou
+   (18 passed, 1 failed), e ambos escreveram `results_exp_distancia/data_summary.json` (apagado). Rodados com
+   `unset HOLO_RESULTS` (lendo `results/`, como no paper): 19 passed e 12/12. Para o check e o teste, sempre
+   `unset HOLO_RESULTS`.
+2. O pacote não está instalado no ambiente do paper (`../.envbuild/holo-openset`): `pytest` (o executável) e
+   `python scripts/...` não acham `holo_openset`. Uso `python -m pytest` e `PYTHONPATH=$PWD python scripts/...`.
+
+### Invariância (protocolo 6.1, item 3)
+
+```bash
+PYTHONPATH=$PWD python scripts/exp_distancia/invariance.py --device cuda:1     # tmux; log logs/exp_distancia/invariance_session_5.log
+```
+
+16:55–17:37, `cuda:1` (load 76 no início, 395 no fim; as seis GPUs a 43–100 % de outros usuários). Regrava
+`variants/session_5` com o código novo em `data/_check/session_5`, reconstrói `rec_z0`/`rec_af` e o `autofocus.csv` e
+compara valor a valor com o que o código do paper escreveu na Etapa 0, **nesta mesma máquina e build**. Saída:
+
+```
+wrote /home/jovyan/compartilhado/ralph/openset-microscopy/holo-openset/data/_check/session_5 (800, 640, 640)
+identical  session_5/holograms.npy  (800, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/backgrounds.npy  (50, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/annotations.csv  
+identical  session_5/metadata.csv  
+identical  session_5/dust.csv  
+identical  session_5/sessions.csv  
+identical  session_5/physics.json  (without the new fields, all of them off)
+identical  session_5/rec_z0.npy  (800, 3, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/rec_af.npy  (800, 3, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/autofocus.csv  
+ALL IDENTICAL
+```
+
+O código novo, com os efeitos novos desligados, grava os mesmos hologramas e escreve as mesmas reconstruções que o
+código do paper, bit a bit. A primeira tentativa (16:55) falhou com `ModuleNotFoundError` (nota 2 acima) antes de
+escrever qualquer coisa.
+
+### Checagem longa do base (em andamento)
+
+`invariance.py --base` (regravar as 5000 imagens do base em `data/_check/realistic` e comparar com `data/realistic` e
+`checksums/data.sha256`) ainda não foi lançado: prioridade mais baixa, roda em segundo plano depois das etapas
+urgentes (ver abaixo). Pelo achado da figura do Checkpoint 1, ele só pode bater com os checksums publicados até a
+diferença entre builds.
+
+### Figura do Checkpoint 1
+
+```bash
+PYTHONPATH=$PWD python scripts/exp_distancia/fig_checkpoint1.py --device cuda:2    # docs/exp_distancia/img/checkpoint1_holograms.png
+```
+
+Imagem de teste 1 do base (sessão 0, 11 letras, z da sessão 19,0492 mm), gravada três vezes com as funções de
+`sim/generate.py` exatamente como `generate()` grava uma imagem: física do base; `frame_z_std = 0,05`; `tilt_deg = 10`.
+Na imagem 1, o sorteio de `frame_z_std` deu z = 19,1206 mm (+0,37 %, um sorteio pequeno de N(0; 5 %)); a inclinação
+leva as letras de −55…+123 µm para −111…+111 µm em torno de z (deslocamentos de −70 a +55 µm). Linhas: holograma;
+holograma − base (escala ±3 níveis, percentil 99,5); |U| retropropagado em z₀ = 19,25 mm.
+
+**Identidade bit a bit com o publicado: não.** Regravar a imagem 1 do base nesta máquina dá **0,0259 % dos pixels
+diferentes** do holograma publicado (`data/realistic/holograms.npy`, linha 1), com diferença máxima de 7 níveis de cinza.
+Ou seja, este build não é o build que escreveu o conjunto publicado (o `docs/REPRODUCIBILITY.md` relata 0,02 % entre
+builds). Portanto a prova bit a bit de que o código novo não muda nada é a comparação de `session_5` acima (código do
+paper contra código novo NESTE build: idênticos), e o base regravado aqui só pode bater com os checksums publicados até
+essa diferença entre builds.
+
+### Timing de referência numa GPU ociosa (pedido do responsável)
+
+Às 21:43 o servidor estava calmo (load 82 / 57 / 50), mas nenhuma GPU estava ociosa: amostrando `nvidia-smi` por 10 s,
+GPU 0 a 93–98 %, GPU 1 a 3–100 % (média ≈ 25 %), GPUs 2–5 a 39–100 %. Pela instrução (só numa GPU a 0 % de outros
+usuários), **não rodei**; fica pendente para quando houver uma GPU ociosa (o mesmo comando, com
+`HOLO_RESULTS=$PWD/results_exp_distancia/etapa1_timing_idle`).
+
+### Decisões de projeto e desvios do protocolo (tomados pelo responsável)
+
+1. Os conjuntos novos `frame_2`, `frame_5` e `walk_05` ficam em `sim/variants.STUDY` (e `ALL = VARIANTS + STUDY`), não
+   em `VARIANTS`: a fila do paper (`pipeline.py`), `simulate variants`, `tab_robustness` e `fig_robustness` iteram sobre
+   `VARIANTS` e precisam continuar com os seus 32 conjuntos.
+2. Os fluxos do estudo (`rec_<método de foco>`, `rec_edfw`) ficam em `flows.STUDY`, incorporados a `FLOWS` mas fora de
+   `PAPER_FLOWS`, que é o que a fila treina e o que `e2e`, `robustness` e `full_frames` rodam por padrão.
+3. O alias `weights` é resolvido quando um modelo é CARREGADO (`experiments/common.model`, `cli evaluate`, via
+   `flows.weights_of`), e não dentro de `paths.weights` como diz o texto do protocolo: `paths.weights` também é onde o
+   `train` escreve, e o alias ali faria `train --flow rec_afn` pular, ou com `--force` sobrescrever, o `rec_af_r1.pt` do
+   paper. `robustness --own` avalia um fluxo com o seu próprio checkpoint (linhas salvas como `<fluxo>+own`).
+4. `build_caches`: os métodos do paper mantêm o seu laço e o `autofocus.csv` intocados; os métodos do estudo escrevem
+   `rec_<m>.npy` e `autofocus_<m>.csv`. Armadilha preexistente, mantida: `reconstruct --methods z0` sozinho reescreve o
+   `autofocus.csv` com `z_af = z0`.
+5. `simulate full`: novo `--name`; agora se recusa a sobrescrever um conjunto existente sem `--force`; e `--n-images`
+   tinha padrão 5000 para todos os subcomandos, de modo que `simulate full` sem `--n-images 40` (como está escrito o
+   comando de E2 no protocolo) gravaria 5000 quadros inteiros: o padrão agora é 5000 para base/small e 40 para full.
+6. `simulate variant --split val` escreve `data/variants_val/<nome>`.
+7. `reconstruct.Focus` tem, além do que o protocolo lista, `fill` (com máscara, a amplitude fora dela vira 1 antes de
+   propagar: o ruído das regiões sem luz se espalha pela janela inteira ao ser propagado, então mascarar só a nitidez
+   não basta) e a varredura também vai testar `bin = 8`; ambos são candidatos só de validação.
+8. A deriva `frame_z_walk` começa em 0: a primeira imagem de uma sessão está na distância da sessão.
+9. O `docs/REPRODUCIBILITY.md` diz que a fila tem 555 jobs; o código do paper tem 575 (documento desatualizado); o
+   teste novo fixa 575.
