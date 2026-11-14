@@ -553,6 +553,11 @@ def tab_dist_breakeven():
             lab = tt(s) if j == 0 else ''
             lines.append(f'{lab} & {name} & ' + ' & '.join(cells_t) + ' \\\\')
             md.append([s if j == 0 else '', name] + cells_m)
+    for dev in ['gpu', 'cpu']:          # how many times cheaper the frozen searches are than the blind one, full frame
+        t = T[dev].get(FULL, {})
+        for name, stage, _, _ in SEARCHES[1:]:
+            r = t['autofocus'] / t[stage] if ok(t.get('autofocus')) and ok(t.get(stage)) and t[stage] > 0 else None
+            macro(f'SearchBlindOver{camel(name)}{camel(dev)}', r, '{:.0f}')
     g, c = map(rel, timing_dirs())
     write('tab_dist_breakeven', lines,
           ['stack', 'search', 'GPU search (ms)', 'GPU n*', 'GPU n* simple', 'GPU per frame (x)', 'CPU search (s)',
@@ -896,7 +901,7 @@ CAPTIONS = {
 def save(fig, name):
     d = out() / 'figures'
     d.mkdir(parents=True, exist_ok=True)
-    fig.savefig(d / f'{name}.pdf', bbox_inches='tight', pad_inches=0.02)
+    fig.savefig(d / f'{name}.pdf', bbox_inches='tight', pad_inches=0.02, metadata={'CreationDate': None})  # same bytes on a rerun
     fig.savefig(d / f'{name}.png', bbox_inches='tight', pad_inches=0.02, dpi=200)
     plt.close(fig)
     print('wrote', d / f'{name}.pdf')
