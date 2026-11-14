@@ -145,6 +145,55 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
 - [ ] Mensagem final ao orientador: o que mudou, onde, o que ficou para ele decidir (push nos dois repositórios,
       merge do branch em `main`, Zenodo, nomes "blind/narrow autofocus", troca da sessão de tempo).
 
+## 4b. Especificação das edições de texto do paper (C2), rascunho de 2026-11-14
+
+Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por macro (`\Rob…`, `\Full…`, `\T…` de
+`numbers.tex`; `\Dist…` de `numbers_distancia.tex`); fechar os números depois dos resultados de A e B. A prosa do
+`prop`/stack continua sendo do orientador (notas `\todo`); eu só atualizo as notas.
+
+- `04-method.tex`, lista de fluxos (linhas 119–125): o item "autofocus" passa a "**blind autofocus**" (73 + 41
+  candidatos em [0,2; 2,1] z₀, no holograma na resolução do sensor); item novo "**narrow autofocus**": mesmo
+  critério, 7 candidatos em ±10 % de z₀ e 11 em volta do melhor (logo dentro de ±13 %), sobre a amplitude média de
+  4 × 4 pixels (18 reconstruções de 1/16 dos pixels), configuração escolhida na validação antes do teste, usa a rede
+  do blind autofocus (só a distância muda), precisa de z₀ a ±13 %. Frase final "The reconstruction flows need…":
+  acrescentar a suposição. Nota `\todo` na contagem "eight flows" da introdução (não mudar o número: a prosa do
+  `prop`/stack ainda não entrou).
+- `05-protocol.tex`: (Data, robustness sets) acrescentar a distância sorteada por imagem (2 e 5 %) e o drift lento
+  dentro da sessão (passeio aleatório, 0,5 % por imagem); "their own autofocus" → os dois. (Time) trocar a frase da
+  carga ≈ 230 pela da sessão nova (carga 59–89; a anterior era cerca de 2× mais lenta, uniformemente): conferir os
+  números com o caderno de integração.
+- `06-results.tex`:
+  - RQ1, última frase do 1º parágrafo ("searching the distance changes almost nothing… \RecAfFone"): pode ganhar
+    `\RecAfcFone`; opcional.
+  - RQ4, 1º parágrafo: depois de "The autofocus (114 of them) takes…": a busca não precisa ser tão longa (narrow:
+    18 reconstruções de 1/16 dos pixels, X ms por quadro em GPU e Y s em CPU, N× menos), e com a distância fixa na
+    sessão ela é paga uma vez por sessão (F1 igual ao da busca em todo quadro: macros `\Dist…`).
+  - RQ4, "On a whole acquisition": números do narrow autofocus (`\FullRecAfc…`).
+  - RQ4, "Answer to RQ4": mais simples — nenhuma rota é mais barata de um jeito que importe; o detector leva mais
+    de 95 % do tempo de todo fluxo que não repete a reconstrução (macro nova de participação do detector).
+  - RQ5 (i): `frame_5`/`frame_2`/`walk_05` ao lado de `session_5` (que são 8 sorteios): texto conforme o achado A1.
+  - RQ5 (ii): "Noise and illumination break the **blind** autofocus": a fragilidade é da busca cega na resolução do
+    sensor (falhas grosseiras 70 % e 74 %); o mesmo critério na amplitude reduzida 4 × 4 e em ±13 % falha em 1,8 %
+    e 0,2 % e mantém `\RobFullwellFiveZeroZeroRecAfc` e `\RobBeamNarrowRecAfc`. Sai a frase "The step that
+    protects the conventional route… is the most fragile one under noise".
+  - "Answer to RQ5": tirar "noise or illumination that mislead the autofocus" como caso em que o ranking vira;
+    fica a fonte que borra as franjas; ruído e feixe estreito enganam só a busca cega.
+  - Cabeçalho e legenda da Tabela 10 (coluna "narrow AF", linhas novas), legendas de `tab:main`, `tab:stages`,
+    `tab:full`, `fig:robustness`, `fig:cost` (isso é C1).
+  - "Fidelity of the reconstruction": erro mediano do narrow ao lado do blind (macro `\Dist…`).
+  - Nota `\todo` da linha 62 (prosa do stack): acrescentar o que sobra do stack — sem λ, Δ, z nem blank frame;
+    tolera drift dentro do jitter; +0,013 sob shot noise forte (5/5); −0,08 sob feixe estreito contra o narrow AF;
+    ≈ −0,03 nos quadros inteiros para os stacks largos; **nenhum argumento de tempo**.
+- `07-discussion.tex`: "The question about image size" (última frase sobre o autofocus: frágil só quando cego na
+  resolução do sensor; estreito e reduzido custa 78× menos e não é frágil); "Which flow to use" ("add the autofocus,
+  with a criterion that the noise… cannot fool—on our data the sharpness criterion was the weakest link" → o elo
+  fraco era a busca cega, não o critério; buscar uma vez por montagem; "as the autofocus is" → "as the blind
+  autofocus is"); Limitations: item novo com a suposição de z₀ a ±13 %; (v) tempos: sessão nova.
+- `00-abstract.tex`: "robust to camera noise that misleads the autofocus" → "…that misleads a blind autofocus
+  (a narrow search on a reduced image is not misled)".
+- `08-conc.tex`: "the distance of the sample and the noise of the camera decide between a fixed and an autofocused
+  reconstruction" → a distância decide; o ruído quebra só a busca cega.
+
 ## 5. Diário (mais recente embaixo)
 
 - 2026-11-14, manhã: PDF do relatório enviado (commit `13d738b`: frases da Seção 4 em bloco de código).
@@ -152,3 +201,4 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
   detalhar as Fases B e C.
 - 2026-11-14: paper e geradores lidos; decisões D1–D8 acima; entrada de pré-registro dos runs novos no caderno;
   subagentes "análise" (Fase A) e "integração-runs" (B1) disparados em paralelo.
+- 2026-11-14: especificação das edições de texto (seção 4b) escrita enquanto os subagentes rodam.
