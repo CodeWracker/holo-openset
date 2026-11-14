@@ -969,3 +969,71 @@ efeito do código.** O braço que separaria as duas peças novas não é necess�
 Resultado das duas regras: B → o código não explica; C → a vizinhança explica. Não interpreto além disso.
 
 `pytest`: 64 passam; `reproduce check`: 13/13.
+
+## 2026-11-14, 20:42 — P3: conferência e leitura das cinco repetições, dos controles e do treino com 50 µm (responsável)
+
+Escrito depois de receber os relatórios dos dois executores (P2-A, P2-B referência, P2-D; K1–K3). Nada foi rodado de
+novo depois de lido o teste; nenhuma configuração foi trocada.
+
+### O que conferi
+
+- Reli os números direto nos arquivos de avaliação (`results_exp_resolucao/eval/{bench_1mm,realistic,
+  bench_1mm_depth50,base_newrec,bench_1mm_dense}/*_r?.json`) e refiz as diferenças e as distâncias: batem com
+  `pilot_five_reps.csv`, `depth_training.csv`, `controls.csv` e `controls_reading.json`.
+- `pytest`: 64 passam. `reproduce check`: 13/13 (com `HOLO_RESULTS` e `HOLO_MODELS` fora do ambiente).
+- Pastas do paper: em `models/`, `results/`, `expected/` e `data/realistic` o único arquivo com data de hoje é
+  `results/data_summary.json`, que o `reproduce check` reescreve com o mesmo conteúdo (o git não acusa mudança).
+- Li o diff do enchimento (`sim/scene.py`, `fill_letters`): gerador próprio, objetos acrescentados no fim, opção
+  desligada = cena idêntica (testes com digest). Olhei a folha de contato do conjunto denso.
+
+### Critério do orientador (P0), cinco repetições do `bench_1mm`
+
+**0 de 5 repetições cumprem as duas condições.** F1(prop) − F1(raw) ≥ 0,10: 0 de 5 (de +0,031 a +0,049; média
++0,039). Rejeição(prop) − rejeição(raw) ≥ 0,30: 1 de 5 (de +0,170 a +0,373; média +0,268). Pela regra fixada antes
+de rodar, a tese central, na forma "o crop falha, a camada sobre o holograma inteiro recupera", **não se mantém no
+conjunto do piloto**. Reporto como está.
+
+### Controles (regras do P2, só crops, r1)
+
+- **B (código):** `base_newrec` (0,763; 0,061) fica a 0,011 / 0,012 de R_ant = (0,774; 0,073) e a 0,166 / 0,561 de
+  R_pil = (0,928; 0,622). Mais perto de R_ant nas duas métricas: **o código novo reproduz o antigo; a melhora a
+  1,0 mm não é efeito do código.** O braço extra não é necessário.
+- **C (vizinhança):** `bench_1mm_dense` (0,796; 0,080) fica a 0,022 / 0,006 de R_ant e a 0,133 / 0,543 de R_pil. Mais
+  perto de R_ant nas duas: **a vizinhança explica a melhora.**
+
+### Desvios e escolhas de execução que declaro
+
+1. **Fator mestre 4 no `base_newrec`** (o piloto usa 16). O pré-registro não fixava esse número; eu tinha autorizado
+   4 no pedido ao executor, por custo (46 min contra ≈ 6,5 h). Em relação ao tamanho da letra, as duas definições
+   se equivalem: 4 × 77 px = 308 células mestras no lado mediano a 19,25 mm; 16 × 17,4 px = 278 a 1,0 mm. O efeito
+   isolado do raster na gravação é 1,1–1,6 % do padrão. As distâncias da regra (0,011 contra 0,166; 0,012 contra
+   0,561) estão longe de depender disso; é julgamento meu, não medida.
+2. **Sobreamostragem 2 no `base_newrec`**, como pré-registrado, depois de (2, 4) passar a 19,25 mm (máx. 0,051 %).
+3. **Uma falha de ambiente** (memória da GPU compartilhada) na conferência do `base_newrec`; repetida sem mudança.
+   Não envolve número de teste.
+4. No pré-registro escrevi "≈ 154 letras por janela (8 × 19,25)". O conjunto denso ficou com 154,1 por janela e
+   10,5 % de área coberta, contra 10,7 % no base.
+
+### Leitura (interpretação minha, posterior aos resultados; nada disto foi pré-registrado)
+
+- **O que derruba o crop é o padrão das vizinhas que entra nele.** O `bench_1mm` e o `bench_1mm_dense` têm as mesmas
+  40 309 letras anotadas, nas mesmas posições, com o mesmo vazamento do próprio padrão para fora do crop (61 / 55 /
+  39 %). Só com as vizinhas a mais, os crops caem 0,133 em F1 e 0,543 em rejeição. Nesta faixa de número de Fresnel
+  (0,3 a 1,0), o vazamento do padrão da própria letra não basta para o crop errar as classes conhecidas (acerto em
+  conjunto fechado de 0,977 no esparso).
+- **A distância não muda o resultado quando o número de Fresnel e a densidade relativa são iguais.** Base a 19,25 mm
+  (crops 0,774 / 0,073; camada 0,959 / 0,869) e denso a 1,0 mm (crops 0,796 / 0,080; camada 0,960 / 0,899) dão o
+  mesmo quadro, com coerência e amostragem muito diferentes.
+- **No esparso sobra a rejeição das não vistas:** crops 0,730 contra 0,998 da camada (média de 5).
+- **A perda com 50 µm de profundidade era do treino com amostra plana:** treinando com 50 µm, camada 0,977 / 0,998 e
+  reconstrução 0,975 / 0,994.
+
+### O que não sei
+
+- Os controles são uma repetição. No base, r1 e a média de cinco diferem em até 0,09 na rejeição.
+- Não há densidade intermediária: não sei a partir de que densidade o crop cai.
+- Não tenho fonte para a densidade de objetos na bancada. Esparso = 7 objetos por mm² (0,5 % da área coberta); denso
+  = 135 por mm² (10,5 %).
+- No denso, a reconstrução fica 0,052 acima da camada em rejeição (r1). No base r1 a diferença tem o sinal
+  contrário (−0,016). Não concluo nada com uma repetição.
+- O conjunto `small_near` (2 mm, código antigo) não foi reanalisado à luz disto.
