@@ -202,3 +202,20 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
 - 2026-11-14: paper e geradores lidos; decisões D1–D8 acima; entrada de pré-registro dos runs novos no caderno;
   subagentes "análise" (Fase A) e "integração-runs" (B1) disparados em paralelo.
 - 2026-11-14: especificação das edições de texto (seção 4b) escrita enquanto os subagentes rodam.
+- 2026-11-14, 09:15: estado e próximos passos, para retomar depois de uma compactação:
+  - Rodando em segundo plano: subagente "análise" (Fase A; dono de `paper/distance.py`, `RELATORIO.md`,
+    `CADERNO.md`, `results_exp_distancia/`, `tests/test_core.py`; GPU 5) e subagente "integração-runs" (B1; dono de
+    `results/`, `data/variants/` novos, `CADERNO_INTEGRACAO.md`; GPUs 0–4; jobs em `tmux` com prefixo `integ_`).
+    Cada um devolve um relatório final para mim; nenhum mexe neste arquivo.
+  - Quando "análise" terminar: revisar o diff e os números dela (A1: os 8 z, previsto × medido; A3: regra do n\*;
+    A6: leitura A), marcar a Fase A aqui, e disparar o subagente "geradores" (B2), que herda `paper/distance.py` e
+    os testes. B2 só mexe em `sim/variants.py` e `pipeline.py` depois que B1 terminar (B1 usa `VARIANTS` para saber
+    o que simular).
+  - Quando "integração-runs" terminar: revisar (linhas antigas de `results/` intactas, coincidência com
+    `results_exp_distancia/`, sanidade da re-simulação, run de quadros inteiros único), mandar B2 regenerar
+    tabelas/figuras/macros, `expected/`, `pytest`, `reproduce check`.
+  - Depois: Fase C (LaTeX) com a especificação da seção 4b, fechando os números com os resultados.
+  - Compilar o paper: `cd ../latex-openset-microscopy && XDG_CACHE_HOME=/home/jovyan/privado/.persist/.cache
+    /home/jovyan/privado/.persist/bin/tectonic --keep-logs -o <dir de saída no scratchpad> main.tex` (a linha de
+    base de hoje compila sem referência indefinida).
+
