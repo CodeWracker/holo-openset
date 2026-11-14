@@ -1116,3 +1116,65 @@ frame_5, largest deviation: image 1454, true z 21.8421 mm (+0.1347), afc 21.8167
 O maior desvio do teste (+13,47 %, uma imagem de `frame_5`) fica 0,14 ponto fora da faixa efetiva; o `afc` devolveu a
 borda da faixa (+13,33 %) com erro de 25,5 µm, abaixo do limiar de falha grosseira (192,5 µm). Fora dessa faixa a busca
 barata falha por construção; isso não foi testado com distâncias maiores.
+
+### Gerador, saídas e relatório (Etapa 4, 23:47 → 00:10)
+
+Nenhum run de experimento, simulação, reconstrução ou treino nesta etapa: só o gerador, `pytest` e o `reproduce check`
+(CPU, 4 threads). Nada escrito em `results/`, `expected/`, `models/` ou `data/`; nenhum CSV de resultado mudou.
+
+Mudanças em `holo_openset/paper/distance.py` (commits `c5f012f`, `e8eb484`):
+
+1. `tab_dist_time_measured`: o total sai em ms sem casas (coluna "total with the detector (ms)") e é o detector
+   (mediana) mais a **mediana por quadro da soma de todos os estágios do fluxo** (coluna nova "without the detector
+   (ms)"; antes era a soma das medianas dos grupos, 0,8 ms menor em `rec_z0`). Coluna nova "x stack 5" (total do fluxo
+   / total de `bank_jit`). Grupos read / compute / embed + decide com uma casa. Macros renomeadas: `\DistMeasDetectMs`,
+   `\DistMeas<Fluxo>TotalMs`, `...FlowMs`, `...OverBankJit` (as antigas em s não eram usadas por nenhum teste).
+   Conferido: mediana por quadro sem detector `rec_z0` 25,6, `rec_af` 148,3, `rec_afc` 26,4, `rec_afr` 36,1, `rec_edfw`
+   230,9, `prop` 7,6, `bank_jit` 11,1, `bank_wide` 12,6, `bank_w2` 14,4 ms; detector 178,1 ms; `normalise` 17,7–17,9
+   ms contra `load` 2,8 ms.
+2. Tabela nova `tab_dist_frames_paired` (tex + md + macros `\DistFramePair...`): diferenças pareadas de F1 fim a fim por
+   repetição nos oito conjuntos de quadros inteiros, pares `rec_afc − rec_af`, `bank_jit|bank_wide|bank_w2 − rec_afc`,
+   `rec_edfw − rec_afc` (onde os dois rodaram).
+3. Tabela nova `tab_dist_criterion` (tex + md + macros `\DistCrit...`) e função `criterion()`: o critério da Seção 3 do
+   protocolo aplicado mecanicamente nos 8 conjuntos de janelas × 3 stacks, com o front end do quadro inteiro de E5
+   (amortizados com n = 100), nas duas leituras (A: convencionais com F1 ≥ melhor − 0,02; B: convencionais com F1 ≥ F1
+   do stack). Convencionais: `rec_z0`, `rec_af`, `rec_afs`, `rec_afsc`, `rec_afM`, `rec_afc`, `rec_afr`. Resultado:
+   cumprido em 1 de 24 linhas na leitura A (`bank_jit`, `walk_05`) e em 2 na B (`bank_jit` em `walk_05` e `frame_2`).
+4. Macros `\DistSearchBlindOver{Afc,Afr}{Gpu,Cpu}` (busca cega / busca congelada no quadro inteiro: 78, 111, 11, 12).
+5. Figuras: em `fig_dist_tilt` a legenda foi para baixo do eixo; em `fig_dist_breakeven` os rótulos à direita são
+   posicionados por blocos centrados nos valores (sem sobreposição, dentro do eixo) e ligados à sua reta por um traço
+   da cor dela. Conferidos a olho nos PNGs: um rótulo legível por reta nos dois painéis. PDFs salvos sem data de criação
+   (rodar de novo dá os mesmos bytes).
+6. Teste novo `test_distance_criterion_reads_the_phrase_two_ways` (números inventados em que A e B divergem, e os casos
+   "F1 fails", "none reaches it" e "cheaper on CPU only"); o teste de entradas ausentes passa a exigir as duas tabelas
+   novas.
+
+Script novo `scripts/exp_distancia/relatorio.sh`: ativa o `env.sh`, roda o gerador, copia
+`results_exp_distancia/distance/numbers_distancia.tex` para `results_exp_distancia/numbers_distancia.tex` e os PNGs
+para `docs/exp_distancia/img/`.
+
+```bash
+bash scripts/exp_distancia/relatorio.sh                    # 1532 macros; saídas commitadas em e0f5a87 e 7730d1b
+env -u HOLO_RESULTS python -m pytest -q                    # 23 passed
+env -u HOLO_RESULTS python -m holo_openset reproduce check # 12/12 files identical to expected/
+git diff --stat 9488fce HEAD -- results expected           # vazio
+```
+
+Relatório: `docs/exp_distancia/RELATORIO.md` (commit `d80b0b2`).
+
+### Checklist da Seção 12
+
+- ✔ `pytest` (23 passed) e `reproduce check` (12/12) passam no commit final, com `HOLO_RESULTS` desligado.
+- ✘ Base gerado com o código novo idêntico ao do Zenodo: 0,0191 % dos valores dos hologramas e 0,0039 % dos blank
+  frames diferem (diferença de build; ver acima); `session_5` é idêntico bit a bit entre o código do paper e o novo
+  dentro deste build.
+- ✔ Resultados novos em `results_exp_distancia/`; `git diff --stat 9488fce HEAD -- results expected` vazio.
+- ✔ Escolhas de hiperparâmetro datadas antes do primeiro run no teste: pré-registro 21:44:19 (`9e41879`), congelamento
+  22:16:15–22:16:23 (`058f8f9`, `03a2a21`, `68e81ea`); primeiro uso de método novo depois disso: timing de CPU 22:18:26
+  (só tempo), primeiros caches do teste 22:23:19.
+- ✘ (parcial) Toda tabela de tempo com front end e fim a fim, GPU e CPU, de um único run: `tab_dist_time` e
+  `tab_dist_breakeven` cumprem (sessão `e5`, GPU e CPU em comandos separados); `tab_dist_time_measured` é só GPU (o
+  `full_frames` não rodou em CPU).
+- ✔ Custo amortizado de `afs` e `afM` identificado como soma de tempos medidos (marca † e notas de `tab_dist_time`).
+- ✔ Cada cenário tem um parágrafo de plausibilidade física (relatório, Seção 3).
+- ✔ O relatório diz o que não foi confirmado e o que não foi testado (relatório, Seção 5).
