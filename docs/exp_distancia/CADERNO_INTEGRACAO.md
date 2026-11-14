@@ -372,3 +372,68 @@ correção do `oracle.py` (`distance per frame (%)` 2 / 5, `distance drift per f
 5; recall do localizador por limiar entre parênteses, caixas `det`): `frame_2` gt 0,8720, det 0,6963 (0,593);
 `frame_5` gt 0,8196, det 0,6697 (0,489); `walk_05` gt 0,8480, det 0,6921 (0,543) — ao lado, do paper: base gt 0,8840,
 det 0,6910 (0,631); `session_2` 0,8620 / 0,6906; `session_5` 0,7873 / 0,6695.
+
+## 2026-11-14, 11:00 — Passo 8: erro de distância da busca estreita na bateria (`results/focus_battery.csv`)
+
+Com o comando do pacote que fez o `focus_error.csv` do estudo (mesma definição: erro |z encontrado − z verdadeiro|,
+mediana em µm, falha grosseira = erro > 1 % de z0 = 192,5 µm), num diretório de rascunho, e copiado para
+`results/focus_battery.csv`:
+
+```bash
+# CPU, 10:59:58 -> 11:00:01 (log logs/integracao/focus_battery.log)
+HOLO_RESULTS=$S/focus python -m holo_openset experiment focus error --sets realistic variants/<32 de VARIANTS> \
+  variants/frame_2 variants/frame_5 variants/walk_05 --methods af afc --split test
+cp $S/focus/focus_error.csv results/focus_battery.csv
+```
+
+44 linhas: `afc` nos 36 conjuntos (18 reconstruções por imagem, 800 imagens de teste cada) e `af` (busca cega, 114)
+onde o `autofocus.csv` existe (base, `fullwell_500`, `beam_narrow`, `session_2`, `session_5`, `frame_2`, `frame_5`,
+`walk_05`; os `autofocus.csv` só-z0 da conferência do passo 1 ficaram fora dos conjuntos). As 16 linhas em comum com
+`results_exp_distancia/focus_error.csv` são iguais (diferença máxima 0). Colunas: `set, method,
+reconstructions_per_image, n, median_um, p90_um, max_um, gross`.
+
+| conjunto | afc mediana (µm) | afc falhas grosseiras | af mediana (µm) | af falhas grosseiras | F1 afc − af | F1 afc − z0 |
+|---|---|---|---|---|---|---|
+| base | 50,1 | 0,25 % | 50,3 | 1,38 % | +0,000 | +0,000 |
+| fullwell_500 | 50,1 | 1,75 % | 446,8 | 70,25 % | +0,178 | -0,001 |
+| fullwell_1500 | 50,1 | 0,75 % | — | — | +0,002 | -0,000 |
+| fullwell_24000 | 50,1 | 0,12 % | — | — | +0,000 | +0,001 |
+| read_10 | 50,1 | 0,25 % | — | — | -0,000 | -0,000 |
+| read_30 | 50,1 | 0,38 % | — | — | +0,000 | -0,000 |
+| read_60 | 50,1 | 0,38 % | — | — | +0,001 | +0,000 |
+| bits_6 | 50,1 | 0,25 % | — | — | +0,000 | +0,000 |
+| bits_4 | 50,1 | 0,38 % | — | — | +0,010 | +0,001 |
+| beam_narrow | 50,1 | 0,25 % | 13049,2 | 74,00 % | +0,529 | -0,000 |
+| beam_flat | 50,1 | 0,25 % | — | — | +0,000 | +0,001 |
+| laser | 37,3 | 0,75 % | — | — | -0,001 | +0,003 |
+| band_0 | 42,2 | 0,25 % | — | — | -0,000 | -0,000 |
+| band_20 | 50,1 | 1,75 % | — | — | -0,000 | -0,000 |
+| band_40 | 86,1 | 11,62 % | — | — | +0,001 | +0,002 |
+| pinhole_20 | 42,2 | 0,00 % | — | — | +0,001 | +0,000 |
+| pinhole_50 | 42,2 | 0,12 % | — | — | +0,000 | +0,001 |
+| pinhole_200 | 55,9 | 5,25 % | — | — | +0,004 | +0,004 |
+| source_5cm | 55,9 | 7,25 % | — | — | +0,100 | +0,005 |
+| dust_0 | 50,1 | 0,50 % | — | — | +0,000 | +0,001 |
+| dust_8 | 42,2 | 0,25 % | — | — | -0,000 | +0,001 |
+| dust_20 | 42,2 | 0,00 % | — | — | +0,000 | +0,003 |
+| opaque | 37,3 | 0,12 % | — | — | +0,000 | -0,000 |
+| absorbing | 42,2 | 0,88 % | — | — | +0,002 | +0,002 |
+| transparent | 78,2 | 1,88 % | — | — | +0,000 | +0,000 |
+| depth_0 | 42,2 | 0,25 % | — | — | +0,000 | +0,001 |
+| depth_150 | 64,2 | 3,88 % | — | — | -0,000 | +0,001 |
+| depth_300 | 103,0 | 23,38 % | — | — | +0,001 | -0,000 |
+| session_0 | 0,0 | 0,25 % | — | — | -0,000 | -0,001 |
+| session_2 | 56,1 | 0,75 % | 49,5 | 2,25 % | +0,000 | +0,025 |
+| session_5 | 28,2 | 0,12 % | 50,0 | 2,00 % | +0,000 | +0,211 |
+| no_outside | 50,1 | 0,38 % | — | — | -0,000 | -0,000 |
+| periodic | 37,3 | 0,00 % | — | — | +0,000 | -0,000 |
+| frame_2 | 41,0 | 0,62 % | 49,4 | 1,62 % | +0,000 | +0,010 |
+| frame_5 | 45,0 | 0,25 % | 46,6 | 2,38 % | -0,000 | +0,098 |
+| walk_05 | 42,6 | 0,00 % | 46,8 | 1,50 % | +0,000 | +0,031 |
+
+(A mediana de 50,1 µm em muitos conjuntos é o passo da grade fina da busca; em `session_0` a distância verdadeira é z0,
+que está na grade.) **Sinalizações (perda de F1 de `rec_afc` > 0,02 contra `rec_af` ou `rec_z0`): nenhuma.** Onde a
+busca estreita mais erra a distância — `depth_300` (23,4 % de falhas grosseiras, mediana 103 µm), `band_40` (11,6 %),
+`source_5cm` (7,3 %), `pinhole_200` (5,3 %), `depth_150` (3,9 %) — o F1 não cai (−0,000 a +0,005 contra `rec_z0`):
+nesses conjuntos o "foco" do campo inteiro é mal definido (objetos em profundidades diferentes, fonte larga), e o erro
+contra o z da sessão não mede o que o classificador vê. Fica como descrição para o líder.
