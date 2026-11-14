@@ -271,3 +271,85 @@ rejeição das falsas detecções / `worldall_new_class_acc`): `rec_afc` 0,9602 
 `bank_jit` 0,9600 / 0,9790 / 0,7812 / 0,9342 (para comparação, do paper: `rec_af` 0,9606 / 0,9775 / 0,7844 / 0,9238;
 `rec_z0` 0,9608; `prop` 0,9604; `bank_w3` 0,9566). Recall do detector 0,9954 em todos (as detecções novas têm o mesmo
 recall das antigas).
+
+## 2026-11-14, 09:26–10:52 — Passos 1 e 2 concluídos
+
+- **Simulação** (`integ_sim3`, cuda:0, 1 worker): as 23 restantes terminaram às 10:51:49, saída 0. Tempo por conjunto
+  (início → início do seguinte): `read_10` 11,6 min, `read_30` 11,2, `bits_6` 14,6, `bits_4` 6,5, `beam_flat` 4,4,
+  `laser` 2,8; daí em diante 2–4 min cada (a disputa da GPU 0 caiu), `no_outside` 28 s e `periodic` 12 s (sem objetos
+  fora do sensor). Total do passo 1: 09:12 → 10:52 (≈ 1 h 40 min). Agora os 32 conjuntos de `VARIANTS` estão em
+  `data/variants/` (90 GB no total do diretório, contando os caches).
+- **`rec_afc` nos conjuntos novos**: `scripts/exp_distancia/integ_afc_follow.sh cuda:1` (tmux `integ_afc`, log
+  `logs/integracao/cache_afc_follow.log`, 09:53:45 → 10:52:13) construiu `rec_afc.npy` + `autofocus_afc.csv` de cada
+  conjunto assim que o `physics.json` dele aparecia (23 conjuntos, ≈ 15–35 s cada, nenhum erro). Com a fila A,
+  os 28 conjuntos novos têm `rec_afc`; os 4 da bateria que o estudo já tinha (`beam_narrow`, `fullwell_500`,
+  `session_2`, `session_5`) e o base já tinham.
+
+## 2026-11-14, 10:52–10:56 — Passo 3a: `rec_afc` no base e nas 32 variantes (em `results/`)
+
+```bash
+cp -p results/robustness.csv $S/before_3a/
+# tmux integ_rob3a, cuda:1, 10:52:37 -> 10:56:18 (log logs/integracao/robustness_3a.log)
+bash scripts/exp_distancia/integ_run.sh experiment robustness --device cuda:1 --flows rec_afc --variants base <as 32 de VARIANTS>
+python scripts/exp_distancia/integ_check.py $S/before_3a/robustness.csv results/robustness.csv --keys rep variant flow --intended "flow == 'rec_afc'"
+python scripts/exp_distancia/integ_coincide.py
+```
+
+- 3 min 41 s, saída 0, nenhum `missing`. 2443 → 2608 linhas (+165 = 33 conjuntos × 5 repetições, todas novas; as 15
+  linhas de `rec_afc` de `frame_*`/`walk_05` do passo 3b não foram recalculadas, só regravadas pelo `save`).
+  Nenhuma chave antiga sumiu; 2400 das 2428 linhas que não são de `rec_afc` idênticas, 28 (as de r5 de 3b) com 1 ULP.
+- **Coincidência com `results_exp_distancia/robustness.csv`** (250 linhas com a mesma chave):
+  - as **100 linhas escritas nesta integração** (`rec_afc` no base, `session_2`, `session_5`, `fullwell_500`,
+    `beam_narrow`, `frame_2`, `frame_5`, `walk_05`: 40; `rec_z0`, `rec_af`, `prop`, `bank_jit` nos três
+    conjuntos novos: 60) coincidem: maior |diferença| em todas as métricas **1,1e-16** (ruído de float da regravação);
+  - as **150 linhas antigas do paper** com a mesma chave (`rec_z0`, `rec_af`, `prop`, `bank_jit`, `bank_w2`,
+    `bank_wide` no base e nos 4 conjuntos da bateria que o estudo re-simulou) **não** são o mesmo cálculo: o paper
+    usou os conjuntos e caches originais, o estudo os re-simulados/reconstruídos neste build. Diferença máxima de F1
+    0,0023 (`beam_narrow`; base 0,0001, `fullwell_500` 0,0010, `session_2` 0,0004, `session_5` 0,0008), média
+    0,00014; em todas as métricas 0,0055 (`world5_new_class_acc`). Mesma ordem da conferência do passo 1.
+  - Consequência para a Tabela 10: a coluna `rec_afc` vem dos conjuntos deste build, as outras colunas das 32 linhas
+    da bateria vêm dos conjuntos do paper (diferenças de arredondamento ≤ 0,001–0,002 de F1, ver passo 1).
+
+F1 aberto macro, média de 5 repetições (`rec_z0`, `rec_af` de `results/robustness.csv`; `rec_afc` deste run):
+
+| conjunto | rec_z0 | rec_af | rec_afc | afc − af | afc − z0 |
+|---|---|---|---|---|---|
+| base | 0,964 | 0,964 | 0,964 | +0,000 | +0,000 |
+| fullwell_500 | 0,950 | 0,771 | 0,949 | +0,178 | -0,001 |
+| fullwell_1500 | 0,961 | 0,959 | 0,961 | +0,002 | -0,000 |
+| fullwell_24000 | 0,963 | 0,964 | 0,964 | +0,000 | +0,001 |
+| read_10 | 0,964 | 0,964 | 0,964 | -0,000 | -0,000 |
+| read_30 | 0,964 | 0,964 | 0,964 | +0,000 | -0,000 |
+| read_60 | 0,963 | 0,962 | 0,963 | +0,001 | +0,000 |
+| bits_6 | 0,964 | 0,964 | 0,964 | +0,000 | +0,000 |
+| bits_4 | 0,953 | 0,944 | 0,954 | +0,010 | +0,001 |
+| beam_narrow | 0,959 | 0,430 | 0,959 | +0,529 | -0,000 |
+| beam_flat | 0,964 | 0,964 | 0,964 | +0,000 | +0,001 |
+| laser | 0,948 | 0,952 | 0,951 | -0,001 | +0,003 |
+| band_0 | 0,966 | 0,965 | 0,965 | -0,000 | -0,000 |
+| band_20 | 0,958 | 0,958 | 0,957 | -0,000 | -0,000 |
+| band_40 | 0,927 | 0,928 | 0,929 | +0,001 | +0,002 |
+| pinhole_20 | 0,964 | 0,963 | 0,964 | +0,001 | +0,000 |
+| pinhole_50 | 0,965 | 0,965 | 0,965 | +0,000 | +0,001 |
+| pinhole_200 | 0,900 | 0,899 | 0,904 | +0,004 | +0,004 |
+| source_5cm | 0,514 | 0,418 | 0,518 | +0,100 | +0,005 |
+| dust_0 | 0,966 | 0,967 | 0,967 | +0,000 | +0,001 |
+| dust_8 | 0,959 | 0,960 | 0,960 | -0,000 | +0,001 |
+| dust_20 | 0,947 | 0,950 | 0,950 | +0,000 | +0,003 |
+| opaque | 0,978 | 0,977 | 0,978 | +0,000 | -0,000 |
+| absorbing | 0,899 | 0,899 | 0,901 | +0,002 | +0,002 |
+| transparent | 0,906 | 0,906 | 0,906 | +0,000 | +0,000 |
+| depth_0 | 0,964 | 0,964 | 0,965 | +0,000 | +0,001 |
+| depth_150 | 0,963 | 0,963 | 0,963 | -0,000 | +0,001 |
+| depth_300 | 0,959 | 0,958 | 0,959 | +0,001 | -0,000 |
+| session_0 | 0,965 | 0,965 | 0,964 | -0,000 | -0,001 |
+| session_2 | 0,939 | 0,964 | 0,964 | +0,000 | +0,025 |
+| session_5 | 0,753 | 0,964 | 0,964 | +0,000 | +0,211 |
+| no_outside | 0,974 | 0,973 | 0,973 | -0,000 | -0,000 |
+| periodic | 0,980 | 0,979 | 0,980 | +0,000 | -0,000 |
+| frame_2 | 0,955 | 0,964 | 0,965 | +0,000 | +0,010 |
+| frame_5 | 0,865 | 0,964 | 0,964 | -0,000 | +0,098 |
+| walk_05 | 0,934 | 0,964 | 0,965 | +0,000 | +0,031 |
+
+Nenhum conjunto em que `rec_afc` perca mais de 0,02 para `rec_af` ou `rec_z0` (as maiores perdas: −0,0012
+para `rec_af` em `laser`, −0,0010 para `rec_z0` em `fullwell_500`).
