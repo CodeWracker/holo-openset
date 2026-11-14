@@ -618,6 +618,11 @@ mostra; 0,5–1,9 mm é.**
 
 ## 7. Largura de banda do LED da bancada
 
+> **Correção (2026-11-14, depois de escrita esta seção):** a tabela de especificações do fabricante foi lida numa
+> cópia arquivada de 2015-05-04 da página "Mounted LEDs" da Thorlabs, e a linha do M385L2 traz "10 nm" na coluna
+> "Bandwidth (FWHM)". Os 10 nm passam a ter fonte (ver `PARAMETROS.md`). O texto abaixo fica como registro do que
+> se sabia antes.
+
 - O artigo de 2015 nomeia o LED ("an ultraviolet LED of 385 nm, model M385L2 from ThorLabs", p. 2) e **não dá a
   largura de banda**, nem no texto principal nem no suplemento.
 - Tentei a página de catálogo arquivada da Thorlabs para o M385L2 (https://www.thorlabs.com/catalogpages/Obsolete/2023/M385L2.pdf)
