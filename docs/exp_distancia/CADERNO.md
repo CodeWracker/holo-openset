@@ -606,3 +606,49 @@ escreveu as primeiras linhas de `data/_check/realistic/holograms.npy`. A gravaç
 figura (em GPU) é idêntica pixel a pixel à linha 1 escrita pelo `generate()` neste build (0 pixels diferentes), e essa
 linha difere do publicado nos mesmos 0,0259 % (máx. 7 níveis); nas primeiras 250 imagens, 0,0187 % dos pixels diferem
 do publicado, e todas as 250 têm alguma diferença. Isso confirma que a diferença é do build, não do script.
+
+---
+
+## 2026-11-13, 22:25 — Congelamento das escolhas da Etapa 2 (antes de qualquer método novo ver o teste)
+
+Revisão da varredura e das políticas pelo responsável, e registro em `reconstruct.FOCUS` (commit deste registro).
+
+**Um empate que o pré-registro não previa.** Na regra 1 (`afc`), três candidatos empatam no custo (1,125) e no
+desempate previsto (pior p90 nos conjuntos limpos, 105,7 µm): `r10b-b4-tog`, `r10b-b4-m` e `r10b-b4-mf`. Nos dois
+conjuntos limpos os três acham exatamente as mesmas distâncias: com o feixe da bancada a máscara de 20 % não exclui
+nada. O `focus select` ficou com `r10b-b4-m` só por ordem alfabética, o que não é regra. Decisão, tomada sem nenhum
+dado de teste: entre candidatos indistinguíveis pelas regras, fica o que faz menos operações, `r10b-b4-tog` (sem
+máscara, o critério do paper). É também o candidato que a regra 3 (`afx`) escolheu sozinha. Consequência prevista no
+pré-registro: `afc` e `afx` coincidem, e **vão ao teste duas buscas, não três**.
+
+| nome | busca | reconstruções | custo | o que é |
+|---|---|---|---|---|
+| `afc` (= `afx`) | `r10b-b4-tog`: ±10 % de z₀, 7 + 11 candidatos, amplitude reduzida 4×, ToG | 18 | 1,125 | a mais barata que acha a distância, e a mais barata que resiste ao ruído |
+| `afr` | `r15b-b2-s2`: ±15 %, 15 + 21, reduzida 2×, campo suavizado σ = 2 px | 36 | 9 | a de menos falhas grosseiras sob ruído |
+| `afs` | busca cega do paper, uma vez por sessão, k = 1 | 114 / n | — | regra do k: k = 3 não reduz as 6 sessões com falha |
+| `afM` | busca cega do paper a cada M = 10 imagens | 114 / 10 | — | regra do M: M = 20 cai 0,0105 abaixo de M = 1 |
+| `afsc` | a busca `afc` uma vez por sessão, k = 1 | 18 / n | — | o `afsx` do pré-registro, com o nome da busca que ficou |
+
+**O que a varredura mostra, só na validação** (falha grosseira em `realistic` / `frame_5` / `fullwell_500` /
+`beam_narrow`): busca cega do paper 1,3 / 2,4 / 70,6 / 49,9 %. Só estreitar a faixa não resolve o ruído (`r10b-b1-tog`:
+3,1 / 3,3 / 66,9 / 21,9 %). Só reduzir a amplitude 4× resolve o ruído e parte do feixe (`blind-b4-tog`: 0,7 / 0,7 /
+1,0 / 12,1 %); só suavizar também (`blind-b1-s2`: 1,0 / 0,9 / 0,7 / 5,7 %). As duas coisas juntas resolvem tudo
+(`r10b-b4-tog`: 0,9 / 0,7 / 0,9 / 0,9 %). Reduzir 8× é demais numa janela de 640 px (5–11 % de falhas). A máscara do
+blank frame não foi o que fez diferença. Isto é validação: o teste dirá se se sustenta.
+
+**Matriz de teste, como declarada no pré-registro, com os nomes que ficaram:** conjuntos `base`, `session_2`,
+`session_5`, `fullwell_500`, `beam_narrow`, `frame_2`, `frame_5`, `walk_05`; fluxos `rec_z0`, `rec_af`, `rec_afs`,
+`rec_afsc`, `rec_afM`, `rec_afc`, `rec_afr`, `prop`, `bank_jit`, `bank_wide`, `bank_w2` (onze: `rec_afx` saiu por
+coincidir com `rec_afc`). Piloto na r1, depois r2–r5. Checagem do modelo próprio: `rec_afc`, r1.
+
+**Quadros inteiros, declarado agora, antes de rodar:** E1 (os 40 quadros do paper) e E2 (`full_frames_frame5`) com
+`rec_z0`, `rec_af`, `rec_afs`, `rec_afsc`, `rec_afc`, `rec_afr`, `prop`, `bank_jit`, `bank_wide`, `bank_w2` (`rec_afM`
+não entra: com 5 quadros por sessão, refocar a cada 10 é o mesmo que `rec_afs`). E4 (inclinação) com os seis fluxos
+do protocolo (`rec_z0`, `rec_af`, `rec_edfw`, `bank_jit`, `bank_wide`, `bank_w2`) mais `rec_afc`, que passou a ser o
+autofocus de referência do estudo.
+
+**n\*, declarado agora:** a conta principal usa o front end completo de cada fluxo, como manda a regra 8.4 do
+protocolo: convencional = flat field + busca / n + uma back-propagation + canais; stack = a camada. A fórmula
+simplificada da Seção 3 do protocolo, T_af / (T_stack − T_backprop), que não cobra do fluxo convencional o flat
+field e os canais, é reportada ao lado.
+

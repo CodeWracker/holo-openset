@@ -11,3 +11,7 @@ done
 # The environment of the paper (requirements-lock.txt), when it is not the active one.
 if [ -x "$PWD/../.envbuild/holo-openset/bin/python" ]; then export PATH=$PWD/../.envbuild/holo-openset/bin:$PATH; fi
 export PYTHONUNBUFFERED=1
+# The package is not installed in that environment: scripts import it from the repository.
+export PYTHONPATH=$PWD${PYTHONPATH:+:$PYTHONPATH}
+# reproduce check and pytest compare the tables of the PAPER: run them with HOLO_RESULTS unset
+#   env -u HOLO_RESULTS python -m pytest -q;  env -u HOLO_RESULTS python -m holo_openset reproduce check
