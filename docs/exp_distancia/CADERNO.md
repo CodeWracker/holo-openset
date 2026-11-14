@@ -1226,3 +1226,44 @@ Escala fixa no lugar do percentil dos canais (a revisão a trata como detalhe de
 relatório), "busca barata a cada M quadros", `full_frames` em CPU, e o reempacotamento do Zenodo (as variantes novas e
 os caches de `rec_afc` mudam o registro de dados; fica para o orientador decidir quando).
 
+
+## 2026-11-14 — A1 (pré-registro): `frame_5` × `session_5`
+
+Subagente "análise" (tarefas A1–A7 do `TODO.md`). Esta parte foi escrita **antes** de rodar qualquer coisa sobre as
+métricas por imagem ou por sessão. A análise é descritiva: nenhum fluxo, limiar, hiperparâmetro ou conjunto é escolhido
+com ela. O que já tinha sido visto antes de escrever: a Tabela 1 do relatório (as médias de `frame_5` e `session_5`) e
+os 8 valores de z do `sessions.csv` das duas versões (dado de desenho, não resultado).
+
+**Como z é sorteado no simulador** (`sim/scene.py::session`, `sim/generate.py::frame_session`): z da sessão =
+z₀ (1 + `session_z_std` · g), g ~ N(0, 1) de `random.Random(seed · 1000 + s)`, sem corte. No base `session_z_std` =
+0,005; em `session_5` é 0,05 com o **mesmo** g (o desvio de `session_5` é exatamente 10× o do base em cada sessão).
+Em `frame_5` a sessão fica a do base e cada imagem recebe z_sessão (1 + 0,05 · h), h ~ N(0, 1) de
+`random.Random(semente da cena + 800_000_000)`, sem corte. Logo o desvio em relação a z₀ tem desvio padrão nominal
+√(0,05² + 0,005²) ≈ 5,02 % em `frame_5` e 5 % em `session_5`.
+
+**O que será calculado** (script `scripts/exp_distancia/frame_vs_session.py`, GPU 5, saída
+`results_exp_distancia/frame_vs_session.csv` e `frame_vs_session_mc.csv`):
+
+1. Os 8 z de teste de `session_5` e do base: desvio relativo a z₀ = 19,25 mm e ao z da sessão do base; média de |Δ| e
+   rms, contra a expectativa de N(0, 5 %) (rms 5 %, média de |Δ| = 5 % · √(2/π) ≈ 3,99 %). Em `frame_5` (800 imagens de
+   teste): o mesmo por imagem, e o σ medido do desvio em relação ao z da sessão.
+2. Métricas por subconjunto de consultas de teste, com o código do protocolo estrito: embeddings como em
+   `experiments/robustness.py` (galeria e limiar do base, modelo do base, caixas verdadeiras), limiar de
+   `experiments/common.strict`, pontuação com `evaluate.nn_scores` e métricas com `evaluate.open_set_metrics` aplicada
+   ao subconjunto (acurácia nas classes vistas, rejeição das não vistas, F1 open-set, AUROC). Fluxos `rec_z0`, `prop`,
+   `bank_jit` (e `rec_af`, `rec_afc` como controle), r1–r5, conjuntos `base`, `session_5`, `frame_5`. Conferência: no
+   teste inteiro os valores têm de ser os de `robustness.csv`, e por sessão os de `robustness_sessions.csv`.
+3. Subconjuntos: por sessão (`base`, `session_5`, `frame_5`); em `frame_5`, por faixa do desvio da imagem em relação a
+   z₀, |Δ| = |z/z₀ − 1|, com as faixas fixadas aqui: 0–1, 1–2, 2–3, 3–4, 4–6, 6–8, 8–10, 10–12 e > 12 % (as três últimas
+   separadas porque três sessões de `session_5` estão entre 10 e 12 %). Secundário: as mesmas faixas com sinal (z menor
+   ou maior que z₀).
+4. Previsão de `session_5` a partir de `frame_5`: para cada uma das 8 sessões, 100 imagens sorteadas com reposição entre
+   as imagens de `frame_5` da faixa do |Δ| daquela sessão; as 800 juntas passam pelo `open_set_metrics`; 200 sorteios
+   por repetição (semente fixa 20261114); média sobre r1–r5. Secundário: a mesma previsão com as faixas com sinal.
+5. Monte Carlo: 1000 sorteios de 8 desvios de N(0, 5 %) (semente 20261115), cada um previsto como no item 4 com um
+   sorteio de imagens por repetição, média sobre r1–r5. Reporto a média e os percentis da distribuição, o percentil da
+   previsão para os 8 desvios reais e o percentil do `session_5` medido; e, só com os z, o percentil do rms e da média
+   de |Δ| dos 8 desvios reais entre sorteios de 8 de N(0, 5 %).
+6. Leitura: se o `session_5` medido estiver perto da previsão para os 8 desvios reais e essa previsão estiver na cauda
+   desfavorável do Monte Carlo, a explicação é o sorteio; se o medido ficar longe da previsão, é outra coisa (sessão,
+   limiar, estrutura por sessão), e a comparação por sessão com o base diz qual.
