@@ -780,3 +780,56 @@ amostragem do kernel do gerador original; é uma observação técnica sobre uma
 Escrevi os cabeçalhos das entradas Z6.3 a Z8.3 com horas adiantadas em relação ao relógio (14:00, 14:15, 14:35).
 Corrigi para a hora real dos commits: Z6.6, Z6.1 e Z6.2 às 13:49 (`07ffc03`); Z6.3 a Z6.5 às 13:51 (`5bdec63`); Z8
 às 13:54 (`6d2914f`). As referências "≈ 13:50" e "≈ 14:10" às atualizações do orientador vêm de `PROTOCOLO_Z.md`.
+
+## 2026-11-14, 15:30 — Z9: a distância do CBMS 2024 e o holograma a 1 mm por tamanho do objeto (responsável)
+
+Pergunta do orientador (≈ 15:20), depois de ver o Checkpoint Z: "no artigo 2024 do CBMS da Manuela, qual que era a
+distância focal do que tinha? Era 1 milímetro, 2 milímetros ou 19 milímetros? Porque pelo que eu vi ali, 1 milímetro
+literalmente não tem nenhuma perturbação de holografia. E aí [...] destrói completamente o artigo, né? Não podemos
+continuar com isso. Confirma pra mim, por favor." Não é aprovação do checkpoint; a parte A segue suspensa.
+
+**A distância do CBMS 2024: 19,25 mm.**
+- O gerador do conjunto do CBMS 2024 está em `microscopia2/data/cbms2024/matlab_generation/`. `run_z.m`, linha 9:
+  `CV_FR_focus(im, 1.67e-6, 1.67e-6, -385e-9 * 50000, 385e-9)`, isto é, z = 50 000 λ = 19,25 mm, pixel 1,67 µm,
+  385 nm. Os dois arquivos têm o mesmo md5 das cópias de `OLD-WRONG-projeto-e-testes` (`a4985664…`, `baf1f123…`,
+  conferido de novo hoje). São 200 imagens 640 × 640 (`original/`, `holograms/`), campo de 1,07 mm, propagação
+  coerente ideal, sem fonte, sem pixel, sem ruído.
+- O texto do artigo: só a p. 364 está acessível (`referencias/c/rockembach2024/`). Ela diz "a dataset generated from
+  synthetic interference patterns produced by the Fresnel Diffraction Method [...] 26 classes, resulting in a total of
+  520 samples after the data augmentation procedure" e não dá a distância. As pp. 365–369 não foram lidas: o que o
+  texto reporta, se reporta, não foi conferido. O valor vem do código.
+- O nosso paper já diz isso (`sections/03b-bench.tex`, linha 8): "z0 = 5·10⁴ λ = 19.25 mm, the parameters also used to
+  generate the public dataset of interference patterns of [rockembach]".
+
+**"A 1 mm não tem perturbação de holografia": vale para a letra da figura (129 µm), não para objetos pequenos.**
+A figura que ele viu (`img/pattern_examples.png`) é a letra mediana do conjunto base, 77 px = 129 µm. O que decide é o
+número de Fresnel, N_F = (lado/2)² / (λ z): acima de alguns, o holograma é a sombra do objeto com uma franja fina na
+borda; abaixo de 1, o padrão se espalha para muito além do objeto. Figura nova, `img/pattern_size_at_1mm.png`
+(`scripts/exp_resolucao/fig_size_at_1mm.py`; uma letra F absorvente, fonte da bancada; os de 1 mm com o campo numa
+grade 4× mais fina que o pixel e o pixel como média 4 × 4):
+
+| painel | objeto | z | N_F | padrão fora do crop |
+|---|---|---|---|---|
+| (a) | 129 µm (77 px) | 19,25 mm | 0,56 | 49 % |
+| (b) | 129 µm (77 px) | 1 mm | 10,7 | 2 % |
+| (c) | 47 µm (28 px) | 1 mm | 1,42 | 27 % |
+| (d) | 25 µm (15 px) | 1 mm | 0,41 | 60 % |
+| (e) | 15 µm (9 px) | 1 mm | 0,15 | 90 % |
+
+- (d) é visualmente o mesmo padrão de (a): pela semelhança de Fresnel, encolher o objeto por s e a distância por s²
+  dá o mesmo padrão encolhido por s. A letra de 129 µm a 19,25 mm equivale a uma de 29 µm a 1 mm (25 µm a 0,7 mm).
+  A faixa do base (p5–p95: 95–172 µm) a 19,25 mm equivale a 22–39 µm a 1 mm.
+- A diferença entre (a) e (d) não é o padrão, é a amostragem: em (d) o mesmo padrão ocupa 4,4× menos pixels (o
+  objeto tem 15 px em vez de 77), e as franjas externas chegam ao limite do pixel de 1,67 µm.
+- Os valores batem com a tabela do Z6.2 (grade nativa, média de quatro letras): 51 %, 2 %, 32 %, 57 %.
+- Não é evidência de reconhecimento: é só o padrão de uma letra isolada, sem ruído nem poeira. Nenhum modelo foi
+  treinado nem avaliado com objetos de 15–30 µm a 1 mm.
+
+**Leitura (minha).** O mecanismo do paper (o padrão sai do crop, o crop falha, a camada sobre o holograma inteiro
+recupera) depende de N_F ≲ 1, não de z = 19,25 mm. Na bancada real (z ≈ 0,7–1 mm) esse regime é o de objetos de
+≈ 15–40 µm, a escala de células, que é o uso da bancada. O que não se sustenta é a combinação do conjunto base, letras
+de 95–172 µm a 19,25 mm, apresentada como a geometria da bancada. O que já está medido a favor: `small_near` (letras
+de 47 µm a 2 mm, N_F 0,70, 49 % fora) repete o resultado central (F1 0,793 / 0,972 / 0,974 em crops / camada /
+reconstrução). O que falta medir: objetos de ≈ 25 µm a 0,7–1 mm, com o simulador sobreamostrado. É o piloto da opção 2
+do Checkpoint Z, e responde à decisão (c) daquele documento: o tamanho tem de ser o de células, não o das letras do
+base.

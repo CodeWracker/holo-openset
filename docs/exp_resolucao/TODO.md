@@ -316,4 +316,14 @@ errado".
   Pendências paralelas dele: .RIS de Scopus/ScienceDirect; páginas 365–369 do [11].
   **Não fazer nada da parte A, nem gravar, nem treinar, até a resposta dele.** Parte C: levantamento pronto
   (`LEVANTAMENTO_C.md`); a escrita do Related Work e do parágrafo espera o texto (B) e os .RIS.
+- **2026-11-14, 15:30 — pergunta do orientador depois do Checkpoint Z (NÃO é aprovação).** Ele perguntou qual era a
+  distância do CBMS 2024 (1, 2 ou 19 mm) e disse que, pelo que viu, a 1 mm "não tem nenhuma perturbação de
+  holografia", o que "destrói completamente o artigo". Respondido (caderno, Z9): (i) CBMS 2024 = 19,25 mm, pelo
+  código do gerador (`microscopia2/data/cbms2024/matlab_generation/run_z.m`, md5 igual ao da Manu); o texto do artigo
+  não foi conferido (só temos a p. 364, que não dá o número); (ii) a 1 mm o holograma some só para objetos grandes:
+  quem decide é o número de Fresnel; letra de 129 µm → 2 % fora do crop, 47 µm → 27 %, 25 µm → 60 %, 15 µm → 90 %; a
+  letra do base a 19,25 mm equivale a uma de 29 µm a 1 mm. Figura `img/pattern_size_at_1mm.png`, script
+  `scripts/exp_resolucao/fig_size_at_1mm.py`. Minha leitura: o paper não cai, mas o conjunto base não é a geometria
+  da bancada; o teste que decide é o piloto da opção 2 com objetos de ≈ 15–40 µm a 0,7–1 mm (simulador
+  sobreamostrado). **Continua PARADO: sem aprovação do Checkpoint Z, nada de gravar nem treinar.**
 
