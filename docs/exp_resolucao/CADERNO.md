@@ -155,3 +155,28 @@ Regra escrita agora, antes de abrir os hologramas; nada dela foi ajustado depois
   protocolo e o k_thr = 2 pré-registrado). Para os conjuntos pequenos, a regra dá b = 4 a 19,25 mm e b = 1 a 2 mm
   (não rodam no piloto).
 - Até este momento nenhum conjunto reduzido existe e nenhuma avaliação de teste foi feita nesta etapa.
+
+## 2026-11-14, 13:20 — Parte A suspensa por ordem do orientador (piloto)
+
+- Ordem recebida do responsável às 13:18 (instrução do orientador em `PROTOCOLO_Z.md`): segurar a parte A até
+  fechar o z da bancada simulada. Às 13:18:51 matei a sessão `tmux` `res_build`
+  (`scripts/exp_resolucao/build_sets.sh 5`, GPU 5); nenhum processo meu ficou rodando.
+- O que estava feito: T0 (teste pareado do enrollment), T2 (b pelo modelo e às cegas; b = 4 registrado às 13:12)
+  e o comando `reduce` com o pixel efetivo no código (commit `eb5dedf`; 7 testes novos em
+  `tests/test_resolution.py`, incluindo α igual em b = 1, 2, 4 num holograma sintético).
+- Conjuntos reduzidos no disco:
+  - completos: `data/realistic_b1` (com `aux/r1`; 2,8 GB) e `data/variants_val_b1/{fullwell_500,beam_narrow}`
+    (552 MB), todos com b = 1. Conferência byte a byte (`python scripts/exp_resolucao/check_b1.py`, 5 s, CPU):
+    holograms, backgrounds, annotations, metadata, sessions, dust e `aux/r1_*` idênticos aos originais; o
+    `physics.json` difere só pelas chaves novas `pixel` e `reduction`. O cache `rec_z0.npy` de `realistic_b1` não foi
+    construído (a conferência acusa "missing" para ele).
+  - parcial: `data/realistic_b2` (só `holograms.npy`, interrompido no meio). Apaguei esse diretório; fui eu que o
+    criei nesta etapa. Nenhum outro arquivo foi apagado.
+- O que não foi feito: as conferências (a) com os caches e os números de r1, (b) α nos dados reais em cada b e
+  (c) figura das caixas; toda a T4 (nenhum conjunto com b = 2, 4, 8, nenhum treino, nenhum modelo em
+  `models_exp_resolucao/`). Os scripts `alpha_b.py`, `train_pilot.sh` e `build_sets.sh` estão commitados
+  (`02efd17`) como estavam, sem ter rodado (exceto o início de `build_sets.sh` descrito acima).
+- **Nenhum split de teste de conjunto reduzido foi avaliado** (nenhuma avaliação de nenhum tipo rodou nesta etapa:
+  `results_exp_resolucao/` só tem `enroll_paired.csv`, `envelope_*.csv` e `spectrum_*.csv`; não existe
+  `results_exp_resolucao/eval/`). O T0 leu resultados de teste já existentes do paper, na resolução cheia.
+- Estado da árvore: `env -u HOLO_RESULTS python -m pytest -q` → 44 passed; `reproduce check` → 13/13.
