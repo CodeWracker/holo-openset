@@ -296,3 +296,185 @@ Nyquist): até onde chegam as franjas que o sensor ainda registra, eq. `eq:sprea
   `scripts/exp_resolucao/envelope_configs_example.csv` (bancada, bancada a 2 mm, laser).
 - Testes: `tests/test_resolution.py` (2 novos: o envelope da bancada é o do painel (b) da figura; o corte se move no
   sentido certo com D e a banda, e a subamostragem é marcada). `pytest` 46 passed, `reproduce check` 13/13.
+
+## 2026-11-14, 13:50 — Z6.6: o que o autor da bancada disse sobre a distância (piloto)
+
+Comunicação pessoal do prof. Sobieranski ao orientador, relatada por este em 2026-11-14 (≈ 13:50; texto em
+`PROTOCOLO_Z.md`, sem página): na bancada, a lamínula fica quase encostada no sensor e só não encosta porque o sensor
+aquece. Então a distância amostra–sensor é da ordem de 1 mm, não 19,25 mm. O mesmo aquecimento torna plausível que z
+derive durante uma sessão (dilatação e acomodação da montagem com a temperatura). É isso que o conjunto `walk_05`
+simula: um passeio aleatório de 0,5 % de z por imagem dentro da sessão (cerca de 5 % depois de 100 imagens). A
+1 mm, 0,5 % são 5 µm por imagem.
+
+## 2026-11-14, 13:50 — Z6.1: o que os três conjuntos que já existem dizem (piloto)
+
+- Onde: container, CPU. `python scripts/exp_resolucao/small_preview.py` (1 s). Lê só
+  `results/eval/{realistic,small_z0,small_near}/<fluxo>_r{1..5}.json` (do paper; os modelos de cada conjunto pequeno
+  foram treinados nele mesmo, **sem cenas auxiliares** (`--no-aux` na fila), o base com elas). Saídas:
+  `results_exp_resolucao/small_preview.csv` (média, dp, mín, máx e cada repetição) e `small_preview_gaps.csv`
+  (diferenças pareadas por repetição). Fluxos comuns aos três conjuntos: os 10 abaixo.
+
+F1 open-set (média de 5 repetições, desvio-padrão):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm |
+|---|---|---|---|
+| `raw` | 0,781 ± 0,004 | 0,050 ± 0,004 | 0,793 ± 0,006 |
+| `learned` | 0,928 ± 0,009 | 0,795 ± 0,043 | 0,944 ± 0,010 |
+| `complex` | 0,934 ± 0,015 | 0,802 ± 0,032 | 0,955 ± 0,013 |
+| `wiener` | 0,910 ± 0,014 | 0,695 ± 0,011 | 0,966 ± 0,007 |
+| `prop` | 0,963 ± 0,004 | 0,845 ± 0,018 | 0,972 ± 0,006 |
+| `bank_jit` | 0,963 ± 0,005 | 0,827 ± 0,010 | 0,977 ± 0,002 |
+| `bank_w3` | 0,962 ± 0,006 | 0,774 ± 0,020 | 0,972 ± 0,006 |
+| `rec_z0` | 0,964 ± 0,007 | 0,842 ± 0,009 | 0,974 ± 0,004 |
+| `rec_af` | 0,964 ± 0,005 | 0,802 ± 0,007 | 0,977 ± 0,003 |
+| `rec_twin` | 0,963 ± 0,005 | 0,795 ± 0,005 | 0,976 ± 0,002 |
+
+rejeição de desconhecidos (média de 5 repetições, desvio-padrão):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm |
+|---|---|---|---|
+| `raw` | 0,104 ± 0,019 | 0,003 ± 0,002 | 0,153 ± 0,041 |
+| `learned` | 0,633 ± 0,104 | 0,241 ± 0,107 | 0,773 ± 0,109 |
+| `complex` | 0,713 ± 0,089 | 0,217 ± 0,100 | 0,843 ± 0,114 |
+| `wiener` | 0,517 ± 0,131 | 0,042 ± 0,015 | 0,906 ± 0,057 |
+| `prop` | 0,924 ± 0,061 | 0,333 ± 0,128 | 0,963 ± 0,050 |
+| `bank_jit` | 0,922 ± 0,038 | 0,254 ± 0,065 | 0,986 ± 0,016 |
+| `bank_w3` | 0,893 ± 0,050 | 0,173 ± 0,097 | 0,956 ± 0,044 |
+| `rec_z0` | 0,923 ± 0,055 | 0,302 ± 0,088 | 0,969 ± 0,034 |
+| `rec_af` | 0,913 ± 0,043 | 0,149 ± 0,041 | 0,988 ± 0,018 |
+| `rec_twin` | 0,922 ± 0,039 | 0,133 ± 0,038 | 0,979 ± 0,022 |
+
+acerto nas conhecidas (média de 5 repetições, desvio-padrão):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm |
+|---|---|---|---|
+| `raw` | 0,876 ± 0,005 | 0,058 ± 0,004 | 0,883 ± 0,006 |
+| `learned` | 0,950 ± 0,004 | 0,867 ± 0,029 | 0,952 ± 0,004 |
+| `complex` | 0,949 ± 0,006 | 0,879 ± 0,022 | 0,956 ± 0,001 |
+| `wiener` | 0,948 ± 0,003 | 0,794 ± 0,008 | 0,960 ± 0,002 |
+| `prop` | 0,951 ± 0,005 | 0,908 ± 0,006 | 0,959 ± 0,002 |
+| `bank_jit` | 0,952 ± 0,003 | 0,905 ± 0,005 | 0,963 ± 0,003 |
+| `bank_w3` | 0,955 ± 0,003 | 0,862 ± 0,008 | 0,960 ± 0,002 |
+| `rec_z0` | 0,953 ± 0,005 | 0,907 ± 0,002 | 0,962 ± 0,002 |
+| `rec_af` | 0,955 ± 0,004 | 0,891 ± 0,003 | 0,962 ± 0,002 |
+| `rec_twin` | 0,952 ± 0,005 | 0,885 ± 0,003 | 0,964 ± 0,004 |
+
+AUROC (média de 5 repetições, desvio-padrão):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm |
+|---|---|---|---|
+| `raw` | 0,829 ± 0,027 | 0,515 ± 0,011 | 0,890 ± 0,014 |
+| `learned` | 0,945 ± 0,016 | 0,880 ± 0,037 | 0,965 ± 0,012 |
+| `complex` | 0,950 ± 0,018 | 0,882 ± 0,023 | 0,969 ± 0,017 |
+| `wiener` | 0,938 ± 0,024 | 0,804 ± 0,020 | 0,982 ± 0,005 |
+| `prop` | 0,983 ± 0,009 | 0,910 ± 0,019 | 0,990 ± 0,006 |
+| `bank_jit` | 0,982 ± 0,007 | 0,905 ± 0,013 | 0,994 ± 0,003 |
+| `bank_w3` | 0,974 ± 0,016 | 0,875 ± 0,018 | 0,989 ± 0,006 |
+| `rec_z0` | 0,978 ± 0,015 | 0,907 ± 0,012 | 0,993 ± 0,004 |
+| `rec_af` | 0,980 ± 0,008 | 0,883 ± 0,013 | 0,994 ± 0,002 |
+| `rec_twin` | 0,982 ± 0,007 | 0,879 ± 0,010 | 0,995 ± 0,003 |
+
+Enrollment (média de 5): nova aceita com k = 5 / k = 20 / todos; rejeição das ausentes (k = 20):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm |
+|---|---|---|---|
+| `raw` | 0,12 / 0,33 / 0,69 / 0,04 | 0,00 / 0,00 / 0,05 / 0,00 | 0,21 / 0,46 / 0,78 / 0,08 |
+| `learned` | 0,35 / 0,63 / 0,87 / 0,60 | 0,28 / 0,49 / 0,74 / 0,13 | 0,32 / 0,63 / 0,89 / 0,79 |
+| `complex` | 0,37 / 0,63 / 0,87 / 0,69 | 0,31 / 0,48 / 0,74 / 0,13 | 0,44 / 0,67 / 0,90 / 0,89 |
+| `wiener` | 0,43 / 0,70 / 0,86 / 0,54 | 0,14 / 0,33 / 0,61 / 0,01 | 0,56 / 0,84 / 0,93 / 0,92 |
+| `prop` | 0,67 / 0,84 / 0,94 / 0,88 | 0,30 / 0,57 / 0,81 / 0,27 | 0,69 / 0,85 / 0,94 / 0,97 |
+| `bank_jit` | 0,65 / 0,86 / 0,94 / 0,92 | 0,37 / 0,57 / 0,80 / 0,18 | 0,60 / 0,85 / 0,94 / 0,98 |
+| `bank_w3` | 0,67 / 0,83 / 0,93 / 0,89 | 0,26 / 0,45 / 0,74 / 0,07 | 0,63 / 0,85 / 0,93 / 0,98 |
+| `rec_z0` | 0,63 / 0,85 / 0,93 / 0,93 | 0,34 / 0,54 / 0,78 / 0,23 | 0,60 / 0,85 / 0,94 / 0,94 |
+| `rec_af` | 0,55 / 0,83 / 0,93 / 0,92 | 0,27 / 0,47 / 0,75 / 0,08 | 0,66 / 0,85 / 0,95 / 0,96 |
+| `rec_twin` | 0,63 / 0,83 / 0,94 / 0,95 | 0,28 / 0,47 / 0,72 / 0,05 | 0,70 / 0,86 / 0,95 / 0,98 |
+
+Diferença pareada de F1 (fluxo − `raw`), média [mín; máx] (repetições com o sinal da média, de 5):
+
+| fluxo | base 19,25 mm | pequenas 19,25 mm | pequenas 2 mm | (−raw) a 2 mm menos na base |
+|---|---|---|---|---|
+| `learned` | +0,147 [+0,135; +0,156] (5) | +0,745 [+0,676; +0,778] (5) | +0,152 [+0,137; +0,169] (5) | +0,005 [-0,009; +0,015] (4) |
+| `complex` | +0,153 [+0,133; +0,180] (5) | +0,753 [+0,699; +0,783] (5) | +0,162 [+0,148; +0,175] (5) | +0,010 [-0,020; +0,027] (3) |
+| `wiener` | +0,129 [+0,103; +0,141] (5) | +0,646 [+0,635; +0,656] (5) | +0,173 [+0,166; +0,185] (5) | +0,043 [+0,026; +0,062] (5) |
+| `prop` | +0,183 [+0,174; +0,193] (5) | +0,795 [+0,774; +0,816] (5) | +0,179 [+0,176; +0,185] (5) | -0,004 [-0,012; +0,003] (3) |
+| `bank_jit` | +0,182 [+0,173; +0,193] (5) | +0,777 [+0,766; +0,788] (5) | +0,184 [+0,179; +0,193] (5) | +0,002 [-0,014; +0,010] (4) |
+| `bank_w3` | +0,181 [+0,170; +0,189] (5) | +0,724 [+0,706; +0,756] (5) | +0,179 [+0,171; +0,187] (5) | -0,002 [-0,007; +0,003] (3) |
+| `rec_z0` | +0,183 [+0,167; +0,189] (5) | +0,792 [+0,783; +0,803] (5) | +0,181 [+0,175; +0,189] (5) | -0,002 [-0,009; +0,011] (3) |
+| `rec_af` | +0,183 [+0,171; +0,190] (5) | +0,753 [+0,749; +0,762] (5) | +0,184 [+0,173; +0,192] (5) | +0,000 [-0,007; +0,011] (2) |
+| `rec_twin` | +0,183 [+0,172; +0,191] (5) | +0,745 [+0,740; +0,753] (5) | +0,184 [+0,176; +0,188] (5) | +0,001 [-0,010; +0,013] (2) |
+
+- O que os números dizem: nos três conjuntos, todo fluxo ganha de `raw` em F1 nas 5 repetições. A vantagem das
+  camadas e da reconstrução sobre os crops é de ≈ 0,18 tanto no base a 19,25 mm quanto nas letras pequenas a 2 mm
+  (`prop` − `raw`: +0,183 e +0,179; a diferença entre os dois conjuntos, por repetição, é −0,004 [−0,012; +0,003],
+  3 de 5). Nas letras pequenas a 19,25 mm, `raw` não funciona (F1 0,05) e a vantagem é ≈ 0,8.
+- O que o `small_near` pode e não pode dizer sobre um base a ≈ 1 mm. As letras pequenas a 2 mm (caixa mediana 28 px,
+  47 µm) têm número de Fresnel ≈ 0,7, próximo do base atual a 19,25 mm (caixa mediana 77 px, N_F ≈ 0,56; ver Z6.2).
+  Também guardam no crop uma fração do padrão próxima da do base atual (0,51 contra 0,49). Ou seja, o `small_near`
+  é o análogo, pelo Fresnel, do base **atual**, não de um base a 1 mm. As letras do base a 1 mm teriam N_F de 6 a 27 e
+  guardariam 94–99 % do padrão no crop, um regime que nenhum conjunto existente cobre. O `small_near` mostra que a
+  vantagem sobre os crops não é exclusiva de 19,25 mm. Não mostra o que acontece quando o padrão quase não sai do
+  crop. Ele difere do base também no tamanho (o crop de 64 × 64 amplia letras de 28 px), nas cenas auxiliares e no
+  pinhole quase irrelevante a 2 mm.
+
+## 2026-11-14, 13:50 — Z6.2: quanto do padrão fica dentro do crop, contra z (piloto)
+
+- Definição: a mesma do painel (c) de `fig_fresnel` (`holo_openset/paper/figures.py`, linhas 298–316), que grava
+  `crop_energy_bench` = 0,4496 e `crop_energy_coherent` = 0,3448 em `results/figure_numbers.json` (macros
+  `\CropEnergyBench`, `\CropEnergyCoherent`, `paper/tables.py`, linhas 159–160). Uma letra absorvente (a = 0,6, sem
+  fase) no centro de uma janela 2048 × 2048 (margem 1024, sem poeira nem ruído, `_single`). A energia do padrão é
+  (I − 1)², e a fração é a energia dentro de um quadrado de lado max(caixa) × 1,25 sobre a energia na janela inteira.
+  "Coerente" no paper = banda 0, pinhole 0, sem pixel; aqui chamo de "fonte pontual". **Conferência: com a letra do
+  paper ('F', DejaVuSans, corpo 100, caixa de 73 px) a 19,25 mm, o script dá 0,4495920 e 0,3448057, iguais ao
+  `figure_numbers.json`.**
+- Tamanhos: lados de caixa (max(largura, altura), `annotations.csv`, todos os splits). No base, mín 46 e máx 140 px,
+  com p1/p5/p25/p50/p75/p95/p99 = 53/57/67/77/88/103/114 px. Nos dois conjuntos pequenos (iguais), mín 11 e máx 59 px,
+  com 14/15/21/28/35/42/47 px. Usei p5, p50 e p95 de cada um. Cada tamanho com 4 letras (F, A, O, W; DejaVuSans,
+  sem rotação), no corpo cujo lado de caixa é o alvo.
+- Onde: GPU 5. `python scripts/exp_resolucao/pattern_in_crop.py --device cuda:5` (41 s). Saídas:
+  `results_exp_resolucao/pattern_in_crop_z.csv` (por letra; inclui a margem que seria preciso para guardar 50 % e
+  90 %), `pattern_in_crop_z_summary.csv` e as figuras `docs/exp_resolucao/img/pattern_in_crop_z.png` e
+  `pattern_examples.png`.
+
+Fração do padrão dentro do crop (caixa + 25 %), fonte da bancada (10 nm, pinhole de 100 µm, pixel); média das 4 letras [mín; máx]; entre parênteses o número de Fresnel:
+
+| tamanho (lado da caixa) | 0,7 mm | 1 mm | 1,5 mm | 2 mm | 5 mm | 19,25 mm |
+|---|---|---|---|---|---|---|
+| small p5 (15 px) | 0,50 [0,47; 0,53] (0,58) | 0,43 [0,37; 0,48] (0,41) | 0,35 [0,27; 0,39] (0,27) | 0,24 [0,18; 0,27] (0,2) | 0,02 [0,02; 0,03] (0,081) | 0,00 [0,00; 0,00] (0,021) |
+| small p50 (28 px) | 0,79 [0,74; 0,82] (2) | 0,68 [0,64; 0,71] (1,4) | 0,58 [0,52; 0,62] (0,93) | 0,51 [0,51; 0,52] (0,7) | 0,34 [0,28; 0,39] (0,28) | 0,02 [0,01; 0,02] (0,072) |
+| small p95 (42 px) | 0,93 [0,92; 0,95] (4,6) | 0,87 [0,83; 0,91] (3,2) | 0,80 [0,75; 0,83] (2,1) | 0,72 [0,70; 0,74] (1,6) | 0,49 [0,48; 0,50] (0,64) | 0,19 [0,16; 0,22] (0,17) |
+| base p5 (57 px) | 0,97 [0,97; 0,98] (8,4) | 0,95 [0,94; 0,96] (5,9) | 0,90 [0,88; 0,94] (3,9) | 0,85 [0,80; 0,89] (2,9) | 0,63 [0,56; 0,67] (1,2) | 0,41 [0,35; 0,47] (0,31) |
+| base p50 (77 px) | 0,99 [0,98; 0,99] (15) | 0,98 [0,97; 0,98] (11) | 0,96 [0,95; 0,97] (7,2) | 0,94 [0,93; 0,96] (5,4) | 0,80 [0,75; 0,83] (2,1) | 0,49 [0,46; 0,51] (0,56) |
+| base p95 (103 px) | 0,99 [0,99; 1,00] (27) | 0,99 [0,98; 0,99] (19) | 0,98 [0,98; 0,98] (13) | 0,97 [0,96; 0,98] (9,6) | 0,89 [0,86; 0,93] (3,8) | 0,61 [0,53; 0,66] (1) |
+
+Fração do padrão dentro do crop (caixa + 25 %), fonte pontual monocromática, sem pixel; média das 4 letras [mín; máx]; entre parênteses o número de Fresnel:
+
+| tamanho (lado da caixa) | 0,7 mm | 1 mm | 1,5 mm | 2 mm | 5 mm | 19,25 mm |
+|---|---|---|---|---|---|---|
+| small p5 (15 px) | 0,45 [0,42; 0,48] (0,58) | 0,37 [0,32; 0,42] (0,41) | 0,29 [0,22; 0,32] (0,27) | 0,19 [0,14; 0,23] (0,2) | 0,01 [0,01; 0,02] (0,081) | 0,00 [0,00; 0,00] (0,021) |
+| small p50 (28 px) | 0,77 [0,71; 0,80] (2) | 0,65 [0,61; 0,67] (1,4) | 0,54 [0,48; 0,58] (0,93) | 0,47 [0,46; 0,48] (0,7) | 0,27 [0,22; 0,29] (0,28) | 0,01 [0,01; 0,01] (0,072) |
+| small p95 (42 px) | 0,91 [0,90; 0,94] (4,6) | 0,84 [0,79; 0,89] (3,2) | 0,77 [0,71; 0,79] (2,1) | 0,68 [0,66; 0,70] (1,6) | 0,43 [0,41; 0,44] (0,64) | 0,11 [0,09; 0,13] (0,17) |
+| base p5 (57 px) | 0,96 [0,96; 0,97] (8,4) | 0,94 [0,93; 0,95] (5,9) | 0,88 [0,85; 0,91] (3,9) | 0,82 [0,76; 0,86] (2,9) | 0,57 [0,52; 0,62] (1,2) | 0,28 [0,24; 0,30] (0,31) |
+| base p50 (77 px) | 0,98 [0,98; 0,99] (15) | 0,97 [0,96; 0,97] (11) | 0,94 [0,94; 0,95] (7,2) | 0,92 [0,91; 0,93] (5,4) | 0,75 [0,69; 0,78] (2,1) | 0,38 [0,37; 0,41] (0,56) |
+| base p95 (103 px) | 0,99 [0,99; 0,99] (27) | 0,98 [0,98; 0,99] (19) | 0,97 [0,97; 0,97] (13) | 0,95 [0,95; 0,96] (9,6) | 0,85 [0,81; 0,89] (3,8) | 0,52 [0,45; 0,57] (1) |
+
+- Legenda de `pattern_in_crop_z.png`: fração da energia do padrão de uma letra isolada que cai dentro do crop do
+  protocolo (a caixa da letra mais 25 % de margem), no eixo vertical, contra a distância amostra–sensor em escala log
+  (0,7 a 19,25 mm), no horizontal. Uma linha por tamanho de caixa: azuis para as letras pequenas (p5, p50, p95: 15,
+  28, 42 px) e laranjas para o base (57, 77, 103 px). Cada linha é a média de 4 letras (F, A, O, W), e a faixa
+  clara vai do mínimo ao máximo delas. Pontilhado: 50 %; tracejado: 90 %. (a) com a fonte da bancada; (b) com uma
+  fonte pontual monocromática e sem a abertura do pixel, o que separa a geometria (difração) do envelope.
+- Legenda de `pattern_examples.png`: o holograma da mesma letra 'F' (caixa de 77 px, a mediana do base), com a fonte
+  da bancada, a 19,25, 2 e 1 mm, recorte central de 400 × 400 px. Linha cheia: a caixa; tracejada: o crop com 25 %
+  de margem.
+- **Dito sem rodeio:** com o critério "o crop guarda ≥ 90 % do padrão", com a fonte da bancada:
+  - letras do base: a 1,5 mm ou menos, nos três tamanhos (p5: 0,91 a 1,5 mm, mas 0,85 a 2 mm); p50 e p95 já a 2 mm
+    (0,94 e 0,97); p95 fica no limite a 5 mm (0,89);
+  - letras pequenas: só p95 (42 px) a 0,7 mm (0,93);
+  - a 19,25 mm, nenhum tamanho (base 0,41–0,61; pequenas 0–0,20).
+  Com o critério "≥ 50 %": todo o base a 5 mm ou menos (e o p95 também a 19,25 mm: 0,61); as pequenas p50 a 2 mm ou menos; as p5 (15 px) só a 0,7 mm
+  (0,50). **A premissa P2 do paper ("um crop não contém o seu padrão") vale a 19,25 mm para todos os tamanhos e
+  deixa de valer para as letras do base a ≈ 1–2 mm, onde o crop guarda 94–99 % do padrão.**
+- A fonte pontual dá frações um pouco menores (o envelope corta as franjas distantes), mas o mesmo quadro. Então a
+  mudança vem da geometria (número de Fresnel), não da fonte.
+- Limite desta conta: a 0,7–1,5 mm o simulador não representa o conteúdo acima do Nyquist do sensor (Z6.3(a)). Pela
+  conta numa grade mais fina, esse conteúdo é 0,1–0,9 % da energia do padrão e não muda a conclusão.
