@@ -8,7 +8,7 @@ Nothing here is needed to run level 1 of [REPRODUCIBILITY.md](REPRODUCIBILITY.md
 |---|---|---|
 | this repository | code, fonts, class splits, csv and json results, expected tables, checksums | about 10 MB |
 | Zenodo | 245 trained models (embedding networks and localisers); holograms, blank frames and annotations of the base, idealised and small-object sets; 40 full sensor frames | about 20 GB |
-| rebuilt by the pipeline | reconstruction caches, auxiliary training scenes, the 35 robustness sets, PNG copies, YOLO working files | about 310 GB |
+| rebuilt by the pipeline | reconstruction caches, auxiliary training scenes, the 35 robustness sets, PNG copies, YOLO working files | about 315 GB |
 
 The Zenodo record has one tar per set. `python -m holo_openset reproduce download` fetches them, checks them against
 `checksums/zenodo.sha256` and unpacks them into `data/` and `models/`.
@@ -26,6 +26,22 @@ The Zenodo record has one tar per set. `python -m holo_openset reproduce downloa
 
 Each set has `holograms.npy` (uint8), `backgrounds.npy` (blank frame of each session), `annotations.csv`,
 `metadata.csv`, `sessions.csv`, `dust.csv`, `physics.json` and, after `reconstruct`, `rec_<method>.npy`.
+
+## Checksums
+
+`checksums/data.sha256` holds the SHA-256 of the holograms and blank frames of every set, in the format of `sha256sum`
+(`sha256sum -c` reads it; it has no comment lines). `python -m holo_openset reproduce verify-data` compares the files on
+disk with it. The lines of the base, idealised, small-object and full-frame sets and of the 32 older robustness sets are
+those of the published build. The last six lines, `variants/frame_2`, `frame_5` and `walk_05`, were added on
+2026-11-14 for the files recorded on the server of the distance study (`docs/exp_distancia/`): Python 3.11.18,
+PyTorch 2.5.1+cu121, CUDA 12.1, NumPy 1.26.4, NVIDIA H100 80GB HBM3 (driver 580.178.04). On that disk the 32 older
+robustness sets were re-simulated with the same code on this build, and their files no longer match the published
+checksums (rounding moves a few pixels: [REPRODUCIBILITY.md](REPRODUCIBILITY.md), level 3); their lines were not
+rewritten. The narrow-autofocus column of the robustness table was computed on these re-simulated sets (within 0.0023
+of F1 of the published ones where both were evaluated).
+
+The narrow autofocus adds 41 GB of reconstruction caches (`rec_afc.npy` of the base set and of the 35 robustness sets)
+and the three sets of the distance per image 13 GB more (holograms, blank frames and their other four caches).
 
 ## Physics
 
