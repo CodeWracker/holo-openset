@@ -609,7 +609,7 @@ do publicado, e todas as 250 têm alguma diferença. Isso confirma que a diferen
 
 ---
 
-## 2026-11-13, 22:25 — Congelamento das escolhas da Etapa 2 (antes de qualquer método novo ver o teste)
+## 2026-11-13, 22:16 — Congelamento das escolhas da Etapa 2 (antes de qualquer método novo ver o teste)
 
 Revisão da varredura e das políticas pelo responsável, e registro em `reconstruct.FOCUS` (commit deste registro).
 
