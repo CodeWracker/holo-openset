@@ -293,4 +293,11 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   da bateria (a 0,01 de `rec_z0`/`rec_af`, menos onde os dois falham).
   Runs (B1) às 10:52: 35 conjuntos simulados; caches `rec_afc` em andamento (`tmux integ_afc`); faltam robustez 3a,
   oráculo, quadros inteiros, `focus_battery.csv`.
+- 2026-11-14, 11:10: rodada 1 de revisão do LaTeX aplicada no clone (commits novos `26e867b` floats, `6e9a258`
+  prosa, sobre `46e5fdd` e `301e4d4`); compila. Macros que o rascunho usa e ainda faltam: `\DistGrossPct`,
+  `\FullRecAfc{ComputeMs,TotalS,Fone}`, `\Rob{SessionFive,FullwellFiveZeroZero,BeamNarrow,SourceFivecm}RecAfc`;
+  para a nota `\todo` de enrollment: `\PropEnroll{Five,All}`, `\BankJitEnroll{Five,All}` (pedir a B2 na fase 2:
+  macros de enrollment para todos os fluxos). CHECK novo (9): `\RobSourceFivecmRecAfc` tem de ser um colapso
+  (≈ 0,5 ou menos) ou a frase de RQ5 (iv) muda.
+  Falta: B1 terminar → fase 2 de B2 → aplicar o rascunho no repositório real com os assets finais.
 
