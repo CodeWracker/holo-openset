@@ -931,3 +931,40 @@ F1 aberto (`novel_open_macro_f1`), r1:
 
 Maior diferença absoluta 0,0060 (`session_2`). Critério pré-registrado (diferença ≤ 0,01 em todos): satisfeito nos oito.
 
+### E4, quadros inteiros: lâmina inclinada
+
+```bash
+FT="rec_z0 rec_af rec_afc rec_edfw bank_jit bank_wide bank_w2"
+bash scripts/exp_distancia/ff_run.sh cuda:N full_frames_tilt$t $FT      # uma sessão tmux ff_tilt$t por conjunto; log logs/exp_distancia/ff_tilt$t.log
+```
+
+| θ | GPU | início | fim | load início → fim |
+|---|---|---|---|---|
+| 0° | cuda:1 | 22:58:20 | 23:11:42 | 53,6 → 49,3 |
+| 1° | cuda:3 | 22:59:33 | 23:15:53 | 48,5 → 56,1 |
+| 2° | cuda:4 | 23:04:25 | 23:14:18 | 53,0 → 47,3 |
+| 5° | cuda:4 | 23:05:25 | 23:16:20 | 53,9 → 58,0 |
+| 10° | cuda:1 | 23:12:08 | 23:23:32 | 62,5 → 38,0 |
+| 15° | cuda:3 | 23:15:50 | 23:34:07 | 56,1 → 31,3 |
+
+Todas as GPUs com outros usuários (90–100 %) e outros jobs nossos rodando ao mesmo tempo: os tempos por estágio destes
+runs não são o tempo do estudo. Saída `results_exp_distancia/full_frames_tilt{0,1,2,5,10,15}{,_time,_focus}.csv`.
+
+Open-set F1 com as caixas detectadas (`boxes == det`), média ± dp sobre as 5 repetições:
+
+| fluxo | 0° | 1° | 2° | 5° | 10° | 15° |
+|---|---|---|---|---|---|---|
+| rec_z0 | 0,9749 ± 0,0064 | 0,9749 ± 0,0061 | 0,9749 ± 0,0059 | 0,9747 ± 0,0062 | 0,9734 ± 0,0063 | 0,9667 ± 0,0069 |
+| rec_af | 0,9752 ± 0,0052 | 0,9750 ± 0,0052 | 0,9749 ± 0,0053 | 0,9745 ± 0,0054 | 0,9725 ± 0,0054 | 0,9672 ± 0,0060 |
+| rec_afc | 0,9752 ± 0,0053 | 0,9750 ± 0,0052 | 0,9749 ± 0,0054 | 0,9746 ± 0,0053 | 0,9727 ± 0,0058 | 0,9668 ± 0,0060 |
+| rec_edfw | 0,9722 ± 0,0091 | 0,9722 ± 0,0088 | 0,9720 ± 0,0086 | 0,9721 ± 0,0089 | 0,9723 ± 0,0090 | 0,9726 ± 0,0087 |
+| bank_jit | 0,9737 ± 0,0045 | 0,9737 ± 0,0043 | 0,9736 ± 0,0044 | 0,9738 ± 0,0043 | 0,9731 ± 0,0043 | 0,9716 ± 0,0045 |
+| bank_wide | 0,9401 ± 0,0061 | 0,9402 ± 0,0063 | 0,9403 ± 0,0063 | 0,9403 ± 0,0066 | 0,9404 ± 0,0064 | 0,9395 ± 0,0075 |
+| bank_w2 | 0,9436 ± 0,0122 | 0,9440 ± 0,0122 | 0,9441 ± 0,0125 | 0,9442 ± 0,0124 | 0,9434 ± 0,0120 | 0,9429 ± 0,0120 |
+
+Conferência de `full_frames_tilt0` contra `full_frames` (log `logs/exp_distancia/check_tilt0.log`): hologramas com
+120542 de 422092800 pixels diferentes (0,0286 %), diferença máxima 17 níveis, todos os 40 quadros com alguma
+diferença; blank frames (`backgrounds.npy`, float32) diferentes em 0,0414 % dos pixels, diferença máxima 1,875;
+`annotations.csv` e `metadata.csv` idênticos byte a byte (8268 letras). O esperado era cerca de 0,02 % (a diferença
+entre builds já vista no base: 0,0187 % nas primeiras 250 imagens); saiu 0,0286 %.
+
