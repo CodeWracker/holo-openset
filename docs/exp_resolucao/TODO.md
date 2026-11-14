@@ -106,6 +106,19 @@ enrollment (`88b5ed9`), o b pela física (`c7e87e3`, `6781b8c`: b = 4 no base pe
 comando de redução (`eb5dedf`), e estava construindo os conjuntos reduzidos (`tmux res_build`). Nenhum treino e
 nenhuma avaliação de teste de conjunto reduzido. Mandei parar e passar para as tarefas Z1–Z3.
 
+## 4b. ATUALIZAÇÃO (2026-11-14, ≈ 13:50): z é da ordem de 1 mm
+
+Palavras do orientador (na íntegra no fim de `PROTOCOLO_Z.md`): o prof. Sobieranski confirmou que a lamínula fica
+muito próxima do sensor, só não encosta porque o sensor aquece; "z é da ordem de 1 mm, não 19,25 mm". Consequências:
+
+- O levantamento passa a ter como foco **fechar esse número** (lamínula + vidro do sensor + folga), com referências.
+- **A parte A (redução 4×) não se aplica a essa distância (b_max = 1) e fica suspensa.**
+- A proposta do Checkpoint Z inclui também: o que muda se o conjunto base for regravado na distância certa; quais
+  conclusões precisam ser checadas de novo (principalmente o espalhamento do padrão para fora do crop e a vantagem da
+  camada sobre os crops); o custo de regravar e retreinar. `small_near` (2 mm) já dá uma prévia.
+- Anotar: o aquecimento do sensor torna plausível o drift de z durante a sessão (`walk_05`).
+- A decisão de regravar continua sendo dele.
+
 ## 5. Plano
 
 Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqueado/aguardando o orientador.
@@ -120,6 +133,10 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
 - [~] Z4. Levantamento de 8–15 bancadas lensless, valores com página → `docs/exp_resolucao/LEVANTAMENTO_Z.md`;
       PDFs em `../referencias/z/` (fora do git) — subagente "levantamento-z". Inclui o suplemento do artigo de 2015
       (Eq. S3: unidade do "k").
+- [~] Z6. Consequências (subagente "piloto", sem regravar conjunto nem treinar): prévia com `small_near`;
+      fração do padrão dentro do crop contra z para os tamanhos de letra do base e dos pequenos; se o simulador grava
+      direito a ≈ 1 mm (amostragem, faixa do α, spread de profundidade relativo, faixas do autofocus); inventário e
+      custo de regravar e retreinar; configurações candidatas na ferramenta do envelope.
 - [ ] Z5. Proposta de configuração + coerência com as resoluções reportadas + consequências (eu, com Z3 e Z4).
 - [!] **Checkpoint Z**: mandar tudo ao orientador e **parar**; A só anda com a aprovação dele.
 
@@ -196,4 +213,6 @@ errado".
   `rec_z0`); a banda de 10 nm é suposição nossa; o limiar 0,1 é convenção.
   Aguardando: "levantamento-z" (tabela das bancadas e proposta) e "levantamento-c". Depois: avaliar as configurações
   candidatas com `envelope_table.py`, escrever a proposta e as consequências, e **parar no Checkpoint Z**.
+- 2026-11-14, 13:50: **atualização do orientador: z ≈ 1 mm** (seção 4b). "levantamento-z" redirecionado para fechar o
+  número (lamínula + vidro do sensor + folga); "piloto" recebe Z6 (consequências e custo, sem regravar nem treinar).
 

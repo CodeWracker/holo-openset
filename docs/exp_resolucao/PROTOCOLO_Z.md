@@ -39,3 +39,12 @@ Não estamos reproduzindo uma bancada exata, e sim simulando uma bancada razoáv
 - **Hologramas reais:** não vai ter. Tudo continua simulado, e a limitação continua no paper.
 
 **Checkpoint Z:** me mande a tabela do levantamento, a unidade do z no código e a proposta de configuração com as consequências. Só depois disso a parte A anda.
+
+---
+
+## Atualização do orientador (2026-11-14, ≈ 13:50), copiada na íntegra
+
+Atualização: o Sobieranski confirmou que a lamínula fica muito próxima do sensor, só não encosta porque o sensor aquece. Então z é da ordem de 1 mm, não 19,25 mm. No levantamento, o foco passa a ser fechar esse número (lamínula + vidro do sensor + folga), com referências.
+
+Consequências pra já: a parte A (redução 4×) não se aplica a essa distância (b_max = 1), então fica suspensa. Na proposta do checkpoint Z, inclui também o que muda se o conjunto base for regravado na distância certa: quais conclusões precisam ser checadas de novo (principalmente o espalhamento do padrão para fora do crop e a vantagem da camada sobre os crops) e o custo de regravar e retreinar. O small_near (2 mm) já dá uma prévia. E anota que o aquecimento do sensor torna plausível o drift de z durante a sessão (walk_05).
+
