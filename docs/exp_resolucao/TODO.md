@@ -187,7 +187,7 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
 
 ### Fase C: levantamento e parágrafo crítico (ordem: depois de B no texto, mas o levantamento é pré-requisito)
 
-- [~] C-agora. Em paralelo (autorizado em `PROTOCOLO_Z.md`): leitura de [11], [13], [14] com frase exata e página;
+- [x] C-agora. (feito: `1c792f9` `LEVANTAMENTO_C.md`, `b1ff802` `scripts/exp_resolucao/refs_merge.py`) Em paralelo (autorizado em `PROTOCOLO_Z.md`): leitura de [11], [13], [14] com frase exata e página;
       strings S1–S7 no PubMed (E-utilities) com exportação e deduplicação; triagem; tabela em
       `docs/exp_resolucao/LEVANTAMENTO_C.md`; PDFs em `../referencias/c/` — subagente "levantamento-c".
 - [!] C0. **Pergunta ao orientador (feita às 13:10, sem resposta ainda):** as strings S1–S7 têm de rodar no Scopus e na ScienceDirect com exportação
@@ -270,4 +270,31 @@ errado".
 - 2026-11-14, 14:10: segunda atualização do orientador (seção 4c): mais três itens no Checkpoint Z (tabela de
   parâmetros com fonte; comparação base × `small_near`; figura "o que muda com o setup") e o tom do texto. Z7 para o
   "levantamento-z", Z8 para o "piloto".
+- 2026-11-14, 14:20: **"levantamento-c" devolveu** (`b1ff802`, `1c792f9`; `docs/exp_resolucao/LEVANTAMENTO_C.md`;
+  downloads em `../referencias/c/`). Resultado:
+  - [11] Rockembach 2024 (nosso CBMS): só a p. 364 está acessível (via TCC no repositório da UFSC). Frases: "the
+    real-time analysis of holograms is computationally expensive due to the nature of numerical diffraction methods
+    to reconstruct the signals into visual information" e "avoiding the need for computationally expensive
+    diffraction methods". Não diz "iterative". Se mediu: não verificável (pp. 365–369 fora de acesso) — **pedir ao
+    orientador o PDF ou a confirmação**.
+  - [13] Bravo-Frank 2024: **não faz a afirmação** (o "real-time" vem da cascata de YOLOs; sem tempos nem hardware).
+    Tem classe "unknown" por limiar: a frase "both are closed-set" de `02-related.tex` precisa de ressalva. O trabalho
+    seguinte do grupo (2025, diálise peritoneal) faz a afirmação e reconstrói dois planos de Fresnel dentro do
+    pipeline "real-time".
+  - [14] Liu 2021: afirma e **mediu no mesmo hardware** (Intel Atom: ≈ 14 s por imagem de reconstrução contra ≈ 0,09 s
+    de clustering), mas o baseline é autofocus cego de 501 distâncias e não há detector.
+  - Tabela: 13 trabalhos com a frase localizada; 3 mediram contra reconstrução no mesmo hardware (Liu, Matthews 2024,
+    OAH-Net 2025), 5 mediram só o próprio pipeline, 4 não mediram, [11] não verificável; 9 lidos sem a afirmação;
+    12 só com resumo (não citáveis entre aspas). Göröcs 2018 mediu estágio por estágio (detecção ≈ 70 ms por quadro;
+    autofocus + reconstrução ≈ 12 ms por objeto): medição independente a favor do nosso argumento. Molani 2026 chama
+    a própria back-propagation de "computationally intensive".
+  - PubMed (S1–S8, com e sem ≥ 2020): 221 registros, 207 após deduplicação, 160 com ≥ 2020; 28 incluídos na triagem.
+    Nenhum dos trabalhos de controle é recuperado pelo PubMed (strings precisam de ajuste; ver o documento).
+  - Ajustes ao rascunho C.3: a chave é `rockembach` (não `rockembach2024`); [13] não entra como quem afirma; dizer que
+    Liu e Matthews mediram e contra o quê; "iterative" só em Kim, Xu e Terbe; Terbe 2022 propõe filtros de Fourier
+    aprendíveis como trabalho futuro (antecedente direto da nossa camada, para o Related Work).
+  - Pendente: .RIS de Scopus/ScienceDirect (pastas `../referencias/c/{scopus,sciencedirect}/`, `S<n>` no nome, sem
+    filtro de ano; depois `python3 -I scripts/exp_resolucao/refs_merge.py <pasta>`); 8 textos abertos que os
+    servidores recusaram a cliente automático; paginação de Liu (manuscrito aceito) e de dois lidos no arXiv.
+  Ainda rodando: Z6/Z8 ("piloto") e Z7 ("levantamento-z").
 
