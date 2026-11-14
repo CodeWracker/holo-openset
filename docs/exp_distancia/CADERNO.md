@@ -1267,3 +1267,98 @@ Em `frame_5` a sessão fica a do base e cada imagem recebe z_sessão (1 + 0,05 �
 6. Leitura: se o `session_5` medido estiver perto da previsão para os 8 desvios reais e essa previsão estiver na cauda
    desfavorável do Monte Carlo, a explicação é o sorteio; se o medido ficar longe da previsão, é outra coisa (sessão,
    limiar, estrutura por sessão), e a comparação por sessão com o base diz qual.
+
+## 2026-11-14 — A1 (resultado): `frame_5` × `session_5`
+
+Feito como no pré-registro acima, com dois desvios anotados abaixo.
+
+```bash
+# tmux fvs_embed, GPU 5 (98 % de outro usuário, 18,8 GB), 09:13:35 -> 09:15:14; log logs/exp_distancia/frame_vs_session_embed.log
+CUDA_VISIBLE_DEVICES=5 python scripts/exp_distancia/frame_vs_session.py embed --device cuda:0
+#   -> results_exp_distancia/frame_vs_session_scores.npz (classe e score do vizinho mais próximo de cada consulta, limiar)
+# tmux fvs_analyse, CPU (4 threads), 09:17:50 -> 09:52:14; log logs/exp_distancia/frame_vs_session_analyse.log
+python scripts/exp_distancia/frame_vs_session.py analyse
+#   -> results_exp_distancia/frame_vs_session.csv (2025 linhas), frame_vs_session_mc.csv
+```
+
+Conferência: as 75 linhas do teste inteiro (5 fluxos × 3 conjuntos × 5 repetições) reproduzem `robustness.csv` e as 600
+linhas por sessão reproduzem `robustness_sessions.csv`, diferença máxima 1,1 × 10⁻¹⁶: o código chamado é o mesmo.
+
+Desvios do pré-registro: (1) num primeiro teste curto do script (2 sorteios) os controles `rec_af` e `rec_afc` saíram
+0,006–0,009 abaixo do medido na previsão; acrescentei, **depois de ver isso**, uma previsão "pareada": o valor das
+cenas sorteadas em `frame_5` menos o das mesmas cenas no base, somado ao valor do base. Ela fica na tabela ao lado da
+direta, que continua sendo a principal. (2) O Monte Carlo rodou só com as faixas sem sinal (a primária); as faixas com
+sinal ficaram só na previsão. (3) Uma faixa com sinal (+12 % ou mais, 2 imagens) não tem classe não vista em duas
+repetições: as métricas dela ficam NaN.
+
+**Os 8 z de teste de `session_5`** (z₀ = 19,25 mm; o z de cada imagem é o da sessão, conferido):
+
+| sessão | z (mm) | Δ de z₀ | z do base (mm) | Δ do base em z₀ |
+|---|---|---|---|---|
+| 0 | 17,242 | −10,43 % | 19,049 | −1,04 % |
+| 5 | 20,177 | +4,81 % | 19,343 | +0,48 % |
+| 12 | 18,828 | −2,19 % | 19,208 | −0,22 % |
+| 13 | 21,444 | +11,40 % | 19,469 | +1,14 % |
+| 14 | 18,997 | −1,31 % | 19,225 | −0,13 % |
+| 37 | 19,409 | +0,82 % | 19,266 | +0,08 % |
+| 44 | 19,124 | −0,66 % | 19,237 | −0,07 % |
+| 45 | 17,185 | −10,73 % | 19,043 | −1,07 % |
+
+Média de |Δ| 5,29 % (esperado 3,99 %), rms 6,93 % (esperado 5 %), três sessões além de 2σ (10,4, 10,7 e 11,4 %). Entre
+1000 sorteios de 8 de N(0, 5 %): o rms real fica no percentil 95, a média de |Δ| no 86, o maior |Δ| no 84; três ou mais
+além de 2σ em 0,4 % dos sorteios (binomial: 0,44 %). Em `frame_5` (800 imagens): desvio de z₀ com desvio padrão 4,75 %,
+média de |Δ| 3,84 %; o jitter em relação ao z da sessão tem σ medido 4,72 % (desenho 5 %; Shapiro p = 0,32, KS contra
+N(0, 5 %) p = 0,39). Como nada é cortado nos dois casos, a comparação é de igual para igual a menos do rms: 4,75 % em
+`frame_5` contra 6,93 % em `session_5`.
+
+**Resposta de `frame_5` por faixa de |Δ| da imagem** (F1 open-set / acurácia aceita e correta nas classes vistas, média
+de r1–r5; n = imagens):
+
+| \|Δ\| | n | rec_z0 | prop | bank_jit | rec_af | rec_afc |
+|---|---|---|---|---|---|---|
+| 0–1 % | 128 | 0,955 / 0,943 | 0,954 / 0,941 | 0,953 / 0,940 | 0,956 / 0,946 | 0,956 / 0,945 |
+| 1–2 % | 137 | 0,960 / 0,945 | 0,962 / 0,944 | 0,962 / 0,946 | 0,967 / 0,957 | 0,966 / 0,956 |
+| 2–3 % | 91 | 0,958 / 0,939 | 0,957 / 0,937 | 0,965 / 0,955 | 0,975 / 0,967 | 0,974 / 0,967 |
+| 3–4 % | 102 | 0,936 / 0,899 | 0,930 / 0,889 | 0,949 / 0,927 | 0,962 / 0,948 | 0,964 / 0,950 |
+| 4–6 % | 162 | 0,863 / 0,789 | 0,858 / 0,780 | 0,939 / 0,912 | 0,963 / 0,955 | 0,963 / 0,956 |
+| 6–8 % | 109 | 0,696 / 0,554 | 0,702 / 0,561 | 0,893 / 0,834 | 0,967 / 0,962 | 0,964 / 0,959 |
+| 8–10 % | 45 | 0,423 / 0,308 | 0,431 / 0,323 | 0,736 / 0,636 | 0,967 / 0,967 | 0,967 / 0,965 |
+| 10–12 % | 21 | 0,217 / 0,141 | 0,195 / 0,129 | 0,505 / 0,390 | 0,946 / 0,932 | 0,936 / 0,921 |
+| > 12 % | 5 | 0,094 / 0,076 | 0,077 / 0,060 | 0,262 / 0,244 | 0,896 / 0,907 | 0,900 / 0,906 |
+
+`rec_z0` e `prop` caem a partir de 3–4 %; o stack de 5 segura até cerca de 4 % e cai a partir de 6 %. A rejeição das não
+vistas sobe com |Δ| em todos (`rec_z0` 0,93 → 0,98): longe de z₀ tudo fica longe da galeria. Sinal: as faixas com sinal
+dão a mesma curva dos dois lados (`rec_z0` em 6–8 %: 0,541 para z maior, 0,566 para z menor). As mesmas cenas no base
+têm F1 0,956–0,971 em todas as faixas menos a última (0,888, 5 imagens): as imagens das faixas altas não são mais
+difíceis em si.
+
+**Por sessão em `session_5`** (acurácia nas classes vistas, média r1–r5; entre parênteses o base nas mesmas sessões):
+`rec_z0` 0,148 (0,949) na sessão 45 (−10,7 %), 0,183 (0,955) na 0 (−10,4 %), 0,104 (0,956) na 13 (+11,4 %), 0,793 (0,956)
+na 5 (+4,8 %), 0,933–0,954 nas outras quatro (|Δ| ≤ 2,2 %); `bank_jit` 0,424, 0,481, 0,391, 0,910 e 0,936–0,953. Isso é o
+que a curva de `frame_5` dá para esses desvios (`rec_z0` 0,141 em 10–12 %, 0,789 em 4–6 %; `bank_jit` 0,390 e 0,912).
+Os controles não mudam por sessão (`rec_afc` 0,946–0,965 contra 0,940–0,960 no base).
+
+**Previsão e Monte Carlo** (`frame_vs_session_mc.csv`, faixas sem sinal; F1 open-set, média r1–r5):
+
+| fluxo | base | `frame_5` | `session_5` medido | previsto para os 8 z | previsto, pareado | Monte Carlo: média (5–95 %) | percentil do medido | percentil do previsto |
+|---|---|---|---|---|---|---|---|---|
+| rec_z0 | 0,964 | 0,865 | 0,753 | 0,745 | 0,746 | 0,856 (0,751–0,936) | 5 | 4 |
+| prop | 0,963 | 0,865 | 0,749 | 0,740 | 0,742 | 0,855 (0,750–0,934) | 5 | 4 |
+| bank_jit | 0,963 | 0,924 | 0,839 | 0,825 | 0,827 | 0,917 (0,858–0,955) | 2 | 1 |
+| rec_af (controle) | 0,964 | 0,964 | 0,964 | 0,958 | 0,960 | 0,964 (0,959–0,969) | 42 | 3 |
+| rec_afc (controle) | 0,964 | 0,964 | 0,964 | 0,955 | 0,956 | 0,964 (0,959–0,968) | 53 | 1 |
+
+Acurácia nas classes vistas: `rec_z0` medido 0,625, previsto 0,615, Monte Carlo 0,778 (0,625–0,904); `bank_jit` 0,748,
+0,729, 0,875 (0,776–0,937). Com as faixas com sinal a previsão fica 0,02–0,03 mais baixa (faixas de 2 a 18 imagens nas
+caudas). O erro do método aparece nos controles: a previsão fica 0,004–0,009 abaixo do medido em `rec_af`/`rec_afc`
+(0,004–0,008 na pareada), e é do mesmo tamanho para os outros (`rec_z0` 0,007–0,008, `bank_jit` 0,012–0,014 abaixo).
+
+**Conclusão.** A hipótese do revisor se confirma. Os 8 z de teste de `session_5` são um sorteio desfavorável (rms no
+percentil 95, três sessões além de 2σ, o que acontece em 0,4 % dos sorteios), e a resposta por imagem de `frame_5`
+explica o `session_5` medido a 0,01 de F1, sessão por sessão; não é limiar (o limiar é o do base nos dois conjuntos,
+o mesmo por repetição e fluxo) nem estrutura por sessão (as mesmas sessões no base são normais, e os controles não
+mudam). Pelo Monte Carlo, a linha de 5 % entre sessões, com 8 sessões sorteadas de N(0, 5 %), daria em média F1 0,856
+para `rec_z0` e 0,917 para o stack de 5, perto de `frame_5` (0,865 e 0,924), contra 0,753 e 0,839 medidos: a linha do
+paper exagera o dano em cerca de 0,10 de F1 para `rec_z0` e `prop` e 0,08 para o stack, perto do dobro da queda
+esperada (0,21 contra 0,11 em `rec_z0`; 0,12 contra 0,05 no stack). E mostra que uma linha de 8 sessões é instável:
+o intervalo de 5–95 % do F1 de `rec_z0` vai de 0,75 a 0,94. `frame_5` (800 sorteios) é a estimativa estável.
