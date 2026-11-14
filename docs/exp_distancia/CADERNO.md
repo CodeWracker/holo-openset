@@ -1078,3 +1078,41 @@ A maior diferença é a da conta completa de `bank_jit` com a busca cega (212 co
 O gerador das tabelas, macros e figuras (`holo_openset/paper/distance.py`) e os testes dele foram escritos num
 worktree à parte e trazidos para este branch por cherry-pick: `b712ede` (era `192d189`) e `d000e7f` (era `3ac7478`).
 O worktree já foi removido.
+
+### Duas conferências para o relatório (só leitura de logs e metadados)
+
+**Checagem longa do base (`invariance.py --base`).** Lançada às 21:57:50 (Etapa 2) e terminada às 22:15 (horário do
+log), mas o resultado nunca tinha sido anotado aqui. Final de `logs/exp_distancia/invariance_base.log`:
+
+```
+DIFFERENT  realistic/holograms.npy  (5000, 640, 640) 0.0191% of the values differ, rms 0.0430
+DIFFERENT  realistic/holograms.npy against checksums/data.sha256
+DIFFERENT  realistic/backgrounds.npy  (50, 640, 640) 0.0039% of the values differ, rms 0.0025
+DIFFERENT  realistic/backgrounds.npy against checksums/data.sha256
+identical  realistic/annotations.csv / metadata.csv / dust.csv / sessions.csv / physics.json
+SOMETHING DIFFERS
+```
+
+O base regravado com o código novo neste build difere do publicado em 0,0191 % dos valores dos hologramas e 0,0039 %
+dos blank frames; anotações, metadados, poeira, sessões e física são idênticos. É a diferença entre builds já vista
+(0,0187 % nas primeiras 250 imagens); a prova de que o código novo não muda nada continua sendo `session_5`, idêntico
+bit a bit dentro deste build (Etapa 1). O item do checklist 12 "base idêntico ao Zenodo" **não é cumprido ao pé da
+letra**.
+
+**Faixa do `afc` contra as distâncias do teste.** A busca `afc` tem 7 candidatos grossos em [0,90; 1,10] z₀ (passo
+0,0333 z₀) e a busca fina vai de um passo grosso abaixo a um acima do melhor (`reconstruct.autofocus`, `fine =
+linspace(c - step, c + step, n_fine)`), então a faixa efetiva é [0,867; 1,133] z₀ (±13,3 %). Script
+`range_check.py` do scratchpad (lê `data/<conjunto>/metadata.csv`, split de teste, e o `autofocus_afc.csv` copiado):
+
+```
+variants/session_5: z/z0 - 1 in [-0.1073, +0.1140], beyond +-10 %: 300, beyond +-13.33 %: 0
+variants/frame_5:   z/z0 - 1 in [-0.1314, +0.1347], beyond +-10 %: 26,  beyond +-13.33 %: 1
+variants/walk_05:   z/z0 - 1 in [-0.0761, +0.1094], beyond +-10 %: 5,   beyond +-13.33 %: 0
+full_frames_frame5: z/z0 - 1 in [-0.0867, +0.0970], beyond +-10 %: 0,   beyond +-13.33 %: 0
+(os outros conjuntos de teste ficam dentro de ±5,6 %)
+frame_5, largest deviation: image 1454, true z 21.8421 mm (+0.1347), afc 21.8167 mm (+0.1333), error 25.5 um
+```
+
+O maior desvio do teste (+13,47 %, uma imagem de `frame_5`) fica 0,14 ponto fora da faixa efetiva; o `afc` devolveu a
+borda da faixa (+13,33 %) com erro de 25,5 µm, abaixo do limiar de falha grosseira (192,5 µm). Fora dessa faixa a busca
+barata falha por construção; isso não foi testado com distâncias maiores.
