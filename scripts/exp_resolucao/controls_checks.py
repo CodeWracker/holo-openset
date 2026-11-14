@@ -14,7 +14,9 @@
   master    control B: the cost of the master raster of the glyphs (factor 16, 8, 4) on 4 scenes of the base_newrec
             layout (scene build time, one process) and its effect on the recording at s = 2 (noise free; rms of the
             difference to factor 16 / rms of the pattern), with the scenes compared object by object
-            -> $HOLO_RESULTS/base_newrec_master.csv
+            -> $HOLO_RESULTS/base_newrec_master.csv; then `raster`
+  raster    the glyph raster alone (the same scene, factor 16, each letter's master replaced by its 4x rendering at
+            the same centroid) -> $HOLO_RESULTS/base_newrec_master_raster.csv
   table     $HOLO_RESULTS/controls.csv: raw, prop, rec_z0 of r1 (test: novel_open_macro_f1, novel_unknown_rejection,
             novel_closed_acc, novel_known_acc, threshold) for base_newrec, bench_1mm_dense, bench_1mm (copied from
             its json) and realistic --no-aux (the like-for-like reference of B, when it exists); the paired
@@ -192,13 +194,17 @@ def dense(a, dev):
     print('wrote', out)
 
 
+def newrec_base():
+    """The physics of base_newrec without noise, the seeds of the sets, 4 scenes (sessions 0, 12, 25, 37)."""
+    base = Physics().replace(margin=1728, reach=1024, depth_std=50e-6, depth_max=150e-6, oversample=2,
+                             full_well=0.0, read_noise=0.0, prnu=0.0, bits=0)
+    return base, dict(seed=17, per_session=100), [k * 1250 for k in range(4)]
+
+
 def master(a, dev):
     """Control B: the master factor of the glyphs."""
     rows = []
-    base = Physics().replace(margin=1728, reach=1024, depth_std=50e-6, depth_max=150e-6, oversample=2,
-                             full_well=0.0, read_noise=0.0, prnu=0.0, bits=0)
-    cfg = dict(seed=17, per_session=100)
-    ids = [k * 1250 for k in range(4)]
+    base, cfg, ids = newrec_base()
     recs = {}
     for f in a.factors:
         lay = FresnelLayout(scale=1, factor=f)
@@ -230,6 +236,71 @@ def master(a, dev):
     paths.RESULTS.mkdir(parents=True, exist_ok=True)
     t.to_csv(paths.RESULTS / 'base_newrec_master.csv', index=False, float_format='%.6g')
     print(t.to_string())
+    raster(base, cfg, ids, dev)
+
+
+def raster(base, cfg, ids, dev, coarse=4, fine=16):
+    """The glyph raster alone: the scenes drawn with factor `fine` change between factors also because the position
+    draw depends on the size of the master (the same uniform number lands a fraction of a pixel elsewhere), so the
+    comparison above mixes the raster with the positions. Here the SAME scene (factor `fine`) is recorded twice: as
+    is, and with the master of every letter (annotated and around the window) replaced by the same glyph (letter,
+    font, size, rotation) rendered at `coarse` x the pixel, each cell repeated (fine/coarse)^2 times, placed with its
+    ink centroid on that of the fine master (to 1/fine px). Dust untouched. rel_rms = rms(difference) / rms(pattern)
+    at s = 2, noise free -> $HOLO_RESULTS/base_newrec_master_raster.csv"""
+    import holo_openset.sim.scene as S
+    from holo_openset.sim.scene import physical_object
+    orig = S.letter_master
+    calls = {}
+
+    def spy(letter, font, size, angle):
+        m = orig(letter, font, size, angle)
+        calls[id(m)] = (letter, font, size, angle)
+        return m
+
+    rows = []
+    lay = FresnelLayout(scale=1, factor=fine)
+    cam = camera(CAMERA_SEED, base, lay)
+    k = fine // coarse
+    for i in ids:
+        S.letter_master = spy
+        try:
+            sc = scene_of(i, cfg, base, lay)
+        finally:
+            S.letter_master = orig
+        objs, shifts = [], []
+        for o in sc['objects']:
+            letter, font, size, angle = calls[id(o['master'])]
+            up = np.kron(orig(letter, font, size / k, angle), np.ones((k, k), np.uint8))
+            c = lambda m: np.array(np.unravel_index(np.arange(m.size), m.shape)).T.astype(float).T @ \
+                m.ravel().astype(float) / m.sum()   # noqa: E731
+            dy, dx = np.round(c(o['master']) - c(up)).astype(int)
+            shifts.append((abs(dy) + abs(dx)))
+            objs.append(physical_object(up, o['mx'] + dx, o['my'] + dy, fine,
+                                        **{q: o[q] for q in ('kind', 'classe', 'absorption', 'phase', 'depth')}))
+        ses = session(17 * 1000 + i // 100, base)
+        rec = lambda s_: record(sensor_intensity(dict(s_, sensor_dust=cam['dust']), ses, base, dev), ses, base, cam,   # noqa
+                                None, dev).astype(np.float64)
+        a, b = rec(sc), rec(dict(sc, objects=objs))
+        blank = record(sensor_intensity(dict(sc, sensor_dust=cam['dust']), ses, base, dev, sample=False), ses, base,
+                       cam, None, dev).astype(np.float64)
+        mask_rel = np.mean([float(np.abs(sample_mask_px(o) - sample_mask_px(p)).sum() / sample_mask_px(o).sum())
+                            for o, p in zip(sc['objects'], objs) if sample_mask_px(o).shape == sample_mask_px(p).shape])
+        rows.append(dict(image_id=i, coarse=coarse, fine=fine, n_letters=len(objs), rel_rms=float((a - b).std() /
+                         (a - blank).std()), max_abs_dn=float(np.abs(a - b).max()),
+                         mean_abs_shift_cells=float(np.mean(shifts)), mask_l1_rel_same_shape=mask_rel))
+        print(rows[-1], flush=True)
+    t = pd.DataFrame(rows)
+    out = paths.RESULTS / 'base_newrec_master_raster.csv'
+    if out.exists():
+        old = pd.read_csv(out)
+        t = pd.concat([old[old.coarse != coarse], t], ignore_index=True)
+    t.to_csv(out, index=False, float_format='%.6g')
+    print(t.to_string())
+
+
+def sample_mask_px(o):
+    from holo_openset.sim.physics import sample_mask
+    return sample_mask(o, 2)[0]
 
 
 def table(a):
@@ -287,12 +358,13 @@ def table(a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('what', choices=['removed', 'dense', 'master', 'table'])
+    ap.add_argument('what', choices=['removed', 'dense', 'master', 'raster', 'table'])
     ap.add_argument('--set', default='bench_1mm_dense')
     ap.add_argument('--ref', default='bench_1mm')
     ap.add_argument('--ids', type=int, nargs='*', default=[])
     ap.add_argument('--n-cover', type=int, default=100)
     ap.add_argument('--factors', type=int, nargs='+', default=[16, 8, 4])
+    ap.add_argument('--coarse', type=int, default=4, help='raster: the coarse factor compared with 16')
     ap.add_argument('--device', default='cpu')
     a = ap.parse_args()
     torch.set_num_threads(4)
@@ -303,6 +375,8 @@ def main():
         removed(a.ref, a.set, a.ids, dev)
     elif a.what == 'dense':
         dense(a, dev)
+    elif a.what == 'raster':
+        raster(*newrec_base(), dev, coarse=a.coarse)
     else:
         master(a, dev)
 
