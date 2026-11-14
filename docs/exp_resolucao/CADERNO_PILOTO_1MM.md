@@ -660,7 +660,7 @@ Commits `bca2f3a` (código e testes) e `6db31c6` (scripts). Arquivos: `holo_open
 - Cada letra como as do conjunto: classe uniforme em todas as 26 (`outside_classes` quando houver, como as de fora),
   fonte, tamanho contínuo, rotação, material e profundidade com as mesmas leis (`material`); posição uniforme onde as
   do conjunto vão: na janela com a borda das anotadas, na faixa sem tocar a janela (± espaçamento), como as de fora.
-  Nenhuma letra pode straddle a borda da janela (como no conjunto). Regra de espaçamento do conjunto na grade de
+  Nenhuma letra fica sobre a borda da janela (como no conjunto). Regra de espaçamento do conjunto na grade de
   ocupação. Escolha minha: a letra é sorteada uma vez e só a posição é sorteada de novo (até
   `max_attempts_per_letter` = 500); se não couber, é pulada e contada (`n_fill_skipped` no `metadata.csv`) — uma
   cena nunca é rejeitada por causa do enchimento (isso trocaria a semente e as letras anotadas).
