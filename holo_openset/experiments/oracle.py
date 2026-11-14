@@ -26,7 +26,7 @@ from holo_openset import paths  # noqa: E402
 from holo_openset.detect import match, threshold_detect  # noqa: E402
 from holo_openset.experiments.common import KEEP, fmt, l2_rows, parser, save  # noqa: E402
 from holo_openset.sim.physics import PIXEL, WAVELENGTH, Z0  # noqa: E402
-from holo_openset.sim.variants import VARIANTS  # noqa: E402
+from holo_openset.sim.variants import ALL, VARIANTS  # noqa: E402
 
 CROP = 32
 
@@ -149,7 +149,7 @@ def main(argv=None):
                 emb_gt = emb_gt_base.copy()
                 emb_gt[np.where(test)[0]] = l2_rows(np.stack([vgt[int(k)] for k in np.where(test)[0]]))
             emb_t_det = l2_rows(t_crops)
-            effect, value, _ = VARIANTS.get(v, ('base', 'base', {}))
+            effect, value, _ = ALL.get(v, ('base', 'base', {}))   # the sets of the distance study too
             rows = []
             for r in a.rep:
                 res = evaluate(None, ds, r, emb=emb_gt)
