@@ -19,7 +19,13 @@
 #   robust_b        (b) recalibrated without labels: alpha (and from it the distance of rec_z0) from
 #                   train.calibrate_alpha on 32 holograms of the 0.7 mm validation split, weights untouched
 #                   -> results_exp_resolucao/recal_bench_1mm_z07.json, rec_z0_recal.npy of z07, and the rows
-#                   prop+recal and rec_z0+recal of robustness_bench_1mm.csv
+#                   prop+recal and rec_z0+recal of robustness_bench_1mm.csv; and the ratio variant (P1): the trained
+#                   alpha times alpha_cal(0.7) / alpha_cal(1.0), rec_z0 at 1.0 mm times the same ratio
+#                   (rec_z0_recal_ratio.npy) -> rows prop+recal_ratio and rec_z0+recal_ratio
+#   record_depth50  the test split of bench_1mm recorded again with the depth spread of the base set (50 / 150 um),
+#                   z0 = 1.0 mm, same seeds: data/bench_1mm_robust/depth50 (P1, the advisor's robustness set)
+#   robust_depth50  its evaluation as is (rec_z0 at the nominal 1.0 mm; models, gallery and threshold of bench_1mm)
+#                   -> row depth50 of robustness_bench_1mm.csv
 #
 # THE TWO OPEN CHOICES OF THE ADVISOR (P1) MUST BE GIVEN; the script does not choose them:
 #   DEPTH=50     depth spread of the letters of the base set (depth_std 50 um, depth_max 150 um)
@@ -32,7 +38,7 @@ set -e
 cd "$(dirname "$0")/../.."
 source scripts/exp_resolucao/env.sh
 GPU=$1; STEP=$2
-[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,34p' "$0"; exit 1; }
+[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,42p' "$0"; exit 1; }
 SET=bench_1mm
 ROBUST=bench_1mm_robust
 WORKERS=3          # scene builders (PIL, one thread each): with the recorder, about 4 ready threads
@@ -98,6 +104,24 @@ case "$STEP" in
     python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants z07 \
            --flows prop rec_z0 --rep 1 --out robustness_bench_1mm --alpha-json $J --rec-tag _recal \
            --device cuda:$GPU --threads 4
+    ZR=$(python scripts/exp_resolucao/recalibrate_distance.py --read $J z_ratio)
+    [ -f data/$ROBUST/z07/autofocus_recal_ratio.csv ] || \
+      py reconstruct --set $ROBUST/z07 --methods z0 --z0 $ZR --tag _recal_ratio --device cuda:$GPU
+    python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants z07 \
+           --flows prop rec_z0 --rep 1 --out robustness_bench_1mm --alpha-json $J --alpha-mode ratio \
+           --rec-tag _recal_ratio --suffix +recal_ratio --device cuda:$GPU --threads 4
+    ;;
+  record_depth50)
+    [ -f data/$ROBUST/depth50/physics.json ] || py simulate like --like $SET --name $ROBUST/depth50 --split test \
+                                                 --set-physics depth_std=50e-6 depth_max=150e-6 --device cuda:$GPU \
+                                                 --workers $WORKERS
+    ;;
+  robust_depth50)
+    Z_SET=$(python -c "import json; print(json.load(open('data/$SET/physics.json'))['physics']['z0'])")
+    [ -f data/$ROBUST/depth50/autofocus.csv ] || \
+      py reconstruct --set $ROBUST/depth50 --methods z0 --z0 $Z_SET --device cuda:$GPU
+    python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants depth50 \
+           --flows raw prop rec_z0 --rep 1 --out robustness_bench_1mm --device cuda:$GPU --threads 4
     ;;
   *) echo "unknown step $STEP"; exit 1 ;;
 esac

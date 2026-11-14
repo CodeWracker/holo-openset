@@ -5,7 +5,8 @@ the validation split recorded at the new distance (no label is read), on its gri
 0.944 mm with the same relative step. The alpha is the phase of the propagation layer ('prop') and gives the distance
 of the back-propagation of 'rec_z0':  z = alpha (640 x 1.67 um)^2 / (pi lambda).
 The same calibration on the same image ids of the reference set (`--ref`, recorded at the distance the models were
-trained at) is written alongside, for the record (it is not used).
+trained at) is written alongside: the ratio variant (P1) uses alpha / alpha_ref (the trained alpha times it, and
+z_ratio = the nominal z0 of the reference times it).
 
     python scripts/exp_resolucao/recalibrate_distance.py --set bench_1mm_robust/z07_val --ref bench_1mm \
         --out $HOLO_RESULTS/recal_bench_1mm_z07.json --device cuda:N
@@ -59,7 +60,9 @@ def main():
     if a.ref:
         ref = Dataset(paths.dataset(a.ref))
         alpha_ref = calibrate_alpha(ref.images(ids), dev, extend=a.extend)
-        out.update(ref=a.ref, alpha_ref=alpha_ref, z_ref=z_of(alpha_ref), nominal_z0_of_ref=ref.z0)
+        # the ratio variant (P1): the bias of the calibration cancels in alpha / alpha_ref
+        out.update(ref=a.ref, alpha_ref=alpha_ref, z_ref=z_of(alpha_ref), nominal_z0_of_ref=ref.z0,
+                   ratio=alpha / alpha_ref, z_ratio=ref.z0 * alpha / alpha_ref)
     json.dump(out, open(a.out, 'w'), indent=1)
     print({k: v for k, v in out.items() if k != 'image_ids'})
 

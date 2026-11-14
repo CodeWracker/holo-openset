@@ -22,9 +22,11 @@ variants, e.g. a set reduced b x b (holo_openset.resolution): --set realistic_b4
 The front end recalibrated without labels (the pilot at 1.0 mm, docs/exp_resolucao/CADERNO_PILOTO_1MM.md, P0 (b)):
 --alpha-json FILE sets the alpha of the propagation layer ('prop', 'bank': the value 'alpha' of the file, written by
 scripts/exp_resolucao/recalibrate_distance.py; a bank keeps its spread around it) for the TEST embeddings of the
-variants; --rec-tag T makes the flows of a reconstruction read rec_<method>T.npy of the variants (a cache
-back-propagated at the recalibrated distance: reconstruct --z0 Z --tag T). The weights, the gallery (the validation
-split of --set, embedded as the model was trained) and the threshold do not change.
+variants (--alpha-mode literal), or scales the trained alpha by the ratio of the two calibrations of the file,
+alpha / alpha_ref (--alpha-mode ratio); --rec-tag T makes the flows of a reconstruction read rec_<method>T.npy of the
+variants (a cache back-propagated at the recalibrated distance: reconstruct --z0 Z --tag T). The rows of the variants
+so read are named <flow><suffix> (--suffix, default +recal). The weights, the gallery (the validation split of --set,
+embedded as the model was trained) and the threshold do not change.
 """
 import json
 
@@ -71,8 +73,13 @@ def main(argv=None):
     ap.add_argument('--out', default='robustness', help='name of the csv (and of <out>_sessions.csv)')
     ap.add_argument('--alpha-json', help="the variants' test patterns embedded with the alpha of this file (prop, bank)")
     ap.add_argument('--rec-tag', default='', help="the variants' reconstructions read from rec_<method><tag>.npy")
+    ap.add_argument('--alpha-mode', default='literal', choices=['literal', 'ratio'],
+                    help="literal: the file's alpha replaces the trained one; ratio: the trained one times "
+                         "alpha / alpha_ref of the file")
+    ap.add_argument('--suffix', default='+recal', help='name of the rows read with --alpha-json / --rec-tag')
     a = ap.parse_args(argv)
-    alpha_new = float(json.load(open(a.alpha_json))['alpha']) if a.alpha_json else None
+    cal = json.load(open(a.alpha_json)) if a.alpha_json else None
+    alpha_new = float(cal['alpha']) if cal else None
     dev = device(a)
     broot = paths.dataset(a.set)
     base = dataset('raw', broot)
@@ -106,8 +113,12 @@ def main(argv=None):
                 emb = np.zeros((len(ann), 128), np.float32)
                 emb[val] = emb_val
                 if recal and v != 'base':   # the propagation of the layer moved to the recalibrated distance
+                    k = alpha_new / float(alpha_trained.mean()) if a.alpha_mode == 'literal' else \
+                        float(cal['alpha']) / float(cal['alpha_ref'])
                     with torch.no_grad():
-                        m.fourier.alpha.copy_(alpha_trained * (alpha_new / float(alpha_trained.mean())))
+                        m.fourier.alpha.copy_(alpha_trained * k)
+                    print(f'{flow}: alpha {float(alpha_trained.mean()):.7f} -> {float(m.fourier.alpha.mean()):.7f} '
+                          f'({a.alpha_mode})', flush=True)
                 emb[test] = embed_annotations(m, Dataset(root, arr, ann=vann), ref)
                 if recal:
                     with torch.no_grad():
@@ -115,7 +126,7 @@ def main(argv=None):
                 res = strict(m, base, r, emb)
                 effect, value, _ = ALL.get(v, ('base', 'base', {}) if v == 'base' else (v, v, {}))   # a set's own
                 moved = v != 'base' and (recal or bool(a.rec_tag and FLOWS[flow]['rec']))
-                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=f'{name}+recal' if moved else name,
+                rows.append(dict(rep=r, variant=v, effect=effect, value=value, flow=f'{name}{a.suffix}' if moved else name,
                                  **{k: res[k] for k in KEEP if k in res}))
                 print(fmt(rows[-1]), flush=True)
                 if a.by_session:
