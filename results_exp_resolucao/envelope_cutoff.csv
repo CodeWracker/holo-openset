@@ -1,0 +1,5 @@
+set,z_mm,threshold,f_c_cyc_per_mm,stays_below_up_to_nyquist,b_max,band_at_fc,pinhole_at_fc,pixel_at_fc,pinhole_image_um,E_at_nyquist,E_at_nyquist_diagonal
+base (z0 = 19.25 mm),19.25,0.1,72.366,True,4,0.404791,0.253068,0.976148,12.8333,-1.89765e-117,-0
+base (z0 = 19.25 mm),19.25,0.05,78.2519,True,3,0.290399,0.177093,0.972145,12.8333,-1.89765e-117,-0
+small_near (z = 2 mm),2,0.1,266.398,True,1,0.166489,0.852219,0.70479,1.33333,0.029733,2.8511e-06
+small_near (z = 2 mm),2,0.05,286.547,True,1,0.0907248,0.830406,0.663666,1.33333,0.029733,2.8511e-06

@@ -77,3 +77,45 @@ Médias por fluxo (5 repetições):
   reconstruções na média, mas contra `rec_z0` e `rec_twin` só em 3 de 5 repetições, e contra `rec_z0` a diferença
   vai de −0,077 a +0,139. A rejeição das ausentes com k = 20 é menor na `prop` que em `rec_z0` (−0,052, 3 de 5,
   mínimo −0,189), `rec_af`, `rec_afc` e `rec_twin` (−0,073, 4 de 5); contra `rec_edf` é igual na média.
+
+## 2026-11-14, 13:10 — T2(i): o b pelo modelo da bancada (piloto)
+
+- Onde: container, CPU. `python scripts/exp_resolucao/envelope_cutoff.py` (1 s). Saídas:
+  `results_exp_resolucao/envelope_cutoff.csv` e `envelope_curve.csv` (a curva E(f) a cada 0,1 ciclo/mm).
+- E(f) é a eq. `eq:envelope` do paper, com as mesmas contas do painel (b) de `fig_fresnel`
+  (`holo_openset/paper/figures.py`): banda gaussiana (FWHM 10 nm, σ_λ = 4,25 nm), imagem do pinhole
+  (2 J1(π d f)/(π d f), d = D z / L) e pixel (sinc(Δ f)), numa direção do eixo do sensor (f_y = 0).
+- f_c = a menor frequência em que |E| fica abaixo do limiar; em todos os casos |E| continua abaixo dele até o
+  Nyquist (299,4 ciclos/mm). b_max = ⌊1 / (2 Δ f_c)⌋, Δ = 1,67 µm.
+
+| distância | limiar | f_c (ciclos/mm) | b_max | banda em f_c | pinhole em f_c | pixel em f_c | d (µm) |
+|---|---|---|---|---|---|---|---|
+| 19,25 mm (base, `small_z0`) | 0,1 | 72,37 | 4 | 0,405 | 0,253 | 0,976 | 12,83 |
+| 19,25 mm (base, `small_z0`) | 0,05 | 78,25 | 3 | 0,290 | 0,177 | 0,972 | 12,83 |
+| 2 mm (`small_near`) | 0,1 | 266,40 | 1 | 0,166 | 0,852 | 0,705 | 1,33 |
+| 2 mm (`small_near`) | 0,05 | 286,55 | 1 | 0,091 | 0,830 | 0,664 | 1,33 |
+
+- Quem manda no corte: a 19,25 mm, a imagem do pinhole é o fator menor em f_c (0,253 contra 0,405 da banda;
+  em log, 60 % da queda), e os dois juntos fazem o corte; o pixel quase não pesa (0,976). A 2 mm, a banda é o fator
+  que manda (0,166), seguida do pixel (0,705); o pinhole quase não pesa (d = 1,3 µm). A 2 mm o corte fica a 89 % do
+  Nyquist, então b_max = 1: o modelo diz para não reduzir.
+- O limiar 0,05 dá b_max = 3 na base, um valor fora da grade do piloto {1, 2, 4, 8} (e 640 não é divisível por 3).
+
+## 2026-11-14, 13:11 — T2(ii): pré-registro da regra cega (antes de calcular qualquer espectro)
+
+Regra escrita agora, antes de abrir os hologramas; nada dela foi ajustado depois.
+
+- Imagens: 256 hologramas do split de **treino** de cada conjunto (`realistic`, `small_z0`, `small_near`),
+  sorteados com `np.random.RandomState(0).choice(ids_de_treino, 256, replace=False)`.
+- Dois sinais por imagem: `I/B` (holograma em float dividido pelo blank frame da sua sessão, com B ≥ 1, como em
+  `reconstruct.normalise` sem a raiz) e `I` puro. Cada um tem a média subtraída e é multiplicado por uma janela de
+  Hann separável 640 × 640 (para o vazamento da borda não criar um piso falso nos eixos). Potência = |FFT|²
+  dividida pela soma da janela ao quadrado, média nas 256 imagens.
+- Anéis: raio inteiro k = round(√(kx² + ky²)) no grid de 640, k = 1 … 320 (até o Nyquist; os cantos além do
+  Nyquist radial ficam de fora). Frequência do anel: f = k / (640 Δ) = 0,9357 k ciclos/mm.
+- Piso: a mediana da potência dos anéis no quinto superior, k = 257 … 320 (240–299 ciclos/mm).
+- Corte: o menor k_c tal que a potência de todos os anéis k ≥ k_c fica abaixo de **k_thr × piso, com k_thr = 2**.
+  f_c = k_c / (640 Δ); b_cego = ⌊f_Nyquist / f_c⌋ = ⌊320 / k_c⌋.
+- Sensibilidade (só reportada, não escolhe nada): k_thr ∈ {1,5; 2; 3}.
+- O b do critério para a base será escrito na próxima entrada, comparando os dois métodos; se discordarem,
+  registro os dois e não escolho.
