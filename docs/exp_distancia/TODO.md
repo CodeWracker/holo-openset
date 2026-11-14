@@ -112,7 +112,7 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
 
 ### Fase B: projeto de código
 
-- [ ] B1. Runs (subagente "integração-runs"; caderno próprio em `docs/exp_distancia/CADERNO_INTEGRACAO.md`):
+- [x] B1. (FEITO, commits `18112a7`…`9b0c71e`) Runs (subagente "integração-runs"; caderno próprio em `docs/exp_distancia/CADERNO_INTEGRACAO.md`):
       simular as 28 variantes que faltam (teste); caches `rec_afc` nelas; caches `rec_edf`/`rec_twin` em
       `frame_2`/`frame_5`/`walk_05`; `robustness` em `results/` (`rec_afc` × 33 conjuntos; fluxos do paper × 3
       conjuntos novos); oráculo nos 3 conjuntos; `evaluate` e `e2e` de `rec_afc`; `full_frames` (um run, todos os
@@ -300,4 +300,29 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   macros de enrollment para todos os fluxos). CHECK novo (9): `\RobSourceFivecmRecAfc` tem de ser um colapso
   (≈ 0,5 ou menos) ou a frase de RQ5 (iv) muda.
   Falta: B1 terminar → fase 2 de B2 → aplicar o rascunho no repositório real com os assets finais.
+- 2026-11-14, 11:50: **B1 concluído** ("integração-runs") e revisado por mim.
+  - Conferi por fora: todas as linhas antigas de `results/robustness.csv` (2278), `e2e.csv` (50) e `oracle.csv`
+    (330) continuam lá; a maior mudança é 1,1e-16 (o `save()` reescreve o csv e mexe no último dígito). O run novo
+    de quadros inteiros reproduz a acurácia antiga dos dez fluxos (maior mudança 9e-5 em F1).
+  - `rec_afc` na bateria (5 repetições): acompanha a melhor entre `rec_z0` e `rec_af` nos 36 conjuntos; maior perda
+    −0,0012 (`laser`); `fullwell_500` 0,949, `beam_narrow` 0,959, `session_5` 0,964, `source_5cm` 0,518 (colapso,
+    como `rec_z0` 0,514 e `rec_af` 0,418). Nenhum conjunto com perda > 0,02.
+  - Linhas novas (F1): `frame_5` `rec_z0` 0,865, `prop` 0,865, stack 0,924, `learned` 0,886, `wiener` 0,814,
+    `rec_af`/`rec_afc` 0,964; oráculo (det) 0,67–0,70.
+  - Quadros inteiros (um run, GPU 3 a 0 % antes e depois, 11:34–11:40): `rec_afc` F1 0,9752 (det), busca 2,04 ms,
+    fim a fim 199,9 ms (`rec_z0` 198,7; `raw` 179; `rec_af` 322; `rec_twin` 407); detecção 171 ms; leitura
+    ≈ 20 ms nos fluxos de reconstrução contra ≈ 3 ms nos de camada (o texto "few tens of milliseconds" tem de mudar).
+  - Erro de distância na bateria (`results/focus_battery.csv`): a busca estreita erra mais em `depth_300` (23 % de
+    falhas grosseiras), `band_40` (12 %), `source_5cm` (7 %), `pinhole_200` (5 %), sem perder F1.
+  - Desvios dele, aceitos: correção em `experiments/oracle.py` (rótulos via `ALL`); caches `rec_edf`/`rec_twin` do
+    base refeitos neste build (não existiam mais); detecções YOLO refeitas para o `e2e` (uma falsa detecção a menos
+    em r1); condição extra de load < 120 para o run de tempo; coluna `value` dos 3 conjuntos novos gravada como
+    `2.0`/`5.0` (nenhum gerador lê).
+  - Disco: +53,5 GB em `compartilhado`.
+  **B2 fase 2 disparada** (mensagem ao agente "geradores"): aplicar o patch de `sim/variants.py`/`pipeline.py`,
+  `\DistGrossPct`, macros de enrollment para todos os fluxos, rótulos de exibição "per image", formato do flat
+  field, `rec_twin` = "blind autofocus + twin removal", regenerar tabelas/figuras/macros em `output/paper/`,
+  `expected/`, `reproduce check` 13/13, `pytest` verde, docs, checksums dos 3 conjuntos novos.
+  Depois: mandar o agente "latex" aplicar o rascunho (4 commits no clone) no repositório real com os assets finais,
+  resolver os CHECK-AFTER-RUNS e compilar; eu reviso o diff final; PDF novo do relatório; mensagem final.
 
