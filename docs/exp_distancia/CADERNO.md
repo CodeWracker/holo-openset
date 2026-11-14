@@ -968,3 +968,53 @@ diferença; blank frames (`backgrounds.npy`, float32) diferentes em 0,0414 % dos
 `annotations.csv` e `metadata.csv` idênticos byte a byte (8268 letras). O esperado era cerca de 0,02 % (a diferença
 entre builds já vista no base: 0,0187 % nas primeiras 250 imagens); saiu 0,0286 %.
 
+### E5, sessão de tempo: GPU, tentativa 2 (`e5_a2`), e qual tentativa conta
+
+Desvio, anotado antes de ver o resultado: pela regra do pedido, a primeira tentativa válida é a que conta, e não
+haveria segunda tentativa depois de uma válida. Fiz a tentativa 2 porque a 1 não chegou ao `full_frames` (faltavam os
+caches das galerias) e a sessão de E5 pede `timing` e `full_frames` no mesmo run. Às 23:24:56 a GPU 1 deu 0 % em 20 de
+20 amostras, sem job nosso nela (o `ff_tilt10` tinha acabado às 23:23:32); rodando ao mesmo tempo, nossos: `ff_tilt15`
+(`cuda:3`) e a simulação `own_aux` (`cuda:2`).
+
+```bash
+# tmux e5_a2, 23:28:09 -> 23:34:27 (log logs/exp_distancia/e5_a2.log)
+bash scripts/exp_distancia/e5_gpu.sh cuda:1 results_exp_distancia/e5_a2
+```
+
+Antes: load 33,2 / 36,0 / 44,3; GPUs 0 25 %, 1 0 % (6,3 GB de outro usuário), 2 100 %, 3 100 %, 4 42 %, 5 100 %; GPU 1
+a 0 % nas 20 amostras. `timing` 23:28:31 → 23:28:58; `full_frames` (5 repetições, 11 fluxos) 23:28:58 → 23:34:04.
+Depois: GPU 1 a 0 % nas 20 amostras; load 29,3 / 33,2 / 40,5. **Validade: backprop no quadro inteiro 0,970 ms (0,99×),
+autofocus 122,9 ms (0,99×), `flat_field` a 640² 0,030 ms: válida.** O F1 do `full_frames` da tentativa 2 é igual ao de
+E1 (`full_frames.csv`) nas 100 linhas (diferença máxima 0).
+
+Pela regra escrita, **a que conta é a tentativa 1** (a primeira válida): o `timing_gpu.csv` dela foi copiado para
+`results_exp_distancia/e5/` (ao lado do `timing_cpu.csv`). Ela não tem `full_frames`; a única sessão de E5 com
+`timing` e `full_frames` no mesmo run é a tentativa 2, que fica em `results_exp_distancia/e5_a2/` para o responsável
+decidir. As duas dão os mesmos tempos a 1–3 % nos estágios do quadro inteiro.
+
+`min_s` (ms) das duas tentativas e do paper (`results/timing_gpu.csv`):
+
+| estágio | a1 640² | a1 quadro | a2 640² | a2 quadro | paper 640² | paper quadro |
+|---|---|---|---|---|---|---|
+| flat_field | 0,0304 | 0,1786 | 0,03009 | 0,1781 | 0,05528 | 0,18 |
+| backprop | 0,09047 | 0,9654 | 0,08962 | 0,9696 | 0,1665 | 0,9761 |
+| channels | 0,5219 | 1,798 | 0,473 | 1,777 | 0,6886 | 1,786 |
+| autofocus | 4,786 | 123,3 | 4,807 | 122,9 | 4,893 | 123,7 |
+| autofocus_afc | 0,5243 | 1,595 | 0,5114 | 1,577 | — | — |
+| autofocus_afr | 0,7808 | 11,18 | 0,7738 | 11,18 | — | — |
+| per_object | 1,623 | 45,87 | 1,604 | 45,48 | 1,749 | 48,16 |
+| per_object_wide | 2,496 | 85,52 | 2,48 | 84,68 | — | — |
+| layer_prop | 0,1477 | 1,103 | 0,1321 | 1,096 | 0,2835 | 1,103 |
+| layer_bank_jit | 0,1948 | 3,523 | 0,1861 | 3,523 | 0,3705 | 3,662 |
+| layer_bank_wide | 0,2355 | 4,74 | 0,2286 | 4,72 | — | — |
+| layer_bank_w2 | 0,2842 | 5,947 | 0,2799 | 5,931 | — | — |
+| yolo_tiled | 10,45 | 165,8 | 8,074 | 166,8 | 12,96 | 221,7 |
+| embed | 1,594 | 2,434 | 1,506 | 2,346 | 2,239 | 2,436 |
+| decide | 0,07172 | 0,1073 | 0,06962 | 0,09179 | 0,09966 | 0,118 |
+
+`full_frames` da tentativa 2 (`e5_a2/full_frames_time.csv`), mediana por quadro (s) da soma dos estágios de cada fluxo,
+sem a detecção (0,178 s, comum a todos): `rec_z0` 0,0256, `rec_af` 0,1483, `rec_afs` 0,0250, `rec_afsc` 0,0249,
+`rec_afc` 0,0264, `rec_afr` 0,0361, `rec_edfw` 0,2309, `prop` 0,0076, `bank_jit` 0,0111, `bank_wide` 0,0126, `bank_w2`
+0,0144. O estágio `normalise` (ler e normalizar o quadro) é 0,018 s nos fluxos de reconstrução; `load` 0,003 s nos de
+camada. Para `rec_afs`/`rec_afsc` o estágio `autofocus` só aparece no primeiro quadro de cada sessão.
+
