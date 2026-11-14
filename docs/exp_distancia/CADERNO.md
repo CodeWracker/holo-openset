@@ -830,3 +830,35 @@ novel_unknown_rejection (média ± dp, 5 repetições)
 | bank_wide | 0,8258 ± 0,0673 | 0,8245 ± 0,0662 | 0,8293 ± 0,0573 | 0,8237 ± 0,0668 | 0,8609 ± 0,0498 | 0,8235 ± 0,0622 | 0,8260 ± 0,0575 | 0,8277 ± 0,0540 |
 | bank_w2 | 0,8377 ± 0,0721 | 0,8393 ± 0,0666 | 0,8387 ± 0,0654 | 0,8370 ± 0,0728 | 0,8706 ± 0,0640 | 0,8359 ± 0,0717 | 0,8341 ± 0,0686 | 0,8385 ± 0,0694 |
 
+### E1, quadros inteiros: os 40 quadros do paper
+
+```bash
+# tmux ff_e1, cuda:4, 22:42:06 -> 23:03:53 (log logs/exp_distancia/ff_e1.log); load 48,5 no começo, 56,1 no fim; GPU 4 a 100 % com outro usuário
+FL="rec_z0 rec_af rec_afs rec_afsc rec_afc rec_afr prop bank_jit bank_wide bank_w2"
+python -m holo_openset experiment full_frames --device cuda:4 --flows $FL
+```
+
+Saída `results_exp_distancia/full_frames.csv`, `full_frames_time.csv`, `full_frames_focus.csv`. **Os tempos por estágio
+destes runs de acurácia foram tomados em GPUs compartilhadas (a 100 % com outros usuários) e com outros jobs nossos
+rodando; não são o tempo do estudo (que é o de E5).** Exemplo do efeito: o estágio `normalise` (ler o quadro e o blank
+frame do disco e normalizar) aparece com 0,26–0,56 s por quadro neste log.
+
+Conferência com o paper (`results/full_frames.csv`, mesmas repetições e caixas): `prop`, `bank_jit`, `bank_wide`,
+`bank_w2` iguais (diferença máxima de F1 1,1 × 10⁻¹⁶); `rec_af` 2,8 × 10⁻⁵ e `rec_z0` 8,9 × 10⁻⁵ (as galerias destes
+saem dos caches `rec_z0.npy`/`rec_af.npy` reconstruídos neste build).
+
+`full_frames.csv`, caixas detectadas (`boxes == det`), média ± dp sobre as repetições:
+
+| fluxo | reps | open-set F1 | rejeição | recall do detector | falsos positivos rejeitados |
+|---|---|---|---|---|---|
+| rec_z0 | 5 | 0,9750 ± 0,0063 | 0,9263 | 0,9967 | 0,9606 |
+| rec_af | 5 | 0,9752 ± 0,0054 | 0,9165 | 0,9967 | 0,9554 |
+| rec_afs | 5 | 0,9751 ± 0,0055 | 0,9175 | 0,9967 | 0,9583 |
+| rec_afsc | 5 | 0,9752 ± 0,0054 | 0,9173 | 0,9967 | 0,9596 |
+| rec_afc | 5 | 0,9752 ± 0,0053 | 0,9180 | 0,9967 | 0,9591 |
+| rec_afr | 5 | 0,9751 ± 0,0053 | 0,9185 | 0,9967 | 0,9604 |
+| prop | 5 | 0,9732 ± 0,0083 | 0,9188 | 0,9967 | 0,9484 |
+| bank_jit | 5 | 0,9737 ± 0,0045 | 0,9255 | 0,9967 | 0,9387 |
+| bank_wide | 5 | 0,9401 ± 0,0062 | 0,8307 | 0,9967 | 0,8830 |
+| bank_w2 | 5 | 0,9436 ± 0,0123 | 0,8453 | 0,9967 | 0,8817 |
+
