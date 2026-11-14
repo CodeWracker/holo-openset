@@ -637,3 +637,54 @@ código que já existe; (ii) código e gravação dos dois conjuntos de controle
 configuração depois de lido o teste; erro de código (não número decepcionante) para tudo e é reportado antes de
 qualquer nova rodada.
 
+## 2026-11-14, 17:57 — K1: as letras de enchimento do controle C (código, testes, conferência prévia) (execução, controles)
+
+Commits `bca2f3a` (código e testes) e `6db31c6` (scripts). Arquivos: `holo_openset/sim/scene.py` (`FresnelLayout.fill_mean`,
+`fill_letters`), `sim/generate.py` (contagens em `metadata.csv`), `tests/test_fill.py`,
+`scripts/exp_resolucao/controls_1mm.sh`, `scripts/exp_resolucao/controls_checks.py`,
+`scripts/exp_resolucao/oversampling_convergence.py` (`--n-scenes`, padrão 8, sem mudança no que já rodou).
+
+### Desenho das letras de enchimento (`fill_mean`, padrão 0 = desligado)
+
+- Parâmetro do layout físico (`--layout ... fill_mean=154`). Desligado, `params()` não escreve a chave: o
+  `physics.json` de um conjunto existente regravado fica igual byte a byte.
+- Gerador próprio: `random.Random(semente da cena + 900 000 000)` (`FILL_SEED`), usado depois das letras anotadas e
+  das letras em volta da janela, antes da poeira; o gerador da cena não é tocado, então letras, materiais,
+  profundidades, poeira, sessões e câmera não mudam. As letras de enchimento são acrescentadas no FIM da lista de
+  objetos, com `kind = 'filler'`: nunca entram em `rows` (anotações, rótulos YOLO), nem nos mapas de verdade
+  (`object_maps` só lê `kind == 'letter'`), nem em `n_outside`.
+- Contagem, por região, contando as letras que a cena já tem: na janela, Poisson(154 × 640²/TILE = 154) menos as
+  anotadas; na faixa do alcance, Poisson(154 × área da faixa / 640²) menos as letras em volta da janela (nunca
+  abaixo de 0). Mesmo sorteio de Poisson que as letras em volta da janela já usam (`poisson`, aproximação normal
+  acima de 50).
+- Cada letra como as do conjunto: classe uniforme em todas as 26 (`outside_classes` quando houver, como as de fora),
+  fonte, tamanho contínuo, rotação, material e profundidade com as mesmas leis (`material`); posição uniforme onde as
+  do conjunto vão: na janela com a borda das anotadas, na faixa sem tocar a janela (± espaçamento), como as de fora.
+  Nenhuma letra pode straddle a borda da janela (como no conjunto). Regra de espaçamento do conjunto na grade de
+  ocupação. Escolha minha: a letra é sorteada uma vez e só a posição é sorteada de novo (até
+  `max_attempts_per_letter` = 500); se não couber, é pulada e contada (`n_fill_skipped` no `metadata.csv`) — uma
+  cena nunca é rejeitada por causa do enchimento (isso trocaria a semente e as letras anotadas).
+- `metadata.csv` ganha `n_fill_window`, `n_fill_band`, `n_fill_skipped` só com o enchimento ligado.
+
+### Testes (`tests/test_fill.py`, CPU, 11 s)
+
+1. Desligado (`FresnelLayout()` e `fill_mean=0`): sha256 de quatro cenas (todos os objetos, rasters, posições,
+   materiais, poeira, poeira do sensor, anotações) igual ao calculado com o código ANTES da mudança (`4a49578`).
+2. Ligado: os objetos da cena sem enchimento estão todos lá, iguais e na mesma ordem; anotações iguais; enchimento
+   só `filler`; dentro da janela com a borda ou fora da janela sem tocá-la; espaçamento entre quaisquer duas letras.
+3. Contagem: em 40 cenas, letras na janela e na faixa com as médias de Poisson esperadas (4 erros-padrão).
+4. `generate()` com e sem enchimento: `annotations.csv`, `dust.csv`, `sessions.csv`, `backgrounds.npy`, `labels/`,
+   `objects/` idênticos byte a byte; hologramas diferentes.
+
+`pytest`: 64 passam (56 + 8).
+
+### Conferência prévia, antes de gravar
+
+`controls_checks.py removed --ref bench_1mm --ids 0 300 --device cuda:5`: as cenas 0 (teste, 3 anotadas, 450 de
+enchimento) e 300 (treino, 10 anotadas, 457) refeitas das sementes, gravadas SEM o enchimento como o `generate` grava
+(mesma sessão, câmera, gerador de ruído, GPU): idênticas ao `holograms.npy` do `bench_1mm` (diferença máxima 0
+níveis). Custo da cena com enchimento: ≈ 2,2–2,8 s num processo (460 letras; 60 % na rotação do raster mestre 16×),
+contra 0,18 s sem.
+
+Gravação: `bash scripts/exp_resolucao/controls_1mm.sh 5 dense_record` (tmux `res_ctrl_dense_record`, 17:51).
+
