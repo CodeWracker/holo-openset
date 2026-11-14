@@ -87,7 +87,7 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
       ressalva de que escala fixa não foi testada; tirar o 1,28× das frases sugeridas.
 - [x] A5. Suposição de z₀ conhecido a ±13 %: no relatório e no paper.
 - [x] A6. Leitura A do critério como principal (gerador, macros, relatório).
-- [~] A7. Relatório e caderno atualizados com A1–A6 (feito, commits `ea592c8`…`bd0092c`); falta o PDF novo
+- [x] A7. (PDF novo gerado em 2026-11-14 e enviado ao orientador) Relatório e caderno atualizados com A1–A6 (feito, commits `ea592c8`…`bd0092c`); falta o PDF novo
       para o orientador (gerar no fim, com `relatorio_pdf/build.sh` do scratchpad ou equivalente).
 
 ### Decisões de desenho (tomadas em 2026-11-14, depois de ler o paper e os geradores)
@@ -128,10 +128,10 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
 
 ### Fase C: projeto LaTeX (`latex-openset-microscopy`, sem push)
 
-- [ ] C1. Assets: `figures/paper/tables/*.tex`, `numbers.tex`, `numbers_distancia.tex`, figuras regeneradas;
+- [x] C1. (FEITO: commit `9816401` no repositório do paper, só local) Assets: `figures/paper/tables/*.tex`, `numbers.tex`, `numbers_distancia.tex`, figuras regeneradas;
       cabeçalhos/legendas dos floats (`tab:main`, `tab:stages`, `tab:full`, `tab:robustness`, `fig:robustness`,
       `fig:cost`); `\input` das macros novas no `main.tex`. Um commit.
-- [ ] C2. Texto (outro commit), só o que a revisão lista:
+- [x] C2. (FEITO: commit `b17b8df` no repositório do paper, só local) Texto (outro commit), só o que a revisão lista:
       - 04-method (flows): definir o "narrow autofocus" e dizer a suposição (z₀ conhecido a ±13 %).
       - 05-protocol (Time): a frase da carga do servidor (era load ≈ 230) conforme a sessão E5.
       - 06-results RQ4: resposta mais simples (nenhuma rota é mais barata de um jeito que importe; detector > 95 %
@@ -141,11 +141,11 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
       - 07-discussion: "The question about image size", "Which flow to use", limitação (iii)/(v).
       - 00-abstract e 08-conc: as frases "noise that misleads the autofocus".
       - notas `\todo` do `prop`/stack: o que sobra do stack (sem argumento de tempo).
-- [ ] C3. Compilar com `tectonic`, conferir macros indefinidas e números do texto.
+- [x] C3. (FEITO: 31 páginas, nenhuma referência ou macro indefinida, nenhum overfull) Compilar com `tectonic`, conferir macros indefinidas e números do texto.
 
 ### Fim
 
-- [ ] Mensagem final ao orientador: o que mudou, onde, o que ficou para ele decidir (push nos dois repositórios,
+- [x] Mensagem final ao orientador (2026-11-14): o que mudou, onde, o que ficou para ele decidir (push nos dois repositórios,
       merge do branch em `main`, Zenodo, nomes "blind/narrow autofocus", troca da sessão de tempo).
 
 ## 4b. Especificação das edições de texto do paper (C2), rascunho de 2026-11-14
@@ -340,4 +340,25 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   resolver os CHECK-AFTER-RUNS com os valores finais (o "few tens of milliseconds" vira macros de leitura),
   acrescentar a frase do build em 05-protocol e compilar. Falta depois: eu revisar o diff final do paper; PDF novo
   do relatório; atualizar a memória; mensagem final.
+- 2026-11-14, 12:30: **Fase C concluída e conferida por mim.** Repositório do paper
+  (`latex-openset-microscopy`, `main`, 2 commits à frente do Overleaf, **sem push**): `9816401` (assets finais +
+  floats + `\input` de `numbers_distancia`) e `b17b8df` (prosa). Conferi: os assets do paper são byte a byte os de
+  `holo-openset/output/paper/` e as tabelas/`numbers.tex` são os de `expected/`; compilei eu mesmo (31 páginas,
+  0 indefinidos, 0 overfull; PDF em `scratchpad/latex_final/main.pdf`); nenhum `CHECK`, `??` ou nome interno nas
+  seções; nenhuma linha de atribuição nos commits.
+  Mudanças em relação ao rascunho que eu tinha revisado: legenda de `fig:cost` e `fig:stack` explicam o marcador
+  aberto; `tab:main` e `tab:full` com `\tabcolsep` de 5 pt; leitura do blank frame por macros (3 → 20 ms); "the
+  largest cost of every flow" → "the largest single stage of every flow" (RQ4 e conclusão), porque com o detector a
+  0,17 s a busca cega + twin removal (211 ms) passa dele; nota `\todo` de enrollment com macros; frase do build em
+  05-protocol (F1 difere no máximo 0,003 entre builds).
+  **Estado final:** código em `exp/distancia-autofocus` (só local; `pytest` 37 passam; `reproduce check` 13/13);
+  paper com 2 commits locais; relatório revisado + PDF; memória atualizada.
+  **Fica com o orientador:** push dos dois repositórios; merge do branch em `main`; aceitar ou reverter (a) os nomes
+  "blind/narrow autofocus", (b) a troca da sessão de tempo do paper, (c) as edições de prosa; os três trechos
+  sinalizados e não editados (profundidade de campo; "generalises best to new classes"; "drift" em
+  `tab:stack`/`fig:stack`); a prosa do `prop`/stack (notas `\todo` atualizadas); consulta ao prof. Sobieranski sobre
+  a inclinação; assimetrias da soma de estágios (pedem estágio novo no `timing.py` e sessão de tempo nova).
+  **Não feito (declarado):** escala fixa dos canais em F1; "busca barata a cada M quadros"; `full_frames` em CPU;
+  estudo inteiro dentro da fila `pipeline.jobs()` (a fila cobre o que as tabelas do paper precisam; os números
+  `\Dist…` são refeitos pelos comandos do caderno e conferidos pelo `reproduce check` a partir dos csv guardados).
 
