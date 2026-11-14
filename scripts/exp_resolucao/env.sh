@@ -20,4 +20,5 @@ export PYTHONPATH=$PWD${PYTHONPATH:+:$PYTHONPATH}
 # Temporaries: never /tmp
 export TMPDIR=/home/jovyan/privado/.persist/.cache/tmp/claude-1000/-home-jovyan-compartilhado-ralph-openset-microscopy/2460bd2f-62a2-4eb8-bda4-b04332eeb593/scratchpad/piloto
 # reproduce check and pytest compare the tables of the PAPER: run them with HOLO_RESULTS unset
-#   env -u HOLO_RESULTS -u HOLO_MODELS python -m pytest -q;  env -u HOLO_RESULTS python -m holo_openset reproduce check
+#   env -u HOLO_RESULTS -u HOLO_MODELS python -m pytest -q;  env -u HOLO_RESULTS -u HOLO_MODELS python -m holo_openset reproduce check
+# (with HOLO_MODELS set, \\NModels counts the models of models_exp_resolucao instead of the paper's)
