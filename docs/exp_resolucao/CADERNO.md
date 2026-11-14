@@ -696,3 +696,81 @@ Configurações candidatas do levantamento (`envelope_candidates.csv`):
   O limiar E < 0,1 fica do lado conservador (10–14 % acima nos dois casos de Zhang).
 - Nos trabalhos do grupo Ozcan (pixel de 2,2 µm, z ≈ 0,7 mm) o termo que manda é o pixel. Esses trabalhos usam
   super-resolução de pixel.
+
+## 2026-11-14, 14:35 — Z8.1: os três conjuntos lado a lado, com o vazamento do padrão (piloto)
+
+- Onde: container, CPU. `python scripts/exp_resolucao/setup_comparison.py` (1 s). Lê `small_preview*.csv` (Z6.1) e
+  `pattern_in_crop_z_summary.csv` (Z6.2). Saída: `results_exp_resolucao/setup_comparison.csv`.
+- F1 e rejeição: média das 5 repetições. A diferença pareada é fluxo − crops (`raw`); entre parênteses, quantas das 5
+  repetições têm o sinal da média. "Fora do crop" = 1 − fração dentro do crop (caixa + 25 %), fonte da bancada, média
+  de 4 letras, para os lados de caixa p5/p50/p95 do próprio conjunto, na distância do próprio conjunto.
+
+| conjunto | letras | z | F1 crops | F1 prop. | F1 rec. z0 | prop. − crops | rec. z0 − crops | rejeição crops | rejeição prop. | rejeição rec. z0 | fora do crop (p5 / p50 / p95) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| base | 46–140 px (p50 77 px, 129 µm) | 19,25 mm | 0,781 | 0,963 | 0,964 | +0,183 (5) | +0,183 (5) | 0,104 | 0,924 | 0,923 | 0,59 / 0,51 / 0,39 |
+| letras pequenas | 11–59 px (p50 28 px, 47 µm) | 19,25 mm | 0,050 | 0,845 | 0,842 | +0,795 (5) | +0,792 (5) | 0,003 | 0,333 | 0,302 | 1,00 / 0,98 / 0,81 |
+| letras pequenas | 11–59 px | 2 mm | 0,793 | 0,972 | 0,974 | +0,179 (5) | +0,181 (5) | 0,153 | 0,963 | 0,969 | 0,76 / 0,49 / 0,28 |
+| (só o padrão; sem reconhecimento) | letras do base | 1 mm | — | — | — | — | — | — | — | — | 0,05 / 0,02 / 0,01 |
+
+Diferenças pareadas da rejeição (fluxo − crops): +0,82 / +0,82 no base, +0,33 / +0,30 nas pequenas a 19,25 mm,
++0,81 / +0,82 nas pequenas a 2 mm (prop / rec. z0), todas 5 de 5.
+
+- O que a tabela mostra: com tamanho de letra fixo, aproximar a amostra de 19,25 para 2 mm reduz o vazamento da letra
+  mediana de 0,98 para 0,49 e leva os crops de F1 0,05 a 0,79. Mesmo assim, a camada e a reconstrução continuam
+  0,18 acima dos crops, a mesma vantagem do base, que vaza o mesmo (0,51).
+- O que ela não pode mostrar: o que acontece com as letras do base a ≈ 1 mm, que vazariam só 1–5 %. Nenhum conjunto
+  existente tem tão pouco vazamento, e o base e o `small_near` diferem no tamanho de letra e na distância ao mesmo
+  tempo (e nas cenas auxiliares de treino).
+
+## 2026-11-14, 14:35 — Z8.2: a figura "o que muda com o setup" (piloto)
+
+- Onde: GPU 5 (só para simular a letra do painel (a)). `python scripts/exp_resolucao/fig_setup.py --device cuda:5`
+  (8 s). Saída: `docs/exp_resolucao/img/fig_setup.{pdf,png}`. Tudo sai dos arquivos de resultado e do simulador:
+  - (a) é simulado na hora;
+  - (b) vem de `sim/envelope.py`;
+  - (c) vem de `pattern_in_crop_z_summary.csv`;
+  - (d) vem de `small_preview.csv`;
+  - (e) vem de `results/eval/{ideal,realistic}`, os mesmos arquivos de `tables.tab_ideal`.
+
+  Não está ligada aos geradores do paper. Olhei o PNG e corrigi a legenda que cobria as curvas em (b) e a
+  sobreposição do rótulo do Nyquist.
+- **Legenda (painel a painel):**
+  - **(a)** A mesma letra 'F' de 129 µm (77 px, o tamanho mediano do conjunto base), absorvente, gravada com a
+    fonte da bancada com a amostra a 19,25, 2 e 1 mm do sensor (recorte de 300 × 300 px). O quadrado tracejado é o
+    recorte que o classificador vê (a caixa da letra com 25 % de margem). A 19,25 mm o padrão se espalha muito além
+    do recorte; a 1 mm ele quase é a sombra da letra. (A imagem de 1 mm vem do simulador atual, sem o conteúdo acima
+    do Nyquist; ver Z6.3(a).)
+  - **(b)** Quanto contraste a fonte da bancada (LED de 10 nm atrás de um pinhole de 100 µm a 15 cm) deixa às franjas,
+    em função da finura delas (ciclos por mm), nas três distâncias (eq. `eq:envelope`, com o pixel). A faixa cinza
+    fica além da frequência de Nyquist do sensor (299 ciclos/mm), o mais fino que os pixels conseguem amostrar. A
+    linha pontilhada marca o contraste de 0,1. A legenda dá o maior fator de redução da imagem que cada distância
+    permite: 4× a 19,25 mm; nenhum a 2 e a 1 mm.
+  - **(c)** A fração da energia do padrão de uma letra que cai fora do recorte, contra a distância amostra–sensor
+    (escala log), para uma letra grande (129 µm, a mediana do base) e uma pequena (47 µm, a mediana dos conjuntos de
+    letras pequenas). As faixas vão do mínimo ao máximo de 4 letras.
+  - **(d)** O F1 open-set (média de 5 partições de classes, barra = desvio-padrão) de três rotas: recortes do
+    holograma bruto (cinza), camada de propagação (verde-azulado) e reconstrução calibrada (roxo), nos três conjuntos
+    que já existem: letras grandes a 19,25 mm, letras pequenas a 19,25 mm e letras pequenas a 2 mm.
+  - **(e)** O modelo idealizado contra a bancada. O F1 open-set de seis rotas treinadas e testadas no modelo
+    idealizado (à esquerda) e na simulação da bancada (no meio); os círculos vazios (à direita) são os modelos
+    treinados no idealizado e testados na bancada, sem retreino. O filtro de Wiener vai de melhor no idealizado
+    (0,988) a último antes dos recortes na bancada (0,910). Os modelos treinados no idealizado caem para 0,36–0,58,
+    exceto a reconstrução calibrada (0,899).
+- Surpresa (para o texto): o "não transfere (0,358)" do orientador é a camada aprendida real. A reconstrução calibrada
+  treinada no idealizado transfere bem (0,899 na bancada); os outros fluxos ficam entre 0,36 e 0,58.
+
+## 2026-11-14, 14:35 — Z8.3: o que o autor da bancada confirmou (piloto)
+
+Comunicação pessoal do prof. Sobieranski ao orientador, relatada por este em 2026-11-14 (≈ 14:10; texto em
+`PROTOCOLO_Z.md`):
+- Não havia inclinação na bancada, só pequenas deformidades locais do material (variações locais de profundidade,
+  que o espalhamento de profundidade por objeto já simula).
+- O brilho era ajustado à mão, pelo obturador (shutter) e pelo ganho analógico; por isso iluminação e exposição
+  mudam de sessão para sessão.
+- O LED é UV de 385 nm, Thorlabs M385L2, com **10 nm de FWHM segundo o datasheet, valor relatado pelo autor e não lido
+  por nós**: o agente do levantamento não conseguiu abrir a página da Thorlabs (anti-robô; `LEVANTAMENTO_Z.md`,
+  linha 560).
+
+Redação daqui em diante: o gerador original foi "evoluído", não "estava errado"; o artigo de conferência anterior
+(CBMS 2024) é trabalho dos próprios autores, corrigido aqui por medição. (No Z1 eu chamei de "achado lateral" a
+amostragem do kernel do gerador original; é uma observação técnica sobre uma versão anterior, não um erro a apontar.)
