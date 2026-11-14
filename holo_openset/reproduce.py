@@ -10,7 +10,9 @@
     python -m holo_openset reproduce package OUT               # maintainers: the archives of the Zenodo record
 
 `check` must match expected/ byte by byte. `compare` allows a tolerance: a new run on other hardware gives close, not
-identical, numbers, and the times of the stages depend on the machine.
+identical, numbers, and the times of the stages depend on the machine. Both cover the two files of numbers the paper
+inputs: numbers.tex (from results/) and numbers_distancia.tex (the distance study, from its stored results in
+results_exp_distancia/, or HOLO_DIST_RESULTS: holo_openset/paper/distance.py).
 """
 import filecmp
 import hashlib
@@ -35,8 +37,12 @@ MODEL_SETS = ['realistic', 'ideal', 'small_z0', 'small_near']
 # level 2: everything that needs neither new scenes nor training
 LEVEL2_JOBS = ['rec_base', 'rec_ideal', 'rec_small', 'eval_', 'exp_e2e', 'exp_discovery', 'exp_full_frames',
                'exp_fidelity']
-# macros that measure the machine, not the method
-MACHINE = re.compile(r'^(T[A-Z]|Full.*(S|Ms)$|TrainMinutes)')
+# macros that measure the machine, not the method: stage times and their ratios, times of the full frames and the
+# detector's share of them, training time; in the distance study, every time, the n* and the verdicts built on times
+MACHINE = re.compile(r'^(T[A-Z]|Full.*(S|Ms)$|FullDetectPct|BackOverLayer|TrainMinutes'
+                     r'|Dist(Time|Stage|Nstar|PerFrame|SearchBlindOver)|Dist(Meas|Frame)\w*(S|Ms|Over\w+)$'
+                     r'|DistCrit\w*(Cheapest|Cost|Verdict|MetCount))')
+NUMBERS = ['numbers.tex', 'numbers_distancia.tex']   # the macros of the paper and those of the distance study
 NUM = re.compile(r'\\newcommand\{\\(\w+)\}\{([^}]*)\}')
 TOLERANCE = 0.01
 
@@ -47,24 +53,27 @@ def sh(*cmd, env=None):
 
 
 def tables(out, results=None):
-    """Tables and numbers.tex of the paper from a results directory, written to `out`."""
+    """Tables and numbers.tex of the paper from a results directory, and numbers_distancia.tex of the distance study
+    from its stored results (no figure), written to `out`."""
     env = {'HOLO_PAPER': str(out)}
     if results:
         env['HOLO_RESULTS'] = str(results)
-    return sh(sys.executable, '-m', 'holo_openset', 'paper', 'tables', env=env)
+    return sh(sys.executable, '-m', 'holo_openset', 'paper', 'tables', 'distance', '--no-figures', env=env)
 
 
 def check():
-    """Level 1: the tables and numbers of the paper, rebuilt from results/, against expected/."""
+    """Level 1: the tables and numbers of the paper, rebuilt from results/ (and the study's from its results), against
+    expected/."""
     with tempfile.TemporaryDirectory() as t:
         out = Path(t)
         if tables(out):
             return 1
-        names = ['numbers.tex'] + [f'tables/{p.name}' for p in sorted((paths.EXPECTED / 'tables').glob('*.tex'))]
-        bad = [n for n in names if not (out / n).exists() or not filecmp.cmp(out / n, paths.EXPECTED / n, shallow=False)]
+        names = NUMBERS + [f'tables/{p.name}' for p in sorted((paths.EXPECTED / 'tables').glob('*.tex'))]
+        bad = [n for n in names if not (out / n).exists() or not (paths.EXPECTED / n).exists()
+               or not filecmp.cmp(out / n, paths.EXPECTED / n, shallow=False)]
     print(f'{len(names) - len(bad)}/{len(names)} files identical to expected/')
     for n in bad:
-        print('  differs:', n)
+        print('  differs:', n + ('' if (paths.EXPECTED / n).exists() else ' (not in expected/)'))
     return 1 if bad else 0
 
 
@@ -74,10 +83,14 @@ def macros(f):
 
 def compare(results):
     """A new run against the paper: every number within the tolerance, the times of the machine set apart."""
+    new, old = {}, {}
     with tempfile.TemporaryDirectory() as t:
         if tables(t, results):
             return 1
-        new, old = macros(Path(t) / 'numbers.tex'), macros(paths.EXPECTED / 'numbers.tex')
+        for n in NUMBERS:
+            if (paths.EXPECTED / n).exists():
+                new.update(macros(Path(t) / n))
+                old.update(macros(paths.EXPECTED / n))
     same, close, far, machine, text = 0, 0, [], 0, 0
     for k, v in old.items():
         if MACHINE.match(k):

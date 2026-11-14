@@ -2,15 +2,19 @@
 the freeze of CADERNO.md), from the csv files of the study. A missing result gives '--' (table), '?' (macro) or a
 figure left out, never an error.
 
-    python -m holo_openset paper distance
-    -> <HOLO_PAPER>/distance/numbers_distancia.tex     macros \\Dist..., letters only, apart from those of the paper
+    python -m holo_openset paper distance [--no-figures]
+    -> <HOLO_PAPER>/numbers_distancia.tex              macros \\Dist..., letters only, apart from those of the paper
+                                                       (next to numbers.tex: the paper inputs both)
+       <HOLO_PAPER>/distance/numbers_distancia.tex     the same file, with the other outputs of the study
        <HOLO_PAPER>/distance/tables/<name>.tex         bodies of tabular environments, as the tables of the paper
        <HOLO_PAPER>/distance/tables/<name>.md          the same table in GitHub Markdown, with a header, for a report
        <HOLO_PAPER>/distance/figures/<name>.pdf, .png, captions.md
 
-Inputs under HOLO_RESULTS (results_exp_distancia): robustness.csv, robustness_sessions.csv, focus_error.csv,
+Inputs: the stored results of the study, results_exp_distancia/ of the repository (HOLO_DIST_RESULTS moves it; the
+results of the paper, HOLO_RESULTS, are not read): robustness.csv, robustness_sessions.csv, focus_error.csv,
 focus_error_sessions.csv, focus_sweep.csv, the full-frame triples NAME.csv, NAME_time.csv, NAME_focus.csv, and the
-timing of the single measurement session in HOLO_DIST_TIMING (default 'e5', relative to HOLO_RESULTS or absolute):
+timing of the single measurement session in HOLO_DIST_TIMING (default 'e5', relative to the results of the study or
+absolute):
 timing_gpu.csv (min_s), timing_cpu.csv (median_s), full_frames_time.csv and full_frames.csv. HOLO_DIST_TIMING_CPU, if
 set, takes timing_cpu.csv from another directory (only to try the module on stand-in timings: the protocol compares
 times of one run only).
@@ -71,8 +75,8 @@ FULL, WINDOW = (2748, 3840), (640, 640)
 HALF_WIDTH_UM = 3840 * PIXEL / 2 * 1e6           # half the width of the sensor: 3.2 mm
 
 # ------------------------------------------------------------------------------------------------ the look
-COLORS = {**{f: PAPER_COLORS[f] for f in ['rec_z0', 'rec_af', 'prop', 'bank_jit']},   # the paper keeps its colours
-          'rec_afs': '#a3195b', 'rec_afsc': '#c77c02', 'rec_afM': '#b05fa0', 'rec_afc': '#1f4e9c',
+COLORS = {**{f: PAPER_COLORS[f] for f in ['rec_z0', 'rec_af', 'rec_afc', 'prop', 'bank_jit']},   # those of the paper
+          'rec_afs': '#a3195b', 'rec_afsc': '#c77c02', 'rec_afM': '#b05fa0',
           'rec_afr': '#8e3b2f', 'rec_edfw': '#2e9e48', 'bank_wide': '#8fa31f', 'bank_w2': '#55c08a'}
 MARKERS = {'rec_z0': 's', 'rec_af': 'o', 'rec_afs': 'D', 'rec_afsc': 'd', 'rec_afM': 'p', 'rec_afc': 'v',
            'rec_afr': '^', 'rec_edfw': 'P', 'prop': 'X', 'bank_jit': '<', 'bank_wide': '>', 'bank_w2': '*'}
@@ -177,6 +181,23 @@ def nstar_shown(d, latex=True):
 
 
 # ------------------------------------------------------------------------------------------------ helpers
+STUDY_RESULTS = 'results_exp_distancia'   # under the repository: the stored results of the study
+
+
+def results():
+    """Where the results of the study are read: HOLO_DIST_RESULTS, else results_exp_distancia/ of the repository."""
+    r = os.environ.get('HOLO_DIST_RESULTS')
+    return Path(r) if r else paths.PROJECT / STUDY_RESULTS
+
+
+def shown(p):
+    """A path for the header of the macros: relative to the repository when inside it (the same bytes in any clone)."""
+    try:
+        return str(Path(p).resolve().relative_to(paths.PROJECT))
+    except ValueError:
+        return str(p)
+
+
 def out():
     return paths.PAPER / 'distance'
 
@@ -239,7 +260,7 @@ def nstar_text(v, latex=True):
 
 
 def load(name, root=None):
-    f = Path(root or paths.RESULTS) / f'{name}.csv'
+    f = Path(root or results()) / f'{name}.csv'
     try:
         return pd.read_csv(f) if f.exists() else pd.DataFrame()
     except (pd.errors.EmptyDataError, pd.errors.ParserError):
@@ -296,18 +317,18 @@ def reps_note(df):
 
 # ------------------------------------------------------------------------------------------------ timing
 def rel(p):
-    """A directory of results as it is named under HOLO_RESULTS, for the notes of the tables."""
+    """A directory of results as it is named under the results of the study, for the notes of the tables."""
     try:
-        return str(Path(p).relative_to(paths.RESULTS)) or '.'
+        return str(Path(p).relative_to(results())) or '.'
     except ValueError:
         return str(p)
 
 
 def timing_dirs():
     t = os.environ.get('HOLO_DIST_TIMING', 'e5')
-    g = Path(t) if Path(t).is_absolute() else paths.RESULTS / t
+    g = Path(t) if Path(t).is_absolute() else results() / t
     c = os.environ.get('HOLO_DIST_TIMING_CPU')
-    c = g if not c else Path(c) if Path(c).is_absolute() else paths.RESULTS / c
+    c = g if not c else Path(c) if Path(c).is_absolute() else results() / c
     return g, c
 
 
@@ -628,7 +649,7 @@ def load_timing_replica():
     """{(height, width): {stage: s}} of the other GPU attempt of the timing session (HOLO_DIST_TIMING_REPLICA, default
     'e5_a1'; min_s): only to show how far n* moves between two measurements, never mixed into a table of times."""
     r = os.environ.get('HOLO_DIST_TIMING_REPLICA', 'e5_a1')
-    df = load('timing_gpu', Path(r) if Path(r).is_absolute() else paths.RESULTS / r)
+    df = load('timing_gpu', Path(r) if Path(r).is_absolute() else results() / r)
     if not has(df, 'height', 'width', 'stage', 'min_s'):
         return {}, r
     return {(int(h), int(w)): dict(zip(x.stage, x.min_s.astype(float))) for (h, w), x in
@@ -1313,23 +1334,25 @@ TABLES = [tab_dist_metrics, tab_dist_paired, tab_dist_focus, tab_dist_focus_val,
 FIGURES = [fig_dist_breakeven, fig_dist_cost_f1, fig_dist_tilt, fig_dist_sets, fig_dist_sweep]
 
 
-def main(timing=None):
+def main(timing=None, figures=True):
+    """Tables, macros and (unless figures=False: what `reproduce check` needs) figures of the study."""
     if timing:
         os.environ['HOLO_DIST_TIMING'] = str(timing)
     M.clear()
     setup()
     out().mkdir(parents=True, exist_ok=True)
-    for fn in TABLES + FIGURES + [write_captions]:
+    for fn in TABLES + (FIGURES + [write_captions] if figures else []):
         try:
             fn()
         except Exception as e:  # noqa: BLE001  one missing result must not stop the others
             print('FAILED', fn.__name__, repr(e))
     g, c = timing_dirs()
-    f = out() / 'numbers_distancia.tex'
-    f.write_text('% generated by python -m holo_openset paper distance -- do not edit\n'
-                 f'% results: {paths.RESULTS}; timing: GPU {g}, CPU {c}\n' +
-                 '\n'.join(f'\\newcommand{{\\{k}}}{{{v}}}' for k, v in sorted(M.items())) + '\n')
-    print('wrote', f, len(M), 'macros')
+    text = ('% generated by python -m holo_openset paper distance -- do not edit\n'
+            f'% results: {shown(results())}; timing: GPU {rel(g)}, CPU {rel(c)}\n' +
+            '\n'.join(f'\\newcommand{{\\{k}}}{{{v}}}' for k, v in sorted(M.items())) + '\n')
+    for f in [out() / 'numbers_distancia.tex', paths.PAPER / 'numbers_distancia.tex']:
+        f.write_text(text)
+        print('wrote', f, len(M), 'macros')
 
 
 if __name__ == '__main__':

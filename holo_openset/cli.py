@@ -7,7 +7,7 @@ Build the data and the models (each command uses ONE device, --device cpu | cuda
   train         train the embedding network of a flow on the seen classes of a repetition
   evaluate      strict open-set evaluation of a flow (paper protocol)
   experiment    the experiments of the paper (see holo_openset/experiments)
-  paper         figures and tables of the paper from the results
+  paper         figures, tables and numbers of the paper from the results (tables, figures, distance)
 Use the system:
   enroll        build (or extend) a gallery from annotated images, with a calibrated threshold
   predict       detect + recognise patterns in hologram images (known class or 'unknown'), with figures
@@ -143,7 +143,13 @@ def cmd_reproduce(a):
 def cmd_paper(a):
     import importlib
     for name in a.what:
-        importlib.import_module(f'holo_openset.paper.{name}').main()
+        if a.no_figures and name == 'figures':
+            continue
+        mod = importlib.import_module(f'holo_openset.paper.{name}')
+        if a.no_figures and name == 'distance':
+            mod.main(figures=False)
+        else:
+            mod.main()
 
 
 # ------------------------------------------------------------------------------------------------ use
@@ -286,7 +292,9 @@ def main(argv=None):
     p.set_defaults(fn=cmd_experiment)
 
     p = sub.add_parser('paper', help='figures and tables of the paper')
-    p.add_argument('what', nargs='*', default=['tables', 'figures'])
+    p.add_argument('what', nargs='*', default=['tables', 'figures'],
+                   help='tables (numbers.tex), figures, distance (the distance study: numbers_distancia.tex)')
+    p.add_argument('--no-figures', action='store_true', help='tables and numbers only (what reproduce check rebuilds)')
     p.set_defaults(fn=cmd_paper)
 
     p = sub.add_parser('reproduce', help='reproduce the paper (docs/REPRODUCIBILITY.md)')

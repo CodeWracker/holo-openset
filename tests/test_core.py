@@ -207,6 +207,7 @@ def test_study_flows_borrow_a_model_and_stay_out_of_the_queue_of_the_paper():
 def _no_dist_env(monkeypatch, results, paper):
     from holo_openset import paths
     monkeypatch.setattr(paths, 'RESULTS', results)
+    monkeypatch.setenv('HOLO_DIST_RESULTS', str(results))   # where the study generator reads its results
     monkeypatch.setattr(paths, 'PAPER', paper)
     monkeypatch.delenv('HOLO_DIST_TIMING', raising=False)
     monkeypatch.delenv('HOLO_DIST_TIMING_CPU', raising=False)
