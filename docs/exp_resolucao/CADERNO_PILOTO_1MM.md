@@ -392,3 +392,53 @@ Escrito depois do S1–S3 (código e teste de convergência) e antes de gravar o
 O teste é lido uma vez, com o limiar da validação. Reporta-se o que sair. O critério do item 4 não é aplicado a r1
 sozinho; as cinco repetições dependem do checkpoint com o orientador.
 
+
+## 2026-11-14, 16:44 — R1–R3: plano de poeira em cada comprimento de onda, conferência cruzada, robustez de profundidade (execução)
+
+Commits `2eb3fec` (código e testes), `9e010ae` (tabelas), `74a5224` (script do piloto). Logs:
+`logs/exp_resolucao/r1_dustfix.log`.
+
+### R1. Correção pedida no P1 (só no caminho fino)
+
+- `fine_scattered_field(..., dust_planes)`: a poeira (`kind == 'dust'`, as faces do vidro a +1,0 mm e −0,2 mm) não é
+  mais pré-propagada; o campo de cada profundidade fica numa tela à parte. Em `fine_intensity`, a FFT de cada plano é
+  feita uma vez e, dentro do laço dos comprimentos de onda, entra no espectro com H(λ, zz + profundidade) (zz = z, ou
+  z − 0,5 mm com a poeira da janela): nenhuma transformada a mais. As letras continuam pré-propagadas pela sua
+  profundidade no λ central; o borrão do pinhole continua calculado para a distância da amostra (aproximação
+  declarada). Caminho nativo intocado (o teste da referência de s = 1 continua bit a bit).
+- Teste novo: sem pinhole, com a banda inteira e a poeira da janela, uma partícula a +1,0 mm gravada a z = 1,0 mm é
+  igual à mesma partícula a profundidade 0 gravada a 2,0 mm: diferença máxima 0,0 (as mesmas contas); pelo caminho das
+  letras (pré-propagação no λ central) a diferença seria 5,1 % do padrão (o teste exige > 2 %).
+- O quanto as gravações mudaram (8 cenas, s = 4, 2,6 µm, sem ruído; o gravador antes da correção rodado de um
+  `git worktree` em `2c9e3d4`, modos `dump`/`compare` do script; `results_exp_resolucao/oversampling_dustfix_change.csv`):
+  rms(depois − antes) / rms do padrão = 1,06 / 2,66 / 4,89 % (mín / mediana / máx) a 1,0 mm e 1,07 / 2,79 / 5,49 % a
+  0,7 mm; diferença máxima 2,17 e 2,53 níveis de cinza; quadros em branco idênticos (não têm poeira de vidro).
+- Testes de convergência, margem e alcance rodados de novo com o gravador corrigido (os csv foram substituídos):
+  (4, 8) com 2,6 µm: 0,23 / 0,25 / 0,32 % a 1,0 mm e 0,34 / 0,36 / 0,46 % a 0,7 mm → **passa, s = 4 mantido**;
+  (2, 4): 1,09 / 1,19 / 1,43 % e 1,42 / 1,55 / 1,79 %, falha; (1, 2): 7,3–9,4 % e 8,8–11,5 %. Com 50 µm e com a
+  densidade escalada, a mesma resposta ((4, 8) ≤ 0,46 % e ≤ 0,42 %). Margem 394: 0,0011 %; alcance 233: 0,14 %
+  (1,0 mm) e 0,11 % (0,7 mm); alcance 117 subiu para 0,73 % (ainda passaria).
+
+### R2. Conferência cruzada com a implementação independente
+
+`python scripts/exp_resolucao/crosscheck_recorder.py --device cuda:5`: uma letra F absorvente (a = 0,6, sem fase), do
+tamanho mediano do layout (fonte 21,42 px), desenhada na grade mestra e levada à grade 4× (máscara 63 × 37 células),
+no centro de uma janela 640 com margem 256, sem poeira, sem feixe, sem ruído, a 1,0 mm, banda do LED e pinhole do
+conjunto: o gravador (`sensor_intensity`, s = 4) contra `sim_sampling.py::fine_recording` (s = 4) com a MESMA máscara
+fina: rms da diferença / rms do padrão = **7,2 × 10⁻¹⁵** (diferença máxima 4,4 × 10⁻¹⁶;
+`results_exp_resolucao/crosscheck_recorder.json`). As duas fazem as mesmas contas (o disco do pinhole por J1 do torch
+num, do scipy no outro), então a concordância é de arredondamento: o que ela confirma é a posição, as unidades, a
+média no pixel e o recorte da janela.
+
+### R3. Robustez de profundidade e variante por razão (preparados)
+
+- `pilot_1mm.sh record_depth50`: `simulate like --like bench_1mm --name bench_1mm_robust/depth50 --split test
+  --set-physics depth_std=50e-6 depth_max=150e-6`; `robust_depth50`: `reconstruct --z0 <1,0 mm>` e `experiment
+  robustness --variants depth50 --flows raw prop rec_z0` (como está).
+- Mesmas cenas a menos das profundidades: verificado em duas cenas (sementes das imagens 0 e 625) por teste
+  (`test_the_depth_spread_moves_only_the_depths`): mesmos rasters, cantos, absorção, fase, tipo, mesma poeira, mesmas
+  linhas de anotação a menos de `depth`, e as profundidades proporcionais (2,6/50) — é um único sorteio gaussiano por
+  objeto, recortado em 3σ nos dois casos. Também vou conferir as anotações do conjunto gravado.
+- `robust_b` ganhou a variante por razão: α treinado × α_cal(0,7)/α_cal(1,0) (`--alpha-mode ratio`) e `rec_z0` em
+  1,0 mm × a mesma razão (`z_ratio` do json, cache `rec_z0_recal_ratio.npy`), linhas `prop+recal_ratio` e
+  `rec_z0+recal_ratio`.
