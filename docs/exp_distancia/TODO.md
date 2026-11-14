@@ -76,18 +76,19 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
 
 ### Fase A: o que faltou (conferências e análise)
 
-- [ ] A1. `frame_5` × `session_5`: os 8 z de teste, F1 por sessão × desvio, quanto a amostra de 8 exagera.
-- [~] A2. Revisão do diff do branch (RNG por quadro, inclinação, pareamento das cenas) + checagens empíricas.
+- [x] A1. `frame_5` × `session_5`: os 8 z de teste, F1 por sessão × desvio, quanto a amostra de 8 exagera.
+- [x] A2. Revisão do diff do branch (RNG por quadro, inclinação, pareamento das cenas) + checagens empíricas.
       Leitura feita por mim em 2026-11-14 (`sim/generate.py`, `reconstruct.py`): o jitter por quadro, o drift e a
       inclinação usam geradores próprios (`+800_000_000`, `+600_000`, `+650_000`), o ruído da câmera mantém a
       semente do base, o blank frame fica o da sessão, e `robustness.py` já afirma (`assert`) que as anotações de
       cada variante são as do base. Nada errado na leitura. Falta a checagem empírica (subagente "análise").
-- [ ] A3. n\*: sensibilidade do denominador (GPU e CPU); reescrever como "custa o mesmo", sem cruzamento preciso.
-- [ ] A4. "Canais" e leitura do blank frame como detalhe de implementação: conta do front end sem os canais, com a
+- [x] A3. n\*: sensibilidade do denominador (GPU e CPU); reescrever como "custa o mesmo", sem cruzamento preciso.
+- [x] A4. "Canais" e leitura do blank frame como detalhe de implementação: conta do front end sem os canais, com a
       ressalva de que escala fixa não foi testada; tirar o 1,28× das frases sugeridas.
-- [ ] A5. Suposição de z₀ conhecido a ±13 %: no relatório e no paper.
-- [ ] A6. Leitura A do critério como principal (gerador, macros, relatório).
-- [ ] A7. Relatório e caderno atualizados com A1–A6; PDF novo para o orientador.
+- [x] A5. Suposição de z₀ conhecido a ±13 %: no relatório e no paper.
+- [x] A6. Leitura A do critério como principal (gerador, macros, relatório).
+- [~] A7. Relatório e caderno atualizados com A1–A6 (feito, commits `ea592c8`…`bd0092c`); falta o PDF novo
+      para o orientador (gerar no fim, com `relatorio_pdf/build.sh` do scratchpad ou equivalente).
 
 ### Decisões de desenho (tomadas em 2026-11-14, depois de ler o paper e os geradores)
 
@@ -218,4 +219,17 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   - Compilar o paper: `cd ../latex-openset-microscopy && XDG_CACHE_HOME=/home/jovyan/privado/.persist/.cache
     /home/jovyan/privado/.persist/bin/tectonic --keep-logs -o <dir de saída no scratchpad> main.tex` (a linha de
     base de hoje compila sem referência indefinida).
+- 2026-11-14, 10:20: **Fase A concluída** pelo subagente "análise" (commits `ea592c8`, `3ada8fe`, `66ec0bd`,
+  `4cc6914`, `a043ff4`, `53e9154`, `60486cc`, `2143bf9`, `1c8b70d`, `8124325`, `bd0092c`) e revisada por mim. Achados:
+  - A1: os 8 z de `session_5` são −10,4, +4,8, −2,2, +11,4, −1,3, +0,8, −0,7, −10,7 % (rms 6,9 %, percentil 95);
+    previsto por `frame_5` para esses 8: `rec_z0` 0,745 (medido 0,753), stack 0,825 (0,839); a linha de 5 % do
+    paper exagera o dano em ≈ 0,10 (`rec_z0`, `prop`) e 0,08 (stack). Macros `\DistSessFive…`.
+  - A2: pareamento confirmado (anotações, z recomputado das sementes, azimute da inclinação; `tilt0` bit a bit igual
+    aos quadros regravados com o código do paper neste build).
+  - A3: regra ±3 %/fator 2; só o stack de 5 em CPU vira "≈ same cost"; GPU no limite (2,0–3,9 e 155–304).
+    Assimetrias não corrigidas: 0,36 ms de conversão não cobrados; `embed` medido com o modelo de 3 canais.
+  - A6: leitura A principal (1 de 24); B fica como alternativa (2 de 24).
+  - Detector > 95 % só em GPU (CPU 82–94 %): o texto do paper diz "on a GPU".
+  - `pytest` 24 passam e 1 falha, `reproduce check` 9/12: esperado enquanto `expected/` não for refeito (B2).
+  Próximo: disparar "geradores" (B2, fase 1: código); "integração-runs" (B1) continua rodando (`tmux integ_*`).
 

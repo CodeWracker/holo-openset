@@ -136,8 +136,8 @@ def break_even(t, stack, search, simple=False):
 
 
 # n* is a ratio over a DIFFERENCE of two times (the layer and what a reconstruction costs besides the search): when the
-# two are close, a small error in either moves n* a lot. Rule (fixed before the table was looked at, on the review of
-# 2026-11-14): a crossover is "not resolved by the measurement" when moving the two times by +-NSTAR_TOL in opposite
+# two are close, a small error in either moves n* a lot. Rule (fixed on the review of 2026-11-14, which had pointed at the unstable
+# crossover on the CPU, and before the ranges below were computed): a crossover is "not resolved by the measurement" when moving the two times by +-NSTAR_TOL in opposite
 # directions flips the sign of the denominator (then the stack costs the same as one reconstruction) or changes n* by
 # more than a factor NSTAR_FACTOR (then n* is printed as a range).
 NSTAR_TOL, NSTAR_FACTOR = 0.03, 2.0

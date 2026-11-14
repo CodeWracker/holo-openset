@@ -1615,3 +1615,19 @@ arquivos desta tarefa.
 
 Commits desta tarefa (A1–A7): `ea592c8`, `3ada8fe`, `66ec0bd`, `4cc6914`, `a043ff4`, `53e9154`, `60486cc`, `2143bf9`,
 `1c8b70d`, `8124325` e o deste registro.
+
+### Revisão do responsável sobre as pendências (2026-11-14, 10:20)
+
+- Conferi por fora os 8 z de teste de `session_5` (`sessions.csv`): −10,43, +4,81, −2,19, +11,40, −1,31, +0,82, −0,66
+  e −10,73 % de z₀; |Δ| médio 5,29 %, rms 6,93 %. Batem com a entrada A1. A probabilidade de três de oito além de 2σ
+  (0,44 %) e o percentil do rms (χ² com 8 graus: 15,4, cauda de 5 %) também batem.
+- A regra do n\* (±3 %, fator 2) veio do meu roteiro, escrito depois de a revisão apontar o cruzamento instável em CPU
+  e antes de as faixas serem calculadas. O relatório e o comentário do gerador diziam "antes de olhar a tabela";
+  troquei pela descrição exata.
+- Assimetrias da soma de estágios achadas em A3 (0,36 ms de conversão da entrada não cobrados dos convencionais em
+  GPU; embedding do stack 1,0–1,9 ms mais caro): ficam declaradas no relatório e não são corrigidas agora, porque a
+  correção pede um estágio novo no `timing.py` e uma sessão de tempo nova. A conclusão não depende delas: o run
+  medido de quadros inteiros, em que cada fluxo paga o que de fato gasta, dá o mesmo quadro.
+- Participação do detector acima de 95 % vale só em GPU (95–98 %); em CPU é 82–94 %. O texto do paper tem de dizer
+  "em GPU".
+
