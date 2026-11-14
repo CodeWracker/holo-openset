@@ -118,7 +118,8 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
       conjuntos novos); oráculo nos 3 conjuntos; `evaluate` e `e2e` de `rec_afc`; `full_frames` (um run, todos os
       fluxos do paper + `rec_afc`); promover os csv de tempo da E5 e o erro de distância (`focus_error`) para
       `results/`.
-- [ ] B2. Geradores do paper (`style.py`, `tables.py`, `figures.py`): `rec_afc` no `ORDER`, linha da busca em
+- [~] B2. (fase 1, código, FEITA: commits `08031fa`, `fd90020`, `644c750`, `cba99f0`, `e880564`, `8138b79`,
+      `080729b`; fase 2 pendente) Geradores do paper (`style.py`, `tables.py`, `figures.py`): `rec_afc` no `ORDER`, linha da busca em
       `tab_stages`, linhas/coluna novas em `tab_robustness`, macros; figuras que usam `ORDER`
       (`fig_robustness`, `fig_cost`); `pipeline.py` (jobs novos), `reproduce.py`/`expected/` (incluir
       `numbers_distancia.tex`), testes, README/docs. `pytest` e `reproduce check` verdes.
@@ -239,4 +240,29 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   devolve um relatório. **Fase 2 (regenerar tudo, `expected/`, figuras, `pipeline.py`, `sim/variants.py`) só começa
   com uma mensagem minha, depois que "integração-runs" (B1) terminar** — mandar por `SendMessage` ao mesmo agente,
   para ele manter o contexto.
+- 2026-11-14, 10:35: **B2 fase 1 concluída** ("geradores"): `rec_afc` no `ORDER` de `tables.py` (única fonte),
+  nomes "blind autofocus"/"narrow autofocus" (curtos "blind AF"/"narrow AF"), linha `autofocus_afc` em `tab_stages`,
+  3 linhas + coluna em `tab_robustness`, macros novas (`TBlindOverNarrow{Gpu,Cpu}Big`, `FullDetectPct<Flow>`,
+  `FullDetectPctMin[Floor|Flow|Of]`, `FocusBlind…`, `FocusNarrow…`; `TLayerBank*` virou `TLayerBankJit*`),
+  `paper distance` lê `results_exp_distancia/` por conta própria (`HOLO_DIST_RESULTS`), entrega
+  `numbers_distancia.tex` em `$HOLO_PAPER`, opção `--no-figures`; `reproduce check` cobre os dois arquivos de macros
+  (13 itens); testes novos em `tests/test_paper_integration.py`; docs. `pytest`: 33 passam, 1 falha (`expected/`
+  velho, esperado), 1 pulado (run novo de quadros inteiros).
+  Minhas decisões sobre as perguntas dele (mandar na mensagem da fase 2):
+  - linha do stack em `tab_stages` usa `layer_bank_jit`: **aceito**;
+  - Wiener entra no conjunto do mínimo da participação do detector: **aceito**;
+  - `rec_twin` passa a "blind autofocus + twin removal": **sim**;
+  - linhas comuns de robustez: iguais (1e-12) nos conjuntos novos e nas de `rec_afc`; ≤ 0,01 nas outras (as do paper
+    vêm dos conjuntos publicados, de outro build; diferença máxima vista 0,0023 em F1): **aceito**, e o paper diz;
+  - `paper` sem argumento continua `tables figures` (sem `distance`): **aceito**;
+  - `checksums/data.sha256`: **não** rodar `write-data-sums`; acrescentar só os 3 conjuntos novos;
+  - patch da fase 2 (não aplicado) em `scratchpad/geradores/phase2/phase2_pipeline_variants.patch`: os 3 conjuntos
+    passam para `VARIANTS`; `pipeline.py` ganha `rec_afc` (caches `afc`, `eval_rec_afc_r*`, flows nos
+    experimentos); 583 jobs.
+  Zenodo: nada a reempacotar (os tars só têm base, ideal, small, full frames e modelos).
+- 2026-11-14, 10:40: subagente "latex" disparado para **rascunhar** as edições do paper num clone de rascunho
+  (`scratchpad/latex_work`, branch `integration-draft`, dois commits: floats e prosa), sem tocar o repositório real.
+  Ele devolve cada trecho antigo/novo para eu revisar. A aplicação no repositório real só depois da fase 2 de B2
+  (assets finais). B1 ainda roda: 23 de 35 conjuntos simulados às 10:31 (≈ 3 min por conjunto), depois a coluna de
+  `rec_afc`, o oráculo, o run de quadros inteiros e `focus_battery.csv`.
 
