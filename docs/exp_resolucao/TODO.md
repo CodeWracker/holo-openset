@@ -206,13 +206,21 @@ base.
       `HOLO_MODELS` fora do ambiente).
 - [x] P4. (feito) Vazamento no conjunto novo: 61 / 55 / 39 % (p5 / p50 / p95), igual ao do base (59 / 51 / 39 %);
       `results_exp_resolucao/sets_by_fresnel.csv` (conjuntos pelo N_F, média de 5 e r1).
-- [!] P5. **CHECKPOINT DO PILOTO ENTREGUE (17:30): `docs/exp_resolucao/CHECKPOINT_PILOTO.md` + PDF + folha de
-      exemplos. PARADO, aguardando o orientador.** Decisões pedidas: (1) rodar as outras quatro repetições (≈ 8 min
-      cada, sem regravar; recomendo); (2) dois controles em r1, pré-registrados: letras do base a 19,25 mm com o
-      gravador e a cena novos (controle do código) e o conjunto de 1 mm com a densidade relativa do base, ≈ 154
-      letras por janela (controle da vizinhança); (3) treinar também com 50 µm de profundidade. **Nada disso roda
-      sem a resposta dele.** Não investiguei por que os crops melhoraram (candidatos: coerência, vizinhas mais
-      longe, código novo; o `small_near` não fecha com os dois primeiros).
+- [x] P5. Checkpoint do piloto entregue (17:30, `CHECKPOINT_PILOTO.md`, `2e095eb`) e respondido às ≈ 17:38:
+      **"1 - ok; 2 - faz os 2 antes de reescrever; 3 - ok"** (na íntegra no fim de `PROTOCOLO_PILOTO_1MM.md`).
+- [~] P6. Pré-registro P2 no caderno do piloto (17:40) e execução, com dois subagentes lançados ≈ 17:50:
+      **"repeticoes"** (o do simulador, retomado): A = r2–r5 no `bench_1mm` com as linhas de robustez; referência do
+      controle B (`realistic`, `--no-aux`, r1, modelos/resultados nas pastas da etapa); D = `bench_1mm_depth50`
+      (todos os splits com 50 / 150 µm) treinado e avaliado em r1, mais as avaliações cruzadas.
+      **"controles"** (novo): B = `base_newrec` (cena física, fator 1, 19,25 mm, s = 2) e C = `bench_1mm_dense`
+      (as cenas do `bench_1mm` + letras não anotadas até ≈ 154 por janela), r1; script próprio
+      (`scripts/exp_resolucao/controls_1mm.sh`), sem tocar em `pilot_1mm.sh`.
+      Leituras fixadas no P2: critério do orientador nas cinco repetições; controles lidos pelos crops, "mais perto
+      de R_ant ou de R_pil" nas duas métricas.
+      **Ao voltar: conferir os números nos arquivos (`results_exp_resolucao/eval/<conjunto>/*_r?.json`,
+      `robustness_bench_1mm.csv`), aplicar o critério, pytest e `reproduce check` (com `HOLO_RESULTS` e `HOLO_MODELS`
+      fora do ambiente), escrever o relatório do piloto completo e mandar ao orientador. A reescrita (parte B) só
+      depois, e só com o pedido dele.**
 - [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
       afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
       reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
@@ -395,3 +403,5 @@ errado".
   profundidade; os crops não. **Próximo passo ao voltar: ler a resposta do orientador ao checkpoint do piloto (ver
   P5); só então rodar repetições ou controles, com pré-registro no caderno do piloto antes.** A parte B (reescrita)
   depende do resultado das cinco repetições: se o critério falhar, "a tese muda e a gente reescreve" (palavras dele).
+- **2026-11-14, 17:40 — orientador aprovou as quatro repetições, os dois controles ("antes de reescrever") e o
+  treino com 50 µm.** Pré-registro P2 escrito antes de rodar; dois subagentes em execução (ver P6).

@@ -19,3 +19,16 @@ Aprovado o piloto, com estas escolhas (fixadas agora, antes de rodar):
 6. O conjunto base de hoje fica no paper como "a geometria do CBMS 2024", para comparação com o trabalho anterior, e não como a bancada. Vale apresentar os conjuntos pelo número de Fresnel: o small_near (N_F ~0,72) já cai dentro da faixa do base e repete o resultado.
 
 Sobre o texto do CBMS 2024: está na página 367: "The diffraction parameters used were λ = 385nm, z = 50k, pixel size of 1.67μm", sem unidade no z. Te mando o PDF.
+
+---
+
+## Resposta do orientador ao checkpoint do piloto (2026-11-14, ≈ 17:38), copiada na íntegra
+
+As três decisões pedidas em `CHECKPOINT_PILOTO.md` eram: (1) rodar as outras quatro repetições; (2) rodar dois
+controles em r1, pré-registrados (o do código e o da vizinhança); (3) treinar também com 50 µm de profundidade.
+A resposta:
+
+1 - ok
+2 - faz os 2 antes de reescrever
+3 - ok
+

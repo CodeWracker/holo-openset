@@ -572,3 +572,68 @@ de 5 vêm de `setup_comparison.csv`, os r1 dos antigos de `results/eval/<conjunt
 3. O α treinado (0,9758 mm) se afasta 2,4 % do calibrado (0,9999 mm), e isso decide o (b) literal (0,545) contra o
    por razão (0,913).
 4. Profundidade de 50 µm: prop e rec_z0 perdem ~0,2 em F1 (a 1,0 mm, 50 µm é 5 % de z, como 1 mm no base).
+
+## 2026-11-14, 17:40 — P2: pré-registro das cinco repetições, dos dois controles e do treino com 50 µm (responsável)
+
+Escrito depois do checkpoint do piloto (r1) e da resposta do orientador ("1 - ok; 2 - faz os 2 antes de reescrever;
+3 - ok", na íntegra em `PROTOCOLO_PILOTO_1MM.md`), e antes de rodar qualquer uma destas coisas. Receita de treino,
+galeria, limiar na validação e métricas como em r1; nenhuma escolha no teste; o que sair é reportado.
+
+### A. Repetições r2–r5 no conjunto do piloto (`bench_1mm`)
+
+- `raw`, `prop` (`--alpha-extend 12`), `rec_z0`, `--no-aux`, exatamente como r1; avaliação no teste; as três linhas de
+  robustez de r1 em cada repetição (0,7 mm como está; 0,7 mm recalibrado, literal e por razão; profundidade de 50 µm).
+- **Critério (P0, sem mudança):** uma repetição conta a favor se F1(prop) − F1(raw) ≥ 0,10 **e** rejeição(prop) −
+  rejeição(raw) ≥ 0,30; a tese se mantém com 4 ou 5 a favor em r1–r5. r1 já está lida: +0,049 e +0,373 (não conta a
+  favor). Reporto por repetição, a média, o mínimo e o máximo das diferenças, e quantas cumprem cada condição.
+
+### B. Controle do código (r1)
+
+Pergunta: a melhora dos crops a 1,0 mm vem do gravador e da cena novos?
+
+- **Referência igual com igual (código antigo):** o conjunto base como está em disco (`realistic`, gravador e cena
+  antigos, 19,25 mm), treinado agora em r1 com a receita do piloto (`--no-aux`), modelos e resultados nas pastas da
+  etapa. Os números do paper (treino com cenas auxiliares) ficam ao lado, só para referência.
+- **Controle (código novo):** conjunto novo a 19,25 mm com a cena em unidades físicas (`FresnelLayout`, fator 1: fontes
+  de 70 a 118 px, 8 letras por janela, borda e espaçamento do base), física do base (margem 1728, alcance 1024,
+  profundidade 50 / 150 µm), gravado pelo caminho sobreamostrado com s = 2, depois de conferir em 4 cenas que (2, 4)
+  passa na tolerância de 1 % a 19,25 mm. Nome `base_newrec`. Mesma receita (`--no-aux`, r1).
+- **Leitura, fixada agora, só com os crops (`raw`):** seja R_ant o par (F1, rejeição) da referência e R_pil = (0,928;
+  0,622) o do piloto. Se o controle ficar mais perto de R_ant que de R_pil nas duas métricas, o código novo reproduz
+  o antigo e a melhora a 1,0 mm não é efeito do código. Se ficar mais perto de R_pil nas duas, é efeito do código.
+  Se der uma de cada, é inconclusivo e roda-se o braço que separa as duas peças novas: as cenas antigas do base
+  (máscaras no pixel) gravadas pelo caminho sobreamostrado.
+
+### C. Controle da vizinhança (r1)
+
+Pergunta: o crop piora a 1,0 mm quando as vizinhas ficam tão perto, em relação ao tamanho da letra, quanto no base?
+
+- **Conjunto `bench_1mm_dense`:** as mesmas cenas do `bench_1mm` (mesmas sementes: as mesmas 40 309 letras anotadas,
+  nas mesmas posições, com os mesmos materiais, profundidades, poeira, sessões e câmera) **mais** letras não anotadas
+  que completam a densidade relativa do base: ≈ 154 letras por janela de 640 × 640 no total (8 × 19,25), dentro da
+  janela e na faixa em volta, de todas as classes, sem sobrepor nenhuma outra (a regra de espaçamento do conjunto),
+  sorteadas por um gerador separado para não mexer no resto da cena. Só as letras anotadas entram no treino e na
+  avaliação, como as letras de fora da janela no base. Assim o treino e a avaliação têm o mesmo tamanho do piloto e
+  a comparação é pareada letra a letra; a única diferença é a vizinhança.
+  (O orientador aprovou "≈ 154 letras por janela"; anotar só as 8 de sempre é escolha minha, pelo motivo acima.)
+- Gravador, s = 4, física e receita iguais às do piloto.
+- **Leitura, fixada agora, só com os crops:** com R_ant e R_pil como em B, a vizinhança explica a melhora se, no
+  conjunto denso, os crops ficarem mais perto de R_ant que de R_pil nas duas métricas; não explica se ficarem mais
+  perto de R_pil nas duas; parcial se der uma de cada. Reporto também `prop` e `rec_z0` e as diferenças pareadas
+  para o `bench_1mm`.
+
+### D. Treino com 50 µm de profundidade (r1)
+
+- **Conjunto `bench_1mm_depth50`:** o `bench_1mm` gravado de novo em todos os splits com `depth_std` = 50 µm e
+  `depth_max` = 150 µm (mesmas sementes; o split de teste é o `bench_1mm_robust/depth50` já gravado).
+- `raw`, `prop`, `rec_z0` treinados e avaliados nele em r1. Reporto ao lado: treinado com 2,6 µm e testado com 50 µm
+  (já lido: 0,929 / 0,773 / 0,801 de F1), e treinado com 50 µm testado com 2,6 µm (o teste do `bench_1mm`).
+- Sem critério: a pergunta é quanto do 0,2 de F1 perdido volta com o treino.
+
+### Ordem e execução
+
+Dois executores, um processo de GPU por vez cada um: (i) repetições r2–r5, referência do B e conjunto do D, com o
+código que já existe; (ii) código e gravação dos dois conjuntos de controle (B e C). Nada é rodado de novo com outra
+configuração depois de lido o teste; erro de código (não número decepcionante) para tudo e é reportado antes de
+qualquer nova rodada.
+
