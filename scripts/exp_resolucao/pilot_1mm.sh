@@ -34,17 +34,31 @@
 #   DENSITY=scaled   the number per window scaled by 1 / 0.22792^2 (154 +- 57.75, 58-346): the same coverage
 #   e.g.  DEPTH=50 DENSITY=base bash scripts/exp_resolucao/pilot_1mm.sh 5 record
 # record_07 records the 0.7 mm splits with the physics of data/bench_1mm (only z0 changes), whatever the choices.
+# REPETITION (P2): REP=2..5 runs train, evaluate, robust_a, robust_b, robust_depth50 for that repetition (default 1);
+# the step `rep` runs those five in order:  REP=2 bash scripts/exp_resolucao/pilot_1mm.sh 5 rep
+# A model, an evaluation json or the robustness rows of a repetition that exist are never redone; the recordings, the
+# reconstruction caches and the recalibration json do not depend on the repetition and are reused. Logs of REP > 1:
+# logs/exp_resolucao/pilot_<step>_r<REP>.log.
 set -e
 cd "$(dirname "$0")/../.."
 source scripts/exp_resolucao/env.sh
 GPU=$1; STEP=$2
-[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,42p' "$0"; exit 1; }
+[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,47p' "$0"; exit 1; }
 SET=bench_1mm
 ROBUST=bench_1mm_robust
 WORKERS=3          # scene builders (PIL, one thread each): with the recorder, about 4 ready threads
-LOG=logs/exp_resolucao/pilot_${STEP}.log
+REP=${REP:-1}
+case "$REP" in 1|2|3|4|5) ;; *) echo "REP must be 1-5"; exit 1 ;; esac
+LOG=logs/exp_resolucao/pilot_${STEP}$([ "$REP" != 1 ] && echo _r$REP || true).log
 mkdir -p logs/exp_resolucao
 py() { echo "+ $(date '+%F %T') python -m holo_openset $*"; python -m holo_openset "$@"; }
+# rows of robustness_bench_1mm.csv for this repetition, variant and flows exist already?
+have_rows() {
+  python -c "import sys, pandas as pd, pathlib; p = pathlib.Path('$HOLO_RESULTS/robustness_bench_1mm.csv')
+t = pd.read_csv(p) if p.exists() else None
+need = {('$1', f) for f in sys.argv[1:]}
+sys.exit(0 if t is not None and need <= set(zip(t[t.rep == $REP].variant, t[t.rep == $REP].flow)) else 1)" "${@:2}"
+}
 
 choices() {
   case "$DEPTH" in
@@ -60,7 +74,7 @@ choices() {
 }
 
 {
-echo "start $(date '+%F %T') gpu $GPU step $STEP"
+echo "start $(date '+%F %T') gpu $GPU step $STEP rep $REP"
 python -c "from holo_openset import paths; print('data', paths.DATA, 'results', paths.RESULTS, 'models', paths.MODELS)"
 t0=$(date +%s)
 case "$STEP" in
@@ -74,12 +88,15 @@ case "$STEP" in
     [ -f data/$SET/autofocus.csv ] || py reconstruct --set $SET --methods z0 --device cuda:$GPU
     ;;
   train)
-    py train --set $SET --flow raw --rep 1 --no-aux --device cuda:$GPU --threads 4
-    py train --set $SET --flow prop --rep 1 --no-aux --alpha-extend 12 --device cuda:$GPU --threads 4
-    py train --set $SET --flow rec_z0 --rep 1 --no-aux --device cuda:$GPU --threads 4
+    py train --set $SET --flow raw --rep $REP --no-aux --device cuda:$GPU --threads 4
+    py train --set $SET --flow prop --rep $REP --no-aux --alpha-extend 12 --device cuda:$GPU --threads 4
+    py train --set $SET --flow rec_z0 --rep $REP --no-aux --device cuda:$GPU --threads 4
     ;;
   evaluate)
-    for F in raw prop rec_z0; do py evaluate --set $SET --flow $F --rep 1 --device cuda:$GPU --threads 4; done
+    for F in raw prop rec_z0; do
+      [ -f $HOLO_RESULTS/eval/$SET/${F}_r$REP.json ] && { echo "exists ${F}_r$REP.json"; continue; }
+      py evaluate --set $SET --flow $F --rep $REP --device cuda:$GPU --threads 4
+    done
     ;;
   record_07)
     for SP in test val; do
@@ -91,8 +108,9 @@ case "$STEP" in
   robust_a)
     Z_SET=$(python -c "import json; print(json.load(open('data/$SET/physics.json'))['physics']['z0'])")
     [ -f data/$ROBUST/z07/autofocus.csv ] || py reconstruct --set $ROBUST/z07 --methods z0 --z0 $Z_SET --device cuda:$GPU
+    have_rows z07 raw prop rec_z0 && have_rows base raw prop rec_z0 && { echo "rows of r$REP exist"; exit 0; }
     python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants base z07 \
-           --flows raw prop rec_z0 --rep 1 --out robustness_bench_1mm --device cuda:$GPU --threads 4
+           --flows raw prop rec_z0 --rep $REP --out robustness_bench_1mm --device cuda:$GPU --threads 4
     ;;
   robust_b)
     J=$HOLO_RESULTS/recal_bench_1mm_z07.json
@@ -101,14 +119,16 @@ case "$STEP" in
     Z=$(python scripts/exp_resolucao/recalibrate_distance.py --read $J z)
     [ -f data/$ROBUST/z07/autofocus_recal.csv ] || \
       py reconstruct --set $ROBUST/z07 --methods z0 --z0 $Z --tag _recal --device cuda:$GPU
+    have_rows z07 prop+recal rec_z0+recal || \
     python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants z07 \
-           --flows prop rec_z0 --rep 1 --out robustness_bench_1mm --alpha-json $J --rec-tag _recal \
+           --flows prop rec_z0 --rep $REP --out robustness_bench_1mm --alpha-json $J --rec-tag _recal \
            --device cuda:$GPU --threads 4
     ZR=$(python scripts/exp_resolucao/recalibrate_distance.py --read $J z_ratio)
     [ -f data/$ROBUST/z07/autofocus_recal_ratio.csv ] || \
       py reconstruct --set $ROBUST/z07 --methods z0 --z0 $ZR --tag _recal_ratio --device cuda:$GPU
+    have_rows z07 prop+recal_ratio rec_z0+recal_ratio || \
     python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants z07 \
-           --flows prop rec_z0 --rep 1 --out robustness_bench_1mm --alpha-json $J --alpha-mode ratio \
+           --flows prop rec_z0 --rep $REP --out robustness_bench_1mm --alpha-json $J --alpha-mode ratio \
            --rec-tag _recal_ratio --suffix +recal_ratio --device cuda:$GPU --threads 4
     ;;
   record_depth50)
@@ -120,8 +140,12 @@ case "$STEP" in
     Z_SET=$(python -c "import json; print(json.load(open('data/$SET/physics.json'))['physics']['z0'])")
     [ -f data/$ROBUST/depth50/autofocus.csv ] || \
       py reconstruct --set $ROBUST/depth50 --methods z0 --z0 $Z_SET --device cuda:$GPU
+    have_rows depth50 raw prop rec_z0 && { echo "rows of r$REP exist"; exit 0; }
     python -m holo_openset experiment robustness --set $SET --variants-root $ROBUST --variants depth50 \
-           --flows raw prop rec_z0 --rep 1 --out robustness_bench_1mm --device cuda:$GPU --threads 4
+           --flows raw prop rec_z0 --rep $REP --out robustness_bench_1mm --device cuda:$GPU --threads 4
+    ;;
+  rep)
+    for S in train evaluate robust_a robust_b robust_depth50; do REP=$REP bash "$0" $GPU $S > /dev/null; done
     ;;
   *) echo "unknown step $STEP"; exit 1 ;;
 esac
