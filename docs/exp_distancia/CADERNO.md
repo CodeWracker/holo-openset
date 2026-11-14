@@ -433,3 +433,176 @@ Ressalvas: (1) a 640 × 640 os estágios de uma chamada saem a ≈ 0,5× do pape
 0,304 ms, layer_real 0,384 ms, layer_prop 2,566 ms, contra 0,06–0,32 no paper e contra os valores vizinhos); (3) o
 autofocus, o twin e o per_object (iterativos, centenas de kernels) saem 13–22 % mais caros que no paper no quadro inteiro.
 A GPU não estava ociosa o tempo todo, então isto é uma referência, não a medição final (E5).
+
+---
+
+## 2026-11-13 — Etapa 2: dados de validação, varredura do autofocus, seleção e políticas
+
+Pré-registro commitado em `9e41879` às 21:44:19, antes de qualquer varredura (a primeira, o smoke test, começou às
+21:46:35; a primeira varredura real, às 21:47:08). Servidor calmo nesta etapa: load 25–63; GPUs ainda com outros
+usuários (a maioria a 90–100 %, com janelas mais livres em 0, 1, 2 e 4).
+
+### Dados de validação (cenas do split de validação do base, 700 imagens cada)
+
+```bash
+# tmux ed_val1, cuda:0, 21:44 -> ~21:54 (log logs/exp_distancia/val_v1.log)
+python -m holo_openset simulate variant frame_5 fullwell_500 walk_05 --split val --device cuda:0 --workers 6
+# tmux ed_val2, cuda:1, 21:45 -> ~21:55 (log logs/exp_distancia/val_v2.log)
+python -m holo_openset simulate variant beam_narrow session_5 --split val --device cuda:1 --workers 6
+```
+
+Conferência (script do scratchpad `check_val.py`, log `logs/exp_distancia/check_val.log`):
+
+```
+frame_5: holograms (700, 640, 640) (non-empty rows 700), split=val, sessions 7, annotations 5711 equal to base val: True, ids equal: True
+   physics: frame_z_std=0.05 frame_z_walk=0.0 tilt_deg=0.0 session_z_std=0.005 full_well=6000.0 beam_waist=[2.0, 3.5]
+   z per session: distinct values min 100 max 100; z/z_session - 1: std 0.0496, min -0.1575, max +0.1416; first image of each session at the session z: False
+   OK
+fullwell_500: holograms (700, 640, 640) (non-empty rows 700), split=val, sessions 7, annotations 5711 equal to base val: True, ids equal: True
+   physics: frame_z_std=0.0 frame_z_walk=0.0 tilt_deg=0.0 session_z_std=0.005 full_well=500.0 beam_waist=[2.0, 3.5]
+   z per session: distinct values min 1 max 1; z/z_session - 1: std 0.0000, min +0.0000, max +0.0000; first image of each session at the session z: True
+   OK
+walk_05: holograms (700, 640, 640) (non-empty rows 700), split=val, sessions 7, annotations 5711 equal to base val: True, ids equal: True
+   physics: frame_z_std=0.0 frame_z_walk=0.005 tilt_deg=0.0 session_z_std=0.005 full_well=6000.0 beam_waist=[2.0, 3.5]
+   z per session: distinct values min 100 max 100; z/z_session - 1: std 0.0238, min -0.0592, max +0.0548; first image of each session at the session z: True
+   OK
+beam_narrow: holograms (700, 640, 640) (non-empty rows 700), split=val, sessions 7, annotations 5711 equal to base val: True, ids equal: True
+   physics: frame_z_std=0.0 frame_z_walk=0.0 tilt_deg=0.0 session_z_std=0.005 full_well=6000.0 beam_waist=[0.9, 1.3]
+   z per session: distinct values min 1 max 1; z/z_session - 1: std 0.0000, min +0.0000, max +0.0000; first image of each session at the session z: True
+   OK
+session_5: holograms (700, 640, 640) (non-empty rows 700), split=val, sessions 7, annotations 5711 equal to base val: True, ids equal: True
+   physics: frame_z_std=0.0 frame_z_walk=0.0 tilt_deg=0.0 session_z_std=0.05 full_well=6000.0 beam_waist=[2.0, 3.5]
+   z per session: distinct values min 1 max 1; z/z_session - 1: std 0.0000, min +0.0000, max +0.0000; first image of each session at the session z: True
+   OK
+ALL CHECKS PASSED
+```
+
+Todos com 700 hologramas não vazios, as mesmas 700 imagens e as mesmas 5711 anotações (image_id, caixa, classe) das
+linhas de validação de `data/realistic/annotations.csv`. z varia por imagem em `frame_5` (100 valores por sessão, desvio
+relativo 4,96 %) e `walk_05` (100 valores por sessão, até ±5,9 %, a primeira imagem de cada sessão no z da sessão); é
+constante por sessão nos outros três.
+
+### Varredura (E3 parte 1)
+
+Smoke test, fora das pastas do projeto (7 imagens de validação × 256 candidatos, `cuda:2`, 21:46:35–21:46:50):
+
+```bash
+HOLO_RESULTS=$S/smoke/results HOLO_LOGS=$S/smoke/logs python -m holo_openset experiment focus sweep --device cuda:2 --sets realistic --stride 100
+```
+
+Rodou sem erro; tempo medido de busca 1,41 s por imagem (os 256 candidatos); `blind-b1-tog` com erro mediano 20,7 µm,
+p90 70,9 µm, nenhuma falha grosseira nas 7 imagens. Nenhuma mudança em `focus.py`.
+
+Varreduras reais (uma sessão tmux por conjunto; logs `logs/exp_distancia/sweep_<conjunto>.log`; as distâncias por
+candidato e imagem em `logs/exp_distancia/focus_sweep/<conjunto>.npz`):
+
+| conjunto | GPU | início | fim | tempo de busca medido (256 candidatos), s/imagem |
+|---|---|---|---|---|
+| realistic (val) | cuda:2, depois cuda:0 | 21:47:08 | 22:07:26 | 1,71 |
+| variants_val/beam_narrow | cuda:5, depois cuda:0 | 21:49:00 | 22:09:45 | 1,76 |
+| variants_val/frame_5 | cuda:1 | 21:50:02 | 22:11:04 | 1,79 |
+| variants_val/fullwell_500 | cuda:0 | 21:51:05 | 22:02:02 | 0,93 |
+| variants_val/session_5 e walk_05 (só `blind-b1-tog`) | cuda:1 | 21:55:24 | 21:55:59 | 0,019 |
+
+```bash
+python -m holo_openset experiment focus sweep --device cuda:N --sets <conjunto>
+python -m holo_openset experiment focus sweep --device cuda:1 --sets variants_val/session_5 variants_val/walk_05 --candidates blind-b1-tog
+```
+
+`realistic` e `beam_narrow` ficaram lentos nas GPUs 2 e 5 (até 7 s/imagem, carga de outros usuários): interrompi cada
+um logo depois de um ponto de salvamento (425 e 375 imagens salvas; as imagens feitas depois do último salvamento foram
+descartadas junto com o seu tempo) e retomei na GPU 0, que estava a 2–6 %; a retomada reaproveita o `.npz` (logs da
+primeira parte em `sweep_<conjunto>_part1_cuda*.log`). O tempo por imagem é só indicativo (GPU compartilhada). As quatro
+matrizes estão completas (256 × 700, todas finitas) e o `focus_sweep.csv` tem 256 linhas por conjunto.
+
+### Seleção (regras pré-registradas)
+
+```bash
+python -m holo_openset experiment focus select      # log logs/exp_distancia/focus_select.log
+```
+
+Resultado: `cheap` (afc) = `r10b-b4-m`, `robust` (afr) = `r15b-b2-s2`, `both` (afx) = `r10b-b4-tog`; 174 de 256
+candidatos satisfazem a condição "acha a distância". Saída completa em `results_exp_distancia/focus_selection.json`.
+
+| candidato | papel | custo | conjunto | mediana (µm) | p90 (µm) | falha grosseira |
+|---|---|---|---|---|---|---|
+| blind-b1-tog | referência | 114 | realistic | 48,4 | 123,9 | 1,29 % |
+| | | | frame_5 | 47,7 | 122,9 | 2,43 % |
+| | | | fullwell_500 | 391,7 | 13343 | 70,57 % |
+| | | | beam_narrow | 187,5 | 13417 | 49,86 % |
+| r10b-b4-m | afc | 1,125 | realistic | 30,9 | 93,1 | 0,86 % |
+| | | | frame_5 | 42,5 | 105,7 | 0,71 % |
+| | | | fullwell_500 | 35,3 | 97,4 | 0,86 % |
+| | | | beam_narrow | 30,9 | 97,6 | 2,86 % |
+| r15b-b2-s2 | afr | 9 | realistic | 29,3 | 84,8 | 0,43 % |
+| | | | frame_5 | 32,8 | 83,4 | 0,29 % |
+| | | | fullwell_500 | 29,3 | 84,8 | 0,86 % |
+| | | | beam_narrow | 29,3 | 84,8 | 0,86 % |
+| r10b-b4-tog | afx | 1,125 | realistic | 30,9 | 93,1 | 0,86 % |
+| | | | frame_5 | 42,5 | 105,7 | 0,71 % |
+| | | | fullwell_500 | 35,3 | 97,4 | 0,86 % |
+| | | | beam_narrow | 30,9 | 93,1 | 0,86 % |
+
+**Empate não resolvido pela regra escrita (para o responsável decidir):** na regra 1 (afc), três candidatos empatam
+em custo (1,125) **e** no desempate pré-registrado (percentil 90 do pior conjunto limpo, 105,705 µm): `r10b-b4-m`,
+`r10b-b4-mf` e `r10b-b4-tog` (têm as mesmas distâncias em `realistic` e `frame_5`). O `select` escolheu `r10b-b4-m` pela
+ordem alfabética do índice, um critério que não está no pré-registro. `r10b-b4-tog`, que é o afx, está entre os
+empatados; com ele como afc, afc e afx coincidiriam e iriam ao teste só dois (regra 3). Não mudei nada.
+
+### Políticas
+
+```bash
+python -m holo_openset experiment focus policy --device cuda:0      # 22:11:33–22:12:13; log logs/exp_distancia/focus_policy.log
+```
+
+Saída:
+
+```
+1 {'base set': 0.9499, 'true distance': 0.953, 1: 0.9534, 2: 0.9516, 5: 0.9508, 10: 0.9481, 20: 0.9411, 50: 0.931, 0: 0.913}
+2 {'base set': 0.9501, 'true distance': 0.9537, 1: 0.9519, 2: 0.9523, 5: 0.9515, 10: 0.9492, 20: 0.9404, 50: 0.936, 0: 0.9254}
+3 {'base set': 0.9503, 'true distance': 0.9524, 1: 0.952, 2: 0.9511, 5: 0.952, 10: 0.949, 20: 0.9426, 50: 0.9348, 0: 0.9228}
+4 {'base set': 0.95, 'true distance': 0.9483, 1: 0.9488, 2: 0.9466, 5: 0.9466, 10: 0.9419, 20: 0.9376, 50: 0.9324, 0: 0.9233}
+5 {'base set': 0.9495, 'true distance': 0.9407, 1: 0.942, 2: 0.9412, 5: 0.9407, 10: 0.939, 20: 0.9341, 50: 0.9253, 0: 0.9148}
+              policy                        set  sessions  sessions_gross      n   median_um        p90_um        max_um     gross  val_known_acc  val_known_acc_std  reps
+0   session, first 1                  realistic       7.0             0.0  700.0   20.652809     91.720645     91.720645  0.000000            NaN                NaN   NaN
+1   session, first 3                  realistic       7.0             0.0  700.0    4.347191     68.054318     68.054318  0.000000            NaN                NaN   NaN
+2        every image                  realistic       NaN             NaN  700.0   48.353471    123.883702    483.562585  0.012857            NaN                NaN   NaN
+3   session, first 1     variants_val/session_5       7.0             0.0  700.0   41.465286    130.543176    130.543176  0.000000            NaN                NaN   NaN
+4   session, first 3     variants_val/session_5       7.0             0.0  700.0   41.465286    130.543176    130.543176  0.000000            NaN                NaN   NaN
+5        every image     variants_val/session_5       NaN             NaN  700.0   42.206448    135.625854    735.625854  0.022857            NaN                NaN   NaN
+6   session, first 1  variants_val/fullwell_500       7.0             4.0  700.0  206.945682  13583.562585  13583.562585  0.571429            NaN                NaN   NaN
+7   session, first 3  variants_val/fullwell_500       7.0             4.0  700.0  206.945682  13583.562585  13583.562585  0.571429            NaN                NaN   NaN
+8        every image  variants_val/fullwell_500       NaN             NaN  700.0  391.720645  13343.054318  19226.395373  0.705714            NaN                NaN   NaN
+9   session, first 1   variants_val/beam_narrow       7.0             2.0  700.0  122.441353  13508.562585  13508.562585  0.285714            NaN                NaN   NaN
+10  session, first 3   variants_val/beam_narrow       7.0             2.0  700.0   54.347191  13458.562585  13458.562585  0.285714            NaN                NaN   NaN
+11       every image   variants_val/beam_narrow       NaN             NaN  700.0  187.500000  13416.720645  13604.347191  0.498571            NaN                NaN   NaN
+12          base set       variants_val/walk_05       NaN             NaN    NaN         NaN           NaN           NaN       NaN       0.949968           0.000300   5.0
+13     true distance       variants_val/walk_05       NaN             NaN    NaN         NaN           NaN           NaN       NaN       0.949617           0.005396   5.0
+14       every image       variants_val/walk_05       NaN             NaN  700.0   51.350967    127.012327   1033.421817  0.021429       0.949615           0.004570   5.0
+15           every 2       variants_val/walk_05       NaN             NaN  700.0   63.697368    169.991795   1033.421817  0.060000       0.948574           0.004722   5.0
+16           every 5       variants_val/walk_05       NaN             NaN  700.0   81.996070    253.769183    642.816316  0.165714       0.948306           0.004748   5.0
+17          every 10       variants_val/walk_05       NaN             NaN  700.0  129.578264    358.844477    811.115304  0.347143       0.945438           0.004724   5.0
+18          every 20       variants_val/walk_05       NaN             NaN  700.0  187.854360    520.093643    936.115304  0.491429       0.939153           0.003350   5.0
+19          every 50       variants_val/walk_05       NaN             NaN  700.0  253.706684    612.014641   1186.115304  0.624286       0.931915           0.004174   5.0
+20  session, first 1       variants_val/walk_05       NaN             NaN  700.0  369.858201    749.537771   1057.502675  0.764286       0.919875           0.005592   5.0
+```
+
+O que as regras pré-registradas dão (aplicação mecânica, sem interpretação):
+
+- **afs:** sessões com falha grosseira somadas nos quatro conjuntos: k = 1 → 0 + 0 + 4 + 2 = 6; k = 3 → 0 + 0 + 4 + 2 =
+  6. k = 3 não reduz, então **k = 1**.
+- **afM:** acurácia nas classes vistas da validação de `walk_05` com M = 1: 0,949615. M = 2: 0,948574 (−0,0010);
+  M = 5: 0,948306 (−0,0013); M = 10: 0,945438 (−0,0042); M = 20: 0,939153 (−0,0105); M = 50: 0,931915 (−0,0177).
+  O maior M a até 0,01 de M = 1 é **M = 10**.
+- **afsx:** a busca `afx` (`r10b-b4-tog`) uma vez por sessão com k = 1.
+
+Nada foi registrado em `reconstruct.FOCUS` e nenhum método novo rodou no teste: as escolhas esperam a revisão do
+responsável.
+
+### Nota sobre a figura do Checkpoint 1
+
+A checagem longa do base (`invariance.py --base`, tmux `inv_base`, `cuda:4`, lançada às 21:57:50, em andamento) já
+escreveu as primeiras linhas de `data/_check/realistic/holograms.npy`. A gravação da imagem 1 feita pelo script da
+figura (em GPU) é idêntica pixel a pixel à linha 1 escrita pelo `generate()` neste build (0 pixels diferentes), e essa
+linha difere do publicado nos mesmos 0,0259 % (máx. 7 níveis); nas primeiras 250 imagens, 0,0187 % dos pixels diferem
+do publicado, e todas as 250 têm alguma diferença. Isso confirma que a diferença é do build, não do script.
