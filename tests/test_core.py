@@ -201,3 +201,57 @@ def test_study_flows_borrow_a_model_and_stay_out_of_the_queue_of_the_paper():
     assert all(weights_of(f) in PAPER_FLOWS for f in STUDY) and not set(STUDY) & set(ALL) and set(STUDY) <= set(FLOWS)
     assert len(VARIANTS) == 32 and not set(STUDY_VARIANTS) & set(VARIANTS) and len(ALL_VARIANTS) == 32 + len(STUDY_VARIANTS)
     assert len(jobs()) == 575   # as before the study
+
+
+# ------------------------------------------------------------------------------------ the report of the distance study
+def _no_dist_env(monkeypatch, results, paper):
+    from holo_openset import paths
+    monkeypatch.setattr(paths, 'RESULTS', results)
+    monkeypatch.setattr(paths, 'PAPER', paper)
+    monkeypatch.delenv('HOLO_DIST_TIMING', raising=False)
+    monkeypatch.delenv('HOLO_DIST_TIMING_CPU', raising=False)
+
+
+def test_distance_report_composes_front_ends_and_the_break_even_point(tmp_path, monkeypatch):
+    import math
+    import pandas as pd
+    from holo_openset.paper import distance as D
+    t = dict(flat_field=1.0, backprop=2.0, channels=3.0, autofocus=120.0, autofocus_afc=12.0, layer_bank_jit=5.0,
+             layer_bank_wide=8.0, layer_bank_w2=10.0, yolo_tiled=100.0, embed=4.0, decide=1.0)
+    assert D.front_end('rec_z0', t) == 6.0 and D.front_end('rec_af', t) == 126.0
+    assert D.front_end('rec_afs', t, n=10) == 18.0 and D.front_end('rec_afM', t) == 18.0   # every 10 images
+    assert D.front_end('rec_afsc', t, n=4) == 9.0 and D.front_end('rec_afs', t) == 7.2      # n = 100 by default
+    assert D.front_end('rec_afr', t) is None and D.end_to_end('rec_afr', t) is None        # not measured: not made up
+    assert D.end_to_end('rec_af', t) == 126.0 + 105.0 and D.front_end('bank_wide', t) == 8.0
+    assert set(D.AMORTISED) == {'rec_afs', 'rec_afM', 'rec_afsc'}
+    assert D.break_even(t, 'bank_wide', 'autofocus') == 60.0                  # 120 / (8 - (1 + 2 + 3))
+    assert D.break_even(t, 'bank_jit', 'autofocus') == math.inf               # 5 < 1 + 2 + 3: the stack always wins
+    assert D.break_even(t, 'bank_jit', 'autofocus', simple=True) == 40.0      # 120 / (5 - 2)
+    assert D.break_even(t, 'bank_w2', 'autofocus_afc') == 3.0 and D.break_even(t, 'bank_w2', 'autofocus_afr') is None
+    # the same numbers through the csv of a timing run, GPU only
+    (tmp_path / 'e5').mkdir()
+    pd.DataFrame([dict(device='gpu', height=2748, width=3840, megapixels=10.55, area_mm2=29.4, n_boxes=200, stage=k,
+                       n=20, median_s=2 * v, min_s=v) for k, v in t.items()]).to_csv(tmp_path / 'e5' / 'timing_gpu.csv',
+                                                                                 index=False)
+    _no_dist_env(monkeypatch, tmp_path, tmp_path / 'out')
+    D.main()
+    num = (tmp_path / 'out' / 'distance' / 'numbers_distancia.tex').read_text()
+    for line in ['\\newcommand{\\DistNstarBankWideBlindGpu}{60}', '\\newcommand{\\DistNstarBankJitBlindGpu}{$\\infty$}',
+                 '\\newcommand{\\DistNstarSimpleBankJitBlindGpu}{40}', '\\newcommand{\\DistNstarBankWideBlindCpu}{?}',
+                 '\\newcommand{\\DistTimeRecAfsFrontGpuBigMs}{7200.0}']:
+        assert line in num, line
+    assert '$\\infty$' in (tmp_path / 'out' / 'distance' / 'tables' / 'tab_dist_breakeven.tex').read_text()
+
+
+def test_distance_report_runs_with_every_input_missing(tmp_path, monkeypatch, capsys):
+    from holo_openset.paper import distance as D
+    _no_dist_env(monkeypatch, tmp_path / 'nothing', tmp_path / 'out')
+    D.main()
+    assert 'FAILED' not in capsys.readouterr().out
+    d = tmp_path / 'out' / 'distance'
+    for name in ['f1', 'rejection', 'auroc', 'known', 'paired', 'focus', 'focus_val', 'sessions', 'time',
+                 'time_measured', 'breakeven', 'frames', 'frames_focus', 'own']:
+        assert (d / 'tables' / f'tab_dist_{name}.tex').exists() and (d / 'tables' / f'tab_dist_{name}.md').exists()
+    num = (d / 'numbers_distancia.tex').read_text()
+    assert '\\newcommand{\\DistFoneFrameFiveBankWide}{?}' in num and '\\newcommand{\\DistRejBaseRecZZero}{?}' in num
+    assert (d / 'figures' / 'captions.md').exists()
