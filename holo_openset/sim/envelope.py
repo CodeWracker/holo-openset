@@ -15,6 +15,7 @@ frequency of the sensor, so a set-up whose contrast survives above Nyquist shows
                  envelope keeps (1 when f_c is at or above Nyquist: nothing to gain)
   undersampled   f_c > 1 / (2 pixel): the hologram carries contrast the sensor cannot sample (pixel super-resolution
                  can recover it, a single frame cannot)
+  f_c_over_nyquist, half_pitch_over_pixel   the same two numbers against the sensor (> 1 and < 1: under-sampled)
   half_pitch     1 / (2 f_c): the half period of the finest grating whose fringes keep a contrast of at least t (the
                  convention of the USAF chart: line width = half period); for one frame of the sensor it cannot go
                  below the pixel, half_pitch_single_frame = max(half_pitch, pixel)
@@ -84,6 +85,8 @@ def summary(s, thresholds=(0.1, 0.05), object_size=50e-6):
         logs = {k: -math.log(max(abs(x), 1e-300)) for k, x in v.items()}
         out.update({f'f_c_{tag}': fc / 1e3, f'f_c_no_pixel_{tag}': cutoff(s, t, pixel=False) / 1e3,
                     f'undersampled_{tag}': bool(fc > s.nyquist),
+                    f'f_c_over_nyquist_{tag}': fc / s.nyquist,
+                    f'half_pitch_over_pixel_{tag}': 1 / (2 * fc * s.pixel) if s.pixel > 0 else math.nan,
                     f'b_max_{tag}': max(1, math.floor(1 / (2 * s.pixel * fc))) if s.pixel > 0 else 1,
                     f'half_pitch_um_{tag}': 1e6 / (2 * fc),
                     f'half_pitch_single_frame_um_{tag}': max(1e6 / (2 * fc), s.pixel * 1e6),

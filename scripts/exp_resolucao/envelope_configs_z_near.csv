@@ -1,0 +1,11 @@
+name,z_mm,source_distance_mm,L_convention
+bench z=0.7 mm L to sample,0.7,150,pinhole 15 cm from the sample
+bench z=0.7 mm L to sensor,0.7,149.3,pinhole 15 cm from the sensor
+bench z=1.0 mm L to sample,1.0,150,pinhole 15 cm from the sample
+bench z=1.0 mm L to sensor,1.0,149.0,pinhole 15 cm from the sensor
+bench z=1.3 mm L to sample,1.3,150,pinhole 15 cm from the sample
+bench z=1.3 mm L to sensor,1.3,148.7,pinhole 15 cm from the sensor
+bench z=1.5 mm L to sample,1.5,150,pinhole 15 cm from the sample
+bench z=1.5 mm L to sensor,1.5,148.5,pinhole 15 cm from the sensor
+bench z=2.0 mm L to sample,2.0,150,pinhole 15 cm from the sample
+bench z=2.0 mm L to sensor,2.0,148.0,pinhole 15 cm from the sensor
