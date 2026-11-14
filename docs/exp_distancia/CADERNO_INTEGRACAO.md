@@ -538,3 +538,77 @@ sendo alterados por outro agente; `expected/` é refeito depois. Não rodei `pap
   `frame_5`, `walk_05`) e `data/realistic/dets_yolo_r{1..5}.csv`. Nenhum arquivo existente de `data/` foi
   sobrescrito ou apagado; o diretório de preparo `data/_integ_staging` não existe mais.
 - Sessões tmux `integ_*`: todas terminadas.
+
+---
+
+## 2026-11-14, 11:45–12:20 — Geradores, fase 2 (agente "geradores", item B2): regenerar tudo, `expected/`, figuras
+
+Escritor desta seção: agente "geradores". Ambiente: `source scripts/exp_distancia/env.sh`, comandos do paper com
+`env -u HOLO_RESULTS` (leem `results/`), 4 threads, uma GPU (4) só para as figuras.
+
+### Código (commits `fae1cdc`, `5ee85a4`, `5f…` abaixo)
+
+- `sim/variants.py`: `frame_2`, `frame_5`, `walk_05` entram em `VARIANTS` logo depois de `session_5` (`STUDY` fica
+  vazio); as strings de efeito continuam "distance per frame (%)" / "distance drift per frame (%)" (código e csv).
+- `pipeline.py`: `rec_base` e `rec_var_*` com `--methods z0 af edf twin afc`; `eval_rec_afc_r1..5` (modelo de
+  `rec_af`, sem treino); `exp_e2e`, `exp_robustness`, `exp_full_frames` com `--flows` = fluxos do paper + `rec_afc`.
+  **583 jobs** (eram 575). `tests/test_core.py` atualizado (35 variantes, 583 jobs).
+- Geradores (`paper/tables.py`, `style.py`, `figures.py`, `distance.py`):
+  - `tab_full` só do run único: lê só os fluxos de `ORDER`, confere que há uma detecção por (repetição, quadro) e que os
+    tempos de cada fluxo estão exatamente nesses quadros; nunca empresta tempo de outro fluxo (o `SAME_LAYER` e a adaga
+    saíram). As linhas antigas de `bank` e `bank_w3` ficam no arquivo e não são lidas.
+  - macros de enrollment para todos os fluxos (`<Fluxo>Enroll{Five,Twenty,All}`, 33);
+  - `rec_twin` = "blind autofocus + twin removal" (o curto "twin-free" fica);
+  - exibição "distance per image (%)" / "distance drift per image (%)" na tabela e na figura de robustez
+    (`tables.SHOWN_EFFECT`; o paper só diz "frame" para o quadro inteiro do sensor);
+  - `tab_stages`: tempo < 0,05 ms com duas casas (flat field em GPU na janela: 0.03), < 0,005 s com quatro (busca na
+    galeria em CPU no quadro inteiro: 0.0003);
+  - `\DistGrossPct` (= 1, `GROSS` em % de z0) em `distance.py`;
+  - figuras: o narrow autofocus desenhado vazado onde cai em cima de outro fluxo (sobre `rec_z0` em `fig_cost` (c),
+    sobre o blind autofocus em `fig_stack`), rótulo fora do aglomerado com linha de chamada.
+
+### Regeneração
+
+```bash
+# tmux geradores_fig, GPU 4 (0 % antes), 11:48:27 -> 11:49:08; log logs/integracao/paper_figures.log
+bash logs/integracao/paper_figures.sh 4
+#   = python -m holo_openset paper tables distance --no-figures   (HOLO_PAPER e HOLO_RESULTS sem valor: output/paper, results/)
+#   + CUDA_VISIBLE_DEVICES=4 HOLO_PAPER_DEVICE=cuda:0 python -m holo_openset paper figures
+bash scripts/exp_distancia/relatorio.sh        # só muda numbers_distancia.tex: + \DistGrossPct (1916 macros)
+```
+
+- 15 figuras, nenhuma falha, 41 s. `results/figure_numbers.json` **não mudou**. Comparação pixel a pixel com as figuras
+  anteriores de `output/paper`: mudaram `fig_cost`, `fig_enroll`, `fig_flows`, `fig_robustness` (36 linhas, 11
+  colunas), `fig_stack` (as que deviam); `fig_variants` em 0,01 % dos pixels (os conjuntos de robustez em disco foram
+  re-simulados neste build) e `fig_scores` em menos de 0,01 % (arredondamento); as outras 8 idênticas. Olhei as cinco
+  que mudaram; ajustei os rótulos de `fig_cost` (c) e `fig_stack` (commit `figures`) e redesenhei só essas duas.
+
+### `numbers.tex`: antigo (`expected/`) → novo
+
+669 → 807 macros. Removidas 5 (`TLayerBank*`, renomeadas `TLayerBankJit*`: a linha do stack usa o estágio do fluxo do
+paper). Acrescentadas 143: 33 `Rob<conjunto>RecAfc`, 33 dos três conjuntos novos (`RobFrameTwo…`, `RobFrameFive…`,
+`RobWalkZeroFive…`), 24 de enrollment, 15 `FullDetectPct…`, 12 `Focus…`, 6 `FullRecAfc…`, 5 `TAutofocusAfc…`, 5
+`TLayerBankJit…`, 4 `RecAfc…`, 4 `EtoE…` (`BankJit`, `RecAfc`), 2 `TBlindOverNarrow…`. **Nenhuma macro existente que
+não seja de tempo mudou de valor** (a acurácia dos quadros inteiros do run novo reproduz a antiga a 3 casas; as linhas
+novas do fim a fim não mexem em `EtoERecall`/`EtoEFp`). Mudaram 85 macros de tempo (sessão E5 e run novo de quadros
+inteiros), p. ex. `TAutofocusCpuBigS` 238.73 → 116.44, `TBackpropCpuBigS` 2.19 → 1.01, `TYoloTiledGpuBigMs` 221.7 →
+166.8, `TAutofocusGpuBigMs` 123.7 → 122.9, `FullDetectS` 0.27 → 0.17, `FullRecZZeroTotalS` 0.31 → 0.20,
+`FullLearnedTotalS` 0.28 → 0.18, `FullRecTwinTotalS` 0.52 → 0.41, `FullRecZZeroReadMs` 30 → 20,
+`BackOverLayerCpuBig` 2.7 → 3.4.
+
+### `expected/`, `checksums/`, testes
+
+```bash
+cp output/paper/{numbers,numbers_distancia}.tex expected/; cp output/paper/tables/<as 11>.tex expected/tables/
+env -u HOLO_RESULTS python -m holo_openset reproduce check     # 13/13 files identical to expected/
+env -u HOLO_RESULTS python -m pytest -q                        # 37 passed
+cd data && sha256sum variants/{frame_2,frame_5,walk_05}/{backgrounds,holograms}.npy >> ../checksums/data.sha256
+```
+
+`checksums/data.sha256` não tem comentário (formato do `sha256sum -c`): a explicação (build em que os três conjuntos
+foram gravados; as 32 variantes antigas re-simuladas neste disco não batem mais com as somas publicadas, cujas linhas
+ficaram) está em `docs/DATA.md`, seção "Checksums". Disco medido no layout do paper: `rec_afc.npy` do base e dos 35
+conjuntos 40,6 GB; os três conjuntos novos, sem contar o `rec_afc`, 13,0 GB (total do pipeline ≈ 315 GB, nível 3 ≈
+335 GB nas docs).
+
+Participação do detector (run único, GPU): mínimo 95,1 % (`narrow autofocus`), piso 95; `bank_jit` 95,6 %.
