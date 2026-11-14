@@ -239,7 +239,7 @@ base.
       pytest 64, `reproduce check` 13/13; pastas do paper intactas (só `results/data_summary.json` reescrito com o
       mesmo conteúdo pelo `reproduce check`).
 - [x] P6 concluído. Relatório completo: `docs/exp_resolucao/RELATORIO_PILOTO_1MM.md` (PDF no scratchpad,
-      `entrega/relatorio_piloto_1mm.pdf`), enviado ao orientador às ≈ 20:50.
+      `entrega/relatorio_piloto_1mm.pdf`), enviado ao orientador às 20:43.
 - [ ] P7. **PARADO, esperando o orientador.** Decisões pedidas no relatório (seção 8): (1) como a tese muda (minha
       recomendação: condicionada à densidade; amostra densa → o crop falha e a camada recupera, a 1,0 como a
       19,25 mm; esparsa → o crop reconhece as conhecidas e a vantagem fica na rejeição das não vistas, 0,997 contra
@@ -435,8 +435,7 @@ errado".
   Os crops a 1 mm ficam em 0,938 / 0,730 (média de 5); a camada passa por +0,039 de F1 e +0,268 de rejeição. Falta o
   subagente dos controles (C gravando até ≈ 19:20, depois treino; depois B). **Próximo passo ao voltar: esperar o
   relatório dele, conferir, escrever o relatório do piloto completo e mandar. Nada de reescrita antes do pedido.**
-
-- **2026-11-14, ≈ 20:50 — RELATÓRIO DO PILOTO COMPLETO ENTREGUE. PARADO.** Critério do orientador: 0 de 5 (camada −
+- **2026-11-14, 20:43 — RELATÓRIO DO PILOTO COMPLETO ENTREGUE. PARADO.** Critério do orientador: 0 de 5 (camada −
   crops +0,039 F1, +0,268 rejeição). Controles (r1): o código novo a 19,25 mm reproduz o base; com a densidade
   relativa do base a 1,0 mm os crops voltam a 0,796 / 0,080 e a camada fica +0,164 / +0,820 acima. Leitura minha: o
   que derruba o crop é o padrão das vizinhas, não o vazamento do próprio padrão nem a distância. Treino com 50 µm
