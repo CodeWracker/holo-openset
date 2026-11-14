@@ -1,6 +1,7 @@
 """The objects of the simulated samples: letters A-Z rendered as binary masks."""
 from pathlib import Path
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 CLASSES = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
@@ -24,6 +25,19 @@ def letter_mask(letter, font_path, font_size, angle):
     mask = mask.rotate(angle, expand=True, resample=Image.Resampling.BICUBIC)
     ink = mask.getbbox()
     return mask.crop(ink) if ink else mask
+
+
+def letter_master(letter, font_path, font_size, angle):
+    """`letter_mask` at a fractional font size (px of the grid it is drawn on; Pillow >= 10.1), as a uint8 array
+    cropped to the ink: the raster of a letter defined in physical units, drawn on a grid finer than the pixel."""
+    font = ImageFont.truetype(str(font_path), float(font_size))
+    bbox = ImageDraw.Draw(Image.new('L', (1, 1), 0)).textbbox((0, 0), letter, font=font)
+    pad = 6
+    mask = Image.new('L', (bbox[2] - bbox[0] + 2 * pad, bbox[3] - bbox[1] + 2 * pad), 0)
+    ImageDraw.Draw(mask).text((pad - bbox[0], pad - bbox[1]), letter, fill=255, font=font)
+    mask = mask.rotate(angle, expand=True, resample=Image.Resampling.BICUBIC)
+    ink = mask.getbbox()
+    return np.asarray(mask.crop(ink) if ink else mask, np.uint8)
 
 
 def write_yolo_label(path, rows, width, height):

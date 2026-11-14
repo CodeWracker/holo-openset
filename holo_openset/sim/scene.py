@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from PIL import Image, ImageDraw
 
-from holo_openset.sim.letters import CLASS_TO_IDX, CLASSES, FONTS, clipped_normal_int, letter_mask
-from holo_openset.sim.physics import PIXEL
+from holo_openset.sim.letters import CLASS_TO_IDX, CLASSES, FONTS, clipped_normal_int, letter_mask, letter_master
+from holo_openset.sim.physics import PIXEL, Z0, sample_mask
 
 TILE = 640 * 640  # the letter density is set per 640 x 640 window
 
@@ -29,6 +29,38 @@ class SmallLayout(Layout):
     """Letters of 12-36 px (20-60 um): the scale of planar microstructures, for the analysis of object size."""
     font_min, font_max = 16, 48
     border, margin = 6, 4
+
+
+class FresnelLayout(Layout):
+    """The letters of Layout at another distance with the same Fresnel number: every length times `scale`
+    (sqrt(z / 19.25 mm): 0.22792 for 1.0 mm), so font sizes 15.95-26.89 px drawn from a continuous uniform (boxes of
+    about 13-23.5 px, 22-39 um), border and spacing scaled. The scene is defined in physical units: the font size,
+    rotation and position of each letter (to 1/factor of a pixel, never snapped to the pixels) and the raster of every
+    object (letters, dust) on a master grid `factor` times finer than the pixel, which the simulator averages onto the
+    grid it records on (physics.sample_mask), so that the same scene is recorded at every oversampling.
+    The number of letters per 640 x 640 window keeps the values of Layout unless given (an open question of the
+    pilot). An instance carries its parameters: FresnelLayout(letters_mean=...)."""
+    physical = True
+    factor = 16                         # the master grid: 1/16 of a pixel (0.10 um)
+    scale = math.sqrt(1.0e-3 / Z0)      # 0.22792: the lengths of Layout for a sample at 1.0 mm
+    PARAMS = ('scale', 'factor', 'letters_mean', 'letters_std', 'letters_min', 'letters_max', 'unique_fraction_mean',
+              'unique_std', 'rotation', 'max_attempts_per_letter')
+
+    def __init__(self, **kw):
+        for k, v in kw.items():
+            if k not in self.PARAMS:
+                raise ValueError(f'{k} is not a parameter of {type(self).__name__} ({", ".join(self.PARAMS)})')
+            setattr(self, k, type(getattr(type(self), k))(v))
+
+    font_min = property(lambda self: Layout.font_min * self.scale)
+    font_max = property(lambda self: Layout.font_max * self.scale)
+    border = property(lambda self: Layout.border * self.scale)
+    margin = property(lambda self: Layout.margin * self.scale)
+
+    def params(self):
+        """What physics.json keeps: the parameters, and the lengths they give (for the record)."""
+        return {**{k: getattr(self, k) for k in self.PARAMS},
+                **{k: getattr(self, k) for k in ('font_min', 'font_max', 'border', 'margin')}}
 
 
 def clipped_normal(rng, mean, std, lo, hi):
@@ -108,7 +140,10 @@ def _draw_letter(rng, letter, fonts, lay):
 def make_scene(seed, phys, classes=CLASSES, fonts=FONTS, lay=Layout, outside_classes=None):
     """-> dict(objects=[letters in and around the window], dust=[...], rows=[annotations, window coordinates]) or
     None when the letters do not fit. Canvas coordinates; the window starts at (margin, margin). The letters around
-    the window are drawn from outside_classes (default: all), in the same fonts."""
+    the window are drawn from outside_classes (default: all), in the same fonts. A physical layout (FresnelLayout)
+    draws the scene in physical units (`physical_scene`)."""
+    if getattr(lay, 'physical', False):
+        return physical_scene(seed, phys, classes, fonts, lay, outside_classes)
     rng = random.Random(seed)
     H, W = phys.canvas
     h, w = phys.window
@@ -162,6 +197,126 @@ def make_scene(seed, phys, classes=CLASSES, fonts=FONTS, lay=Layout, outside_cla
     return dict(objects=objects, dust=dust, rows=rows, margin=m0, seed=seed)
 
 
+# ------------------------------------------------------------------------------- scenes in physical units
+# Canvas coordinates of edges: pixel j covers [j, j + 1), master cell k covers [k / f, (k + 1) / f) (f = lay.factor).
+# Every object keeps its master raster (uint8, cropped to the ink) and the master cell of its top-left corner, plus
+# `mask`, `x`, `y`: its area mean over the pixels and the first pixel it touches (what the native path, the depth of a
+# tilted slide, the ground-truth maps and the dust table read).
+
+def physical_object(master, mx, my, f, **kw):
+    o = dict(master=master, mx=int(mx), my=int(my), factor=f, **kw)
+    o['mask'], o['x'], o['y'] = sample_mask(o, 1)
+    return o
+
+
+def dust_master(rng, f):
+    """`dust_mask` drawn on the master grid (f times finer than the pixel): the same draws, the polygon filled at f x
+    the pixel, cropped to the ink."""
+    a = min(25.0, max(1.0, math.exp(rng.gauss(math.log(3.0), 0.6))))
+    b = a * rng.uniform(0.5, 1.0)
+    size = int(math.ceil((2 * a + 6) * f))
+    im = Image.new('L', (size, size), 0)
+    pts = []
+    rot = rng.uniform(0, math.pi)
+    for k in range(24):
+        t = 2 * math.pi * k / 24
+        r = 1 + 0.15 * rng.uniform(-1, 1)
+        x, y = a * r * math.cos(t), b * r * math.sin(t)
+        pts.append((size / 2 + (x * math.cos(rot) - y * math.sin(rot)) * f,
+                    size / 2 + (x * math.sin(rot) + y * math.cos(rot)) * f))
+    ImageDraw.Draw(im).polygon(pts, fill=255)
+    return np.asarray(im.crop(im.getbbox()), np.uint8)
+
+
+def make_physical_dust(rng, n, region, depth, f):
+    """`make_dust` in physical units: each particle anywhere in the region, to 1/f of a pixel."""
+    x0, y0, x1, y1 = region
+    out = []
+    for _ in range(n):
+        m = dust_master(rng, f)
+        u, v = rng.uniform(x0, x1 - m.shape[1] / f), rng.uniform(y0, y1 - m.shape[0] / f)
+        out.append(physical_object(m, round(u * f), round(v * f), f, absorption=rng.uniform(0.3, 1.0),
+                                   phase=rng.uniform(0.0, 1.5), depth=depth, kind='dust'))
+    return out
+
+
+def physical_scene(seed, phys, classes=CLASSES, fonts=FONTS, lay=None, outside_classes=None):
+    """`make_scene` for a physical layout: the same steps (letters in the window, the same density around it, dust on
+    the two glass surfaces), with continuous font sizes and positions. The scene depends on the window, margin, reach,
+    material and dust of `phys`, never on the distance or on the oversampling. The annotation keeps the integer box
+    of the pixels the letter touches (x0, y0, x1, y1, what the pipeline reads) and the box of its ink in pixels
+    (bx0, by0, bx1, by1, floats)."""
+    lay = lay or FresnelLayout()
+    f = lay.factor
+    rng = random.Random(seed)
+    H, W = phys.canvas
+    h, w = phys.window
+    m0 = phys.margin
+    lo_y, hi_y = max(0, m0 - phys.reach), min(H, m0 + h + phys.reach)
+    lo_x, hi_x = max(0, m0 - phys.reach), min(W, m0 + w + phys.reach)
+    g = max(1, round(lay.margin))   # spacing between the boxes of two letters (px of the occupancy grid)
+    occ = np.zeros((H, W), bool)
+    objects, rows = [], []
+
+    def draw(letter):
+        size, font = rng.uniform(lay.font_min, lay.font_max), rng.choice(fonts)
+        angle = rng.uniform(-lay.rotation, lay.rotation)
+        return letter_master(letter, font, size * f, angle), size, font, angle
+
+    def box(o):
+        mh, mw = o['mask'].shape
+        return o['x'], o['y'], o['x'] + mw, o['y'] + mh
+
+    for det_idx, letter in enumerate(letter_list(rng, classes, h * w / TILE, lay)):
+        for _ in range(lay.max_attempts_per_letter):
+            master, size, font, angle = draw(letter)
+            fh, fw = master.shape[0] / f, master.shape[1] / f
+            u = m0 + rng.uniform(lay.border, w - fw - lay.border)
+            v = m0 + rng.uniform(lay.border, h - fh - lay.border)
+            o = physical_object(master, round(u * f), round(v * f), f, kind='letter', classe=letter)
+            x0, y0, x1, y1 = box(o)
+            if occ[y0 - g:y1 + g, x0 - g:x1 + g].any():
+                continue
+            occ[y0 - g:y1 + g, x0 - g:x1 + g] = True
+            mat = material(rng, phys)
+            o.update(mat)
+            objects.append(o)
+            rows.append(dict(det_idx=det_idx, classe=letter, class_id=CLASS_TO_IDX[letter], x0=x0 - m0, y0=y0 - m0,
+                             x1=x1 - m0, y1=y1 - m0, font_size=size, font_name=font.stem, rotation=angle,
+                             absorption=mat['absorption'], phase=mat['phase'], depth=mat['depth'],
+                             bx0=o['mx'] / f - m0, by0=o['my'] / f - m0, bx1=(o['mx'] + master.shape[1]) / f - m0,
+                             by1=(o['my'] + master.shape[0]) / f - m0))
+            break
+        else:
+            return None
+    if phys.reach > 0:
+        density = lay.letters_mean / TILE
+        target = poisson(rng, density * ((hi_y - lo_y) * (hi_x - lo_x) - h * w))
+        placed = 0
+        for _ in range(target * 20):
+            if placed == target:
+                break
+            letter = rng.choice(sorted(outside_classes or CLASSES))
+            master, size, font, angle = draw(letter)
+            fh, fw = master.shape[0] / f, master.shape[1] / f
+            u, v = rng.uniform(lo_x, hi_x - fw), rng.uniform(lo_y, hi_y - fh)
+            o = physical_object(master, round(u * f), round(v * f), f, kind='outside', classe=letter)
+            x0, y0, x1, y1 = box(o)
+            if x1 + g > m0 and x0 - g < m0 + w and y1 + g > m0 and y0 - g < m0 + h:
+                continue
+            if occ[max(0, y0 - g):y1 + g, max(0, x0 - g):x1 + g].any():
+                continue
+            occ[max(0, y0 - g):y1 + g, max(0, x0 - g):x1 + g] = True
+            o.update(material(rng, phys))
+            objects.append(o)
+            placed += 1
+    dust = []
+    area_mm2 = (hi_y - lo_y) * (hi_x - lo_x) * (PIXEL * 1e3) ** 2
+    for depth in phys.dust_depths:
+        dust += make_physical_dust(rng, poisson(rng, phys.dust_density * area_mm2), (lo_x, lo_y, hi_x, hi_y), depth, f)
+    return dict(objects=objects, dust=dust, rows=rows, margin=m0, seed=seed)
+
+
 def object_maps(scene, phys):
     """Amplitude and phase of the letters inside the window, in their own plane (the ground truth of a
     reconstruction)."""
@@ -179,14 +334,17 @@ def object_maps(scene, phys):
     return amp, ph
 
 
-def camera(seed, phys):
-    """Defects fixed for the camera: photo-response non-uniformity and dust on the sensor window."""
+def camera(seed, phys, lay=Layout):
+    """Defects fixed for the camera: photo-response non-uniformity and dust on the sensor window (in physical units
+    with a physical layout)."""
     rng = random.Random(seed)
     g = torch.Generator().manual_seed(seed)
     h, w = phys.window
     m0, pad = phys.margin, min(64, phys.margin)
     n = poisson(rng, phys.sensor_dust_density * h * w * (PIXEL * 1e3) ** 2)
-    dust = make_dust(rng, n, (m0 - pad, m0 - pad, m0 + w + pad, m0 + h + pad), 0.0)
+    region = (m0 - pad, m0 - pad, m0 + w + pad, m0 + h + pad)
+    dust = make_physical_dust(rng, n, region, 0.0, lay.factor) if getattr(lay, 'physical', False) else \
+        make_dust(rng, n, region, 0.0)
     return dict(prnu=torch.randn(h, w, generator=g, dtype=torch.float64), dust=dust)
 
 

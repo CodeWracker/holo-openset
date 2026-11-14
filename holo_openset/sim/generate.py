@@ -32,12 +32,36 @@ import torch
 from PIL import Image
 
 from holo_openset.sim.letters import AUX_FONTS, CLASSES, FONTS, write_yolo_label
-from holo_openset.sim.physics import FULL_FRAME, PIXEL, Physics, physics_from_dict, record, sensor_intensity
-from holo_openset.sim.scene import Layout, SmallLayout, camera, make_scene, object_maps, session
+from holo_openset.sim.physics import FULL_FRAME, PIXEL, Physics, physics_dict, physics_from_dict, record, sensor_intensity
+from holo_openset.sim.scene import FresnelLayout, Layout, SmallLayout, camera, make_scene, object_maps, session
 
 CAMERA_SEED = 7
 N_BLANKS = 8
-LAYOUTS = {'default': Layout, 'small': SmallLayout}
+LAYOUTS = {'default': Layout, 'small': SmallLayout, 'fresnel': FresnelLayout}
+
+
+def make_layout(name, params=None):
+    """The layout of a set: the class of LAYOUTS (the layouts of the paper) or, for a physical layout, an instance
+    with its parameters (physics.json keeps them as layout_params; the lengths they give are recorded, not read)."""
+    lay = LAYOUTS[name]
+    if not getattr(lay, 'physical', False):
+        if params:
+            raise SystemExit(f'layout {name} takes no parameters')
+        return lay
+    return lay(**{k: v for k, v in (params or {}).items() if k in lay.PARAMS})
+
+
+def layout_of(cfg):
+    """The layout of a set from its physics.json."""
+    return make_layout(cfg.get('layout', 'default'), cfg.get('layout_params'))
+
+
+def _set_json(phys, lay, **kw):
+    """physics.json of a set: layout_params only for a physical layout (the files of the paper stay as they were)."""
+    d = dict(physics=physics_dict(phys), **kw)
+    if getattr(lay, 'physical', False):
+        d['layout_params'] = lay.params()
+    return d
 
 
 def parse_sets(items):
@@ -156,15 +180,17 @@ def _rows(i, sc, ses, split, phys, fn):
 
 
 def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None, split=None, layout='default',
-             workers=8, dev='cpu', log=print):
+             workers=8, dev='cpu', log=print, layout_params=None):
     """Write a set to `out`. like: an existing set whose scenes are recorded again (its physics, overridden by the
-    fields of `phys` given as a dict); split: with like, only that split."""
+    fields of `phys` given as a dict, and its layout); split: with like, only that split. layout_params: the
+    parameters of a physical layout (FresnelLayout)."""
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     if like:
         base = json.load(open(Path(like) / 'physics.json'))
         phys = physics_from_dict(base['physics']).replace(**(phys or {}))
         seed, per_session, layout = base['seed'], base['per_session'], base.get('layout', 'default')
+        layout_params = base.get('layout_params')
         meta = pd.read_csv(Path(like) / 'metadata.csv')
         n_sessions = int(meta.session.max()) + 1
         split_of_session = meta.groupby('session').split.first().to_dict()
@@ -176,11 +202,12 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
         ids = np.arange(n_images)
         n_sessions = -(-n_images // per_session)
         split_of_session = split_sessions(n_sessions, seed)
+    lay = make_layout(layout, layout_params)
     full = split is None
     if full:
         for d in ['images', 'labels', 'objects']:
             (out / d).mkdir(exist_ok=True)
-    cam = camera(CAMERA_SEED, phys)
+    cam = camera(CAMERA_SEED, phys, lay)
     sessions = {s: session(seed * 1000 + s, phys) for s in range(n_sessions)}
     used = sorted({int(i) // per_session for i in ids})
     walk = {s: session_walk(seed * 1000 + s, per_session, phys.frame_z_walk) for s in used} if phys.frame_z_walk > 0 \
@@ -196,7 +223,7 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
                                      shape=(len(ids), h, w))
     meta_rows, ann_rows, dust_rows = [], [], []
     seeds = [seed * 1_000_000 + int(i) for i in ids]
-    for k, (i, sc) in enumerate(zip(ids, scenes(seeds, phys, workers, lay=LAYOUTS[layout]))):
+    for k, (i, sc) in enumerate(zip(ids, scenes(seeds, phys, workers, lay=lay))):
         i = int(i)
         s = i // per_session
         sp = split_of_session[i // per_session]
@@ -231,9 +258,9 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
         out / 'dust.csv', index=False)
     pd.DataFrame([dict(session=s, split=split_of_session[s], **sessions[s]) for s in range(n_sessions)]).to_csv(
         out / 'sessions.csv', index=False)
-    json.dump(dict(physics=dataclasses.asdict(phys), seed=seed, per_session=per_session, layout=layout,
-                   camera_seed=CAMERA_SEED, n_blanks=N_BLANKS, like=str(like) if like else None, split=split,
-                   fonts=[f.name for f in FONTS]), open(out / 'physics.json', 'w'), indent=1)
+    json.dump(_set_json(phys, lay, seed=seed, per_session=per_session, layout=layout, camera_seed=CAMERA_SEED,
+                        n_blanks=N_BLANKS, like=str(like) if like else None, split=split, fonts=[f.name for f in FONTS]),
+              open(out / 'physics.json', 'w'), indent=1)
     log(f'wrote {out} {holo.shape}')
 
 
@@ -246,8 +273,8 @@ def aux(base, out, rep, n_images=2000, workers=8, dev='cpu', log=print):
     out.mkdir(parents=True, exist_ok=True)
     cfg = json.load(open(base / 'physics.json'))
     phys, seed = physics_from_dict(cfg['physics']), cfg['seed']
-    lay = LAYOUTS[cfg.get('layout', 'default')]
-    cam = camera(CAMERA_SEED, phys)
+    lay = layout_of(cfg)
+    cam = camera(CAMERA_SEED, phys, lay)
     ses_tab = pd.read_csv(base / 'sessions.csv')
     train_sessions = ses_tab[ses_tab.split == 'train'].session.tolist()
     seen = classes(rep)[0]
@@ -279,8 +306,8 @@ def full_frames(base, out, n_images=40, phys=None, workers=8, dev='cpu', log=pri
     out.mkdir(parents=True, exist_ok=True)
     cfg = json.load(open(base / 'physics.json'))
     p = physics_from_dict(cfg['physics']).replace(window=FULL_FRAME, **(phys or {}))
-    seed, lay = cfg['seed'], LAYOUTS[cfg.get('layout', 'default')]
-    cam = camera(CAMERA_SEED + 1, p)
+    seed, lay = cfg['seed'], layout_of(cfg)
+    cam = camera(CAMERA_SEED + 1, p, lay)
     ses_tab = pd.read_csv(base / 'sessions.csv')
     test_sessions = ses_tab[ses_tab.split == 'test'].session.tolist()
     sessions = {s: session(seed * 1000 + s, p) for s in test_sessions}
@@ -315,7 +342,7 @@ def full_frames(base, out, n_images=40, phys=None, workers=8, dev='cpu', log=pri
     pd.DataFrame(dust_rows, columns=['image_id', 'x0', 'y0', 'x1', 'y1', 'depth', 'absorption', 'phase']).to_csv(
         out / 'dust.csv', index=False)
     ses_tab.to_csv(out / 'sessions.csv', index=False)
-    json.dump(dict(physics=dataclasses.asdict(p), seed=seed, per_session=None, layout=cfg.get('layout', 'default'),
-                   camera_seed=CAMERA_SEED + 1, n_blanks=N_BLANKS, like=str(base), split='test',
-                   fonts=[f.name for f in FONTS]), open(out / 'physics.json', 'w'), indent=1)
+    json.dump(_set_json(p, lay, seed=seed, per_session=None, layout=cfg.get('layout', 'default'),
+                        camera_seed=CAMERA_SEED + 1, n_blanks=N_BLANKS, like=str(base), split='test',
+                        fonts=[f.name for f in FONTS]), open(out / 'physics.json', 'w'), indent=1)
     log(f'wrote {out} {holo.shape}')
