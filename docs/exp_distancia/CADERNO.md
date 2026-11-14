@@ -1028,3 +1028,53 @@ camada. Para `rec_afs`/`rec_afsc` o estágio `autofocus` só aparece no primeiro
   `data/`, fora do git): `rec_{afs,afM,afc,afr,afsc}.npy` e `autofocus_<método>.csv` nos oito conjuntos de janelas,
   `data/realistic/rec_edfw.npy` e `autofocus_edfw.csv`, `data/realistic/aux/` (r1, r1_cal, `r1_rec_afc.npy`,
   `r1_autofocus_afc.csv`); modelo `models_exp_distancia/realistic/rec_afc_r1.pt`.
+
+---
+
+## 2026-11-13, 23:45 — Etapa 4: sessão de tempo que conta, gerador e relatório
+
+### Nota sobre o subagente dos runs
+
+O subagente que conduziu os runs da Etapa 3 foi interrompido por engano logo depois do commit `bfd4a0d` (fim da Etapa
+3). Nada ficou rodando: o `own_aux` já tinha terminado às 23:38:02 e nenhum tmux nosso estava ativo. Ele não chegou a
+escrever o relatório dele; a revisão da Etapa 3 foi feita por este caderno e pelos CSVs de `results_exp_distancia/`.
+
+### Qual sessão de E5 conta (decisão do responsável)
+
+**Decisão do responsável: a sessão de E5 que conta é a `e5_a2`.** Motivos:
+
+1. O protocolo (7, E5) define a sessão de medição como `timing` **e** `full_frames` no mesmo run, e a regra 10.4
+   proíbe misturar runs numa mesma tabela. Só a `e5_a2` tem as duas coisas.
+2. A `e5_a1` não chegou ao `full_frames` por um erro de ordem nosso (as galerias dos fluxos do estudo ainda não
+   tinham sido construídas), não por causa de nenhum tempo medido.
+3. A regra "vale a primeira tentativa válida" foi escrita para impedir a escolha entre sessões completas. A primeira
+   (e única) sessão completa e válida é a 2.
+4. A escolha não depende dos valores: as duas tentativas concordam a 1–3 % nos estágios do quadro inteiro (tabela da
+   Etapa 3 acima e n\* abaixo).
+
+`results_exp_distancia/e5/` passa a conter a sessão 2 em GPU (`timing_gpu.csv`, `full_frames.csv`,
+`full_frames_time.csv`, `full_frames_focus.csv`, cópias byte a byte de `e5_a2/`) e o run de CPU (`timing_cpu.csv`,
+22:18). O `timing_gpu.csv` que estava em `e5/` era cópia da `e5_a1`, que continua em `e5_a1/` como réplica. O
+orientador pode reverter.
+
+n\* no quadro inteiro, GPU (`min_s`), com cada tentativa (`break_even` de `holo_openset/paper/distance.py`; script
+`nstar_attempts.py` do scratchpad). Conta completa: n\* = T_busca / (T_camada − (T_flat_field + T_backprop +
+T_channels)); simplificada: n\* = T_busca / (T_camada − T_backprop).
+
+| stack | busca | completa a1 | completa a2 | simplificada a1 | simplificada a2 |
+|---|---|---|---|---|---|
+| bank_jit | cega | 212 | 205 | 48 | 48 |
+| bank_jit | afc | 2,7 | 2,6 | 0,6 | 0,6 |
+| bank_wide | cega | 69 | 68 | 33 | 33 |
+| bank_wide | afc | 0,9 | 0,9 | 0,4 | 0,4 |
+| bank_w2 | cega | 41 | 41 | 25 | 25 |
+| bank_w2 | afc | 0,5 | 0,5 | 0,3 | 0,3 |
+
+A maior diferença é a da conta completa de `bank_jit` com a busca cega (212 contra 205, 3 %): o denominador é pequeno
+(3,523 − 2,942 = 0,581 ms na a1; 3,523 − 2,925 = 0,598 ms na a2), então 17 µs de diferença nos estágios mudam n\* em 7.
+
+### Integração do gerador
+
+O gerador das tabelas, macros e figuras (`holo_openset/paper/distance.py`) e os testes dele foram escritos num
+worktree à parte e trazidos para este branch por cherry-pick: `b712ede` (era `192d189`) e `d000e7f` (era `3ac7478`).
+O worktree já foi removido.
