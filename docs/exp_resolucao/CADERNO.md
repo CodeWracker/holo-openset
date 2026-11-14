@@ -119,3 +119,39 @@ Regra escrita agora, antes de abrir os hologramas; nada dela foi ajustado depois
 - Sensibilidade (só reportada, não escolhe nada): k_thr ∈ {1,5; 2; 3}.
 - O b do critério para a base será escrito na próxima entrada, comparando os dois métodos; se discordarem,
   registro os dois e não escolho.
+
+## 2026-11-14, 13:12 — T2(ii)-(iii): espectro por anel, b às cegas e o b do critério (piloto)
+
+- Onde: container, CPU, 4 threads. `python scripts/exp_resolucao/spectrum_rings.py` (14,5 s, os três conjuntos),
+  depois `python scripts/exp_resolucao/fig_spectrum.py`. Saídas: `results_exp_resolucao/spectrum_rings.csv`
+  (potência por anel, conjunto e sinal), `spectrum_cutoff.csv` (piso, k_c, f_c e b para cada k_thr) e a figura
+  `docs/exp_resolucao/img/spectrum_cutoff.png`. Regra exatamente a do pré-registro das 13:11; nada mudou depois.
+
+| conjunto | sinal | f_c (k_thr = 2) | b (k_thr = 2) | f_c (k_thr = 1,5) | b | f_c (k_thr = 3) | b | modelo f_c (E < 0,1 / 0,05) | b_max (0,1 / 0,05) |
+|---|---|---|---|---|---|---|---|---|---|
+| `realistic` | I/B | 72,98 | **4** | 75,79 | 3 | 70,17 | 4 | 72,37 / 78,25 | **4** / 3 |
+| `realistic` | I | 72,98 | 4 | 75,79 | 3 | 70,17 | 4 | | |
+| `small_z0` | I/B | 69,24 | **4** | 72,04 | 4 | 66,43 | 4 | 72,37 / 78,25 | **4** / 3 |
+| `small_z0` | I | 69,24 | 4 | 72,04 | 4 | 65,49 | 4 | | |
+| `small_near` | I/B | 173,09 | **1** | 190,87 | 1 | 157,19 | 1 | 266,40 / 286,55 | **1** / 1 |
+| `small_near` | I | 172,16 | 1 | 188,06 | 1 | 152,51 | 1 | | |
+
+(f_c em ciclos/mm; b = ⌊320 / k_c⌋ às cegas, ⌊1 / (2 Δ f_c)⌋ pelo modelo.)
+
+- Legenda da figura `spectrum_cutoff.png`. (a)–(c): potência média por anel do espectro de 256 hologramas de
+  treino, dividida pelo piso de ruído (a mediana dos anéis na faixa cinza, o quinto superior até o Nyquist), em
+  escala log, contra a frequência em ciclos/mm; azul `I/B`, laranja `I` puro. A linha cheia horizontal é 2 × o
+  piso (o limiar pré-registrado); as tracejadas verticais são o corte às cegas de cada sinal; a pontilhada preta é o
+  corte do modelo (E < 0,1). (a) conjunto base a 19,25 mm; (b) letras pequenas a 19,25 mm; (c) letras pequenas a
+  2 mm. (d): |E(f)| do modelo (eq. `eq:envelope`) a 19,25 mm (roxo) e 2 mm (verde-azulado), com os limiares 0,1
+  (tracejado) e 0,05 (pontilhado) e os cortes correspondentes.
+- Os dois métodos concordam no b nos três conjuntos: 4 na base e em `small_z0`, 1 em `small_near`. Na base, o
+  corte às cegas (72,98) cai a 0,6 ciclo/mm do corte do modelo (72,37). A 2 mm os dois dão b = 1, mas os cortes não
+  coincidem: o espectro encosta no piso em 173 ciclos/mm, o modelo em 266. `I/B` e `I` dão o mesmo corte (no
+  máximo 1 anel de diferença).
+- Sensibilidade: na base, o b fica entre 3 e 4 (k_thr = 1,5 e o limiar 0,05 do modelo dão 3); 4 está perto da
+  fronteira (f_c > 74,85 ciclos/mm já daria 3). Em `small_z0` e `small_near`, nenhuma das variações muda o b.
+- **b do critério pré-registrado (A.6) para o conjunto base: b = 4** (os dois métodos, com o limiar 0,1 do
+  protocolo e o k_thr = 2 pré-registrado). Para os conjuntos pequenos, a regra dá b = 4 a 19,25 mm e b = 1 a 2 mm
+  (não rodam no piloto).
+- Até este momento nenhum conjunto reduzido existe e nenhuma avaliação de teste foi feita nesta etapa.
