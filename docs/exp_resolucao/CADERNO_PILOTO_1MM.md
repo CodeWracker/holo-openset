@@ -688,3 +688,93 @@ contra 0,18 s sem.
 
 Gravação: `bash scripts/exp_resolucao/controls_1mm.sh 5 dense_record` (tmux `res_ctrl_dense_record`, 17:51).
 
+
+## 2026-11-14, 18:25 — P2-A: repetições r2–r5 do `bench_1mm` e o critério do P0 (execução)
+
+Commits `47514f5` (script com a repetição como parâmetro), `0ec3790` (resumo), `28c0244` (resultados).
+`pilot_1mm.sh` ganhou `REP=1..5` e o passo `rep` (train, evaluate, robust_a, robust_b, robust_depth50 da repetição);
+nada que exista é refeito: o r1 não foi tocado (conferido por md5 de `robustness_bench_1mm.csv` e dos três json de r1
+depois de rodar os passos com `REP=1`, que só imprimiram "exists" / "rows of r1 exist"; essas chamadas de checagem
+acrescentaram linhas aos logs de r1). As gravações a 0,7 mm, os caches e o json da recalibração não dependem da
+repetição e foram reaproveitados; o α treinado de cada repetição é o que muda na variante por razão.
+
+Comando (tmux `res_pilot_reps`, GPU 5, um processo por vez):
+`for R in 2 3 4 5; do REP=$R bash scripts/exp_resolucao/pilot_1mm.sh 5 rep; done` — 17:42 a 18:12; por repetição
+424 / 473 / 442 / ~470 s (treino 276–309 s, avaliação 43–52 s, robustez 17–58 s por passo). Resumo:
+`python scripts/exp_resolucao/pilot_five_reps.py` → `results_exp_resolucao/pilot_five_reps.csv`,
+`pilot_five_reps_robustness.csv` (e `_rows.csv`), `pilot_five_reps_alpha.csv`.
+
+### As cinco repetições (teste; limiar da validação)
+
+| rep | F1 raw / prop / rec_z0 | rejeição raw / prop / rec_z0 | prop − raw F1 | prop − raw rej. | rec_z0 − prop F1 / rej. |
+|---|---|---|---|---|---|
+| 1 | 0,9283 / 0,9770 / 0,9765 | 0,6224 / 0,9952 / 1,0000 | +0,0486 | +0,3728 | −0,0004 / +0,0048 |
+| 2 | 0,9422 / 0,9736 / 0,9788 | 0,7437 / 1,0000 / 1,0000 | +0,0314 | +0,2563 | +0,0052 / 0,0000 |
+| 3 | 0,9339 / 0,9770 / 0,9806 | 0,6998 / 0,9930 / 0,9914 | +0,0431 | +0,2932 | +0,0036 / −0,0016 |
+| 4 | 0,9451 / 0,9800 / 0,9781 | 0,8288 / 0,9992 / 0,9992 | +0,0349 | +0,1704 | −0,0019 / 0,0000 |
+| 5 | 0,9415 / 0,9763 / 0,9803 | 0,7545 / 1,0000 / 1,0000 | +0,0348 | +0,2455 | +0,0040 / 0,0000 |
+| média | 0,9382 / 0,9768 / 0,9789 | 0,7299 / 0,9975 / 0,9981 | +0,0386 | +0,2676 | +0,0021 / +0,0007 |
+| mín. | 0,9283 / 0,9736 / 0,9765 | 0,6224 / 0,9930 / 0,9914 | +0,0314 | +0,1704 | −0,0019 / −0,0016 |
+| máx. | 0,9451 / 0,9800 / 0,9806 | 0,8288 / 1,0000 / 1,0000 | +0,0486 | +0,3728 | +0,0052 / +0,0048 |
+
+Acurácia fechada: raw 0,9751–0,9780, prop 0,9967–0,9976, rec_z0 0,9983–0,9988; limiar raw 0,832–0,888, prop
+0,992–0,994, rec_z0 0,990–0,992 (todas as colunas no csv).
+
+**Critério do P0, aplicado mecanicamente:** F1(prop) − F1(raw) ≥ 0,10 em **0 de 5**; rejeição(prop) − rejeição(raw)
+≥ 0,30 em **1 de 5** (r1); as duas em **0 de 5**. A regra pede 4 ou 5.
+
+### Robustez nas cinco repetições (média / mín. / máx.; `pilot_five_reps_robustness.csv`)
+
+| linha | F1 | rejeição |
+|---|---|---|
+| raw, base | 0,9382 / 0,9283 / 0,9451 | 0,7299 / 0,6224 / 0,8288 |
+| raw, 0,7 mm como está | 0,9107 / 0,8965 / 0,9241 | 0,7428 / 0,6087 / 0,8375 |
+| prop, 0,7 mm como está | 0,0150 / 0,0146 / 0,0153 | 1,0000 (todas) |
+| rec_z0, 0,7 mm como está | 0,0150 / 0,0146 / 0,0153 | 1,0000 (todas) |
+| prop, recalibrado literal | 0,5095 / 0,4558 / 0,5453 | 0,9988 / 0,9938 / 1,0000 |
+| prop, recalibrado razão | 0,9137 / 0,8988 / 0,9296 | 0,9963 / 0,9821 / 1,0000 |
+| rec_z0, recalibrado literal | 0,9629 / 0,9562 / 0,9683 | 0,9967 / 0,9852 / 1,0000 |
+| rec_z0, recalibrado razão | 0,9639 / 0,9577 / 0,9693 | 0,9964 / 0,9844 / 1,0000 |
+| raw, 50 µm como está | 0,9387 / 0,9288 / 0,9450 | 0,7384 / 0,6296 / 0,8329 |
+| prop, 50 µm como está | 0,7842 / 0,7732 / 0,7997 | 0,9986 / 0,9961 / 1,0000 |
+| rec_z0, 50 µm como está | 0,8225 / 0,8014 / 0,8410 | 0,9995 / 0,9984 / 1,0000 |
+
+### α do prop (`pilot_five_reps_alpha.csv`; o calibrado recalculado na CPU nos mesmos 32 hologramas que `train()`
+sorteou)
+
+| rep | α calibrado | z calibrado | α treinado | z treinado | mudança |
+|---|---|---|---|---|---|
+| 1 | 0,0010587 | 0,99986 mm | 0,0010332 | 0,97582 mm | −2,40 % |
+| 2 | 0,0010587 | 0,99986 mm | 0,0010290 | 0,97186 mm | −2,80 % |
+| 3 | 0,0010587 | 0,99986 mm | 0,0010294 | 0,97221 mm | −2,77 % |
+| 4 | 0,0010587 | 0,99986 mm | 0,0010291 | 0,97190 mm | −2,80 % |
+| 5 | 0,0010557 | 0,99709 mm | 0,0010334 | 0,97605 mm | −2,11 % |
+
+(r1–r4 sortearam os mesmos 32 hologramas: quase toda imagem tem uma letra vista, e o sorteio é sobre as imagens.)
+
+## 2026-11-14, 18:25 — P2-B referência: o base em disco treinado em r1 com a receita do piloto (execução)
+
+`bash scripts/exp_resolucao/reference_noaux.sh 5` (tmux `res_pilot_reference`, 18:12:41–18:19:31, 410 s; commits
+`0ec3790` e `7694b72`). O script imprime os seis alvos antes de escrever e recusa rodar se `HOLO_MODELS`/`HOLO_RESULTS`
+apontassem para `models/`/`results/` ou se um alvo existisse; os alvos foram
+`models_exp_resolucao/realistic/{raw,prop,rec_z0}_r1.pt` e `results_exp_resolucao/eval/realistic/{raw,prop,rec_z0}_r1.json`.
+`train --set realistic --flow <f> --rep 1 --no-aux` (o `prop` com a grade padrão: α calibrado 0,020411, o da bancada
+0,020382, depois do treino 0,020255) e `evaluate --set realistic --flow <f> --rep 1`. O `rec_z0.npy` de `data/realistic`
+só foi lido.
+
+| r1, teste | F1 | rejeição | fechada | conhecidas | limiar |
+|---|---|---|---|---|---|
+| raw, agora (sem auxiliares) | 0,7742 | 0,0733 | 0,8791 | 0,8740 | 0,5598 |
+| prop, agora | 0,9588 | 0,8688 | 0,9936 | 0,9538 | 0,9702 |
+| rec_z0, agora | 0,9562 | 0,8615 | 0,9920 | 0,9497 | 0,9736 |
+| raw, paper (com auxiliares) | 0,7853 | 0,1047 | 0,8844 | 0,8785 | 0,5558 |
+| prop, paper | 0,9595 | 0,8519 | 0,9914 | 0,9559 | 0,9702 |
+| rec_z0, paper | 0,9519 | 0,8357 | 0,9922 | 0,9460 | 0,9738 |
+
+R_ant (referência do B, raw) = (0,7742; 0,0733).
+
+**Pastas do paper:** comparei a listagem com data e tamanho de todos os arquivos de `data/realistic`, `models/`,
+`results/` e `expected/` antes (17:44) e depois (18:19): nada mudou, salvo a data de `results/data_summary.json`
+(17:47:30, conteúdo idêntico: o git não o vê modificado). Esse arquivo é reescrito por qualquer `paper tables` com
+`HOLO_RESULTS` desligado, isto é, por `pytest` ou `reproduce check` (`tables.data_numbers`); às 17:47 eu não rodei
+nenhum dos dois (o outro executor ou o responsável sim, presumo).
