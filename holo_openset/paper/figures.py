@@ -586,6 +586,7 @@ def fig_filter(rep=1):
 
 
 GRIDC = '#b9b8b2'
+HOLLOW = dict(mfc='none', mew=1.3, zorder=5)   # a marker that lets the one under it show
 
 
 def fig_scores(rep=1):
@@ -682,13 +683,14 @@ def fig_cost(rep=None):
             if f not in per.index:
                 continue
             a = acc[(acc.flow == f) & (acc.boxes == 'det')].novel_open_macro_f1.mean()
-            ax.plot(per[f] + det, a, 'o', color=COLORS[f], ms=5)
-            off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12), 'rec_afc': (6, 8),
+            # the narrow autofocus lands on the reconstruction at z0: a ring, so that both stay visible
+            ax.plot(per[f] + det, a, 'o', color=COLORS[f], ms=5, **(HOLLOW if f == 'rec_afc' else {}))
+            off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12), 'rec_afc': (26, -32),
                    'rec_edf': (-6, 7), 'rec_twin': (-14, -12), 'rec_z0': (8, 2), 'raw': (6, -2), 'prop': (-8, 7),
                    'bank_jit': (6, -8), 'bank_w3': (6, -8)}.get(f, (5, 3))
             ax.annotate(SHORT[f], (per[f] + det, a), xytext=off, textcoords='offset points', fontsize=6, color=INK,
                         va='center', arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=0, shrinkB=3)
-                        if f in ('complex', 'learned', 'wiener') else None)
+                        if f in ('complex', 'learned', 'wiener', 'rec_afc') else None)
         ax.text(0.97, 0.06, 'better: up and left', transform=ax.transAxes, ha='right', fontsize=6, color=MUTED)
         ax.set_xlabel('time per full frame, one GPU (s)')
         ax.set_ylabel('open-set F1, end to end')
@@ -845,13 +847,16 @@ def fig_stack():
                                                       and len(r[(r.flow == s[0]) & (r.variant == 'session_5')])]):
         ax.plot(x, y, 'o', color=COLORS['bank_w3'] if n > 1 else COLORS['prop'], ms=4 + jitter / 3, alpha=0.85)
         ax.annotate(label, (x, y), xytext=off.get(f, (5, 3)), textcoords='offset points', fontsize=5.4, color=INK)
-    offb = {'learned': (5, -3), 'rec_z0': (5, -9), 'rec_af': (-36, 5), 'rec_afc': (-38, -9), 'rec_twin': (5, -9)}
+    offb = {'learned': (5, -3), 'rec_z0': (5, -9), 'rec_af': (-34, 7), 'rec_afc': (14, -20), 'rec_twin': (8, 0)}
     for f in ['learned', 'rec_z0', 'rec_af', 'rec_afc', 'rec_twin']:
         d, rr = e[e.flow == f], r[(r.flow == f) & (r.variant == 'session_5')]
-        if len(d) and len(rr):
-            ax.plot(d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), 's', color=COLORS[f], ms=5)
+        if len(d) and len(rr):   # the two autofocus flows land on the same point: the narrow one as an open square
+            ax.plot(d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), 's', color=COLORS[f], ms=5,
+                    **(HOLLOW if f == 'rec_afc' else {}))
             ax.annotate(SHORT[f], (d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean()), xytext=offb[f],
-                        textcoords='offset points', fontsize=6, color=INK)
+                        textcoords='offset points', fontsize=6, color=INK,
+                        arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.4, shrinkA=0, shrinkB=3)
+                        if f in ('rec_af', 'rec_afc') else None)
     x0, x1 = ax.get_xlim()
     ax.set_xlim(x0, x1 + 0.25 * (x1 - x0))
     ax.set_xlabel('open-set F1 on the calibrated bench\n(circles: distances / width % / jitter %)')
