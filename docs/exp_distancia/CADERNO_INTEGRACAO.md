@@ -353,3 +353,22 @@ F1 aberto macro, média de 5 repetições (`rec_z0`, `rec_af` de `results/robust
 
 Nenhum conjunto em que `rec_afc` perca mais de 0,02 para `rec_af` ou `rec_z0` (as maiores perdas: −0,0012
 para `rec_af` em `laser`, −0,0010 para `rec_z0` em `fullwell_500`).
+
+## 2026-11-14, 10:57–10:59 — Passo 4: oráculo de pixels em `frame_2`, `frame_5`, `walk_05`
+
+Como a fila do paper (`experiment oracle --workers 16`, CPU), com 6 workers e nada mais rodando, só nos três conjuntos:
+
+```bash
+cp -p results/oracle.csv $S/before_oracle/
+# tmux integ_oracle, CPU, 10:57:23 -> 10:59:26 (log logs/integracao/oracle.log)
+bash scripts/exp_distancia/integ_run.sh experiment oracle --device cpu --workers 6 --variants frame_2 frame_5 walk_05
+python scripts/exp_distancia/integ_check.py $S/before_oracle/oracle.csv results/oracle.csv --keys rep variant boxes \
+  --intended "variant in ['frame_2','frame_5','walk_05']"
+```
+
+2 min, saída 0. `oracle.csv`: 330 → 360 linhas (+30 = 3 conjuntos × 5 repetições × caixas gt/det, todas novas); nenhuma
+chave antiga sumiu; 320 antigas idênticas, 10 (`periodic`, as últimas gravadas) com 1 ULP. Rótulos certos com a
+correção do `oracle.py` (`distance per frame (%)` 2 / 5, `distance drift per frame (%)` 0.5). F1 aberto macro (média de
+5; recall do localizador por limiar entre parênteses, caixas `det`): `frame_2` gt 0,8720, det 0,6963 (0,593);
+`frame_5` gt 0,8196, det 0,6697 (0,489); `walk_05` gt 0,8480, det 0,6921 (0,543) — ao lado, do paper: base gt 0,8840,
+det 0,6910 (0,631); `session_2` 0,8620 / 0,6906; `session_5` 0,7873 / 0,6695.
