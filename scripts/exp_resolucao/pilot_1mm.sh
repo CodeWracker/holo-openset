@@ -83,7 +83,7 @@ case "$STEP" in
     ;;
   record_07)
     for SP in test val; do
-      OUT=$ROBUST/z07$([ $SP = val ] && echo _val)
+      if [ $SP = val ]; then OUT=$ROBUST/z07_val; else OUT=$ROBUST/z07; fi
       [ -f data/$OUT/physics.json ] || py simulate like --like $SET --name $OUT --split $SP --set-physics z0=0.7e-3 \
                                           --device cuda:$GPU --workers $WORKERS
     done
