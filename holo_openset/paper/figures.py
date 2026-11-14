@@ -467,7 +467,8 @@ def fig_flows(image_id=None, rep=1):
         m = _model(f, rep)
         if m is not None:
             panels.append((_view(m, holo), t))
-    for f, t in [('rec_z0', 'rec. at $z_0$, |q|'), ('rec_af', 'autofocus, |q|'), ('rec_edf', 'per object, |q|'),
+    # the narrow autofocus has no panel: on a test window it lands where the blind one does, and the image is the same
+    for f, t in [('rec_z0', 'rec. at $z_0$, |q|'), ('rec_af', 'blind AF, |q|'), ('rec_edf', 'per object, |q|'),
                  ('rec_twin', 'twin rem., |q|')]:
         x = dataset(f).image(image_id).astype(np.float32)
         panels.append((x[2], t))
@@ -653,8 +654,9 @@ def fig_cost(rep=None):
     c, g, acc, t = load_csv('timing_cpu'), load_csv('timing_gpu'), load_csv('full_frames'), load_csv('full_frames_time')
     fig, axs = plt.subplots(1, 3, figsize=(7.16, 2.6), gridspec_kw=dict(wspace=0.34))
     stages = [('layer_real', 'real layer', COLORS['learned']), ('layer_prop', 'propagation layer', COLORS['prop']),
-              ('layer_bank', 'focal stack (5)', COLORS['bank_jit']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
-              ('autofocus', 'autofocus', COLORS['rec_af']), ('twin', 'twin removal', COLORS['rec_twin']),
+              ('layer_bank_jit', 'focal stack (5)', COLORS['bank_jit']), ('backprop', 'one reconstruction', COLORS['rec_z0']),
+              ('autofocus', 'blind autofocus', COLORS['rec_af']),
+              ('autofocus_afc', 'narrow autofocus', COLORS['rec_afc']), ('twin', 'twin removal', COLORS['rec_twin']),
               ('yolo_tiled', 'YOLO (tiles)', COLORS['raw'])]
     for ax, df, title, key in [(axs[0], c, '(a) one CPU core', 'median_s'), (axs[1], g, '(b) one GPU', 'min_s')]:
         if not len(df):
@@ -681,7 +683,7 @@ def fig_cost(rep=None):
                 continue
             a = acc[(acc.flow == f) & (acc.boxes == 'det')].novel_open_macro_f1.mean()
             ax.plot(per[f] + det, a, 'o', color=COLORS[f], ms=5)
-            off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12),
+            off = {'complex': (14, 9), 'learned': (16, 0), 'wiener': (14, -10), 'rec_af': (-8, -12), 'rec_afc': (6, 8),
                    'rec_edf': (-6, 7), 'rec_twin': (-14, -12), 'rec_z0': (8, 2), 'raw': (6, -2), 'prop': (-8, 7),
                    'bank_jit': (6, -8), 'bank_w3': (6, -8)}.get(f, (5, 3))
             ax.annotate(SHORT[f], (per[f] + det, a), xytext=off, textcoords='offset points', fontsize=6, color=INK,
@@ -843,8 +845,8 @@ def fig_stack():
                                                       and len(r[(r.flow == s[0]) & (r.variant == 'session_5')])]):
         ax.plot(x, y, 'o', color=COLORS['bank_w3'] if n > 1 else COLORS['prop'], ms=4 + jitter / 3, alpha=0.85)
         ax.annotate(label, (x, y), xytext=off.get(f, (5, 3)), textcoords='offset points', fontsize=5.4, color=INK)
-    offb = {'learned': (5, -3), 'rec_z0': (5, -9), 'rec_af': (-36, 5), 'rec_twin': (5, -9)}
-    for f in ['learned', 'rec_z0', 'rec_af', 'rec_twin']:
+    offb = {'learned': (5, -3), 'rec_z0': (5, -9), 'rec_af': (-36, 5), 'rec_afc': (-38, -9), 'rec_twin': (5, -9)}
+    for f in ['learned', 'rec_z0', 'rec_af', 'rec_afc', 'rec_twin']:
         d, rr = e[e.flow == f], r[(r.flow == f) & (r.variant == 'session_5')]
         if len(d) and len(rr):
             ax.plot(d.novel_open_macro_f1.mean(), rr.novel_open_macro_f1.mean(), 's', color=COLORS[f], ms=5)
@@ -859,16 +861,16 @@ def fig_stack():
 
 def fig_robustness():
     """Open-set F1 of every flow in every robustness set (models and galleries of the base set)."""
-    from holo_openset.paper.tables import load_csv
-    from holo_openset.sim.variants import VARIANTS
+    from holo_openset.paper.tables import load_csv, robustness_sets
+    from holo_openset.sim.variants import ALL as VARIANTS
     d = load_csv('robustness')
     if not len(d):
         return
     piv = d.groupby(['variant', 'flow']).novel_open_macro_f1.mean().unstack()
-    rows = [v for v in ['base'] + list(VARIANTS) if v in piv.index]
+    rows = [v for v in robustness_sets() if v in piv.index]
     cols = [f for f in ORDER if f in piv.columns]
     M_ = piv.loc[rows, cols].to_numpy()
-    fig, ax = plt.subplots(figsize=(3.5, 5.6))
+    fig, ax = plt.subplots(figsize=(3.5, 0.65 + 0.15 * len(rows)))   # 5.6 in for the 33 rows of the first draft
     im = ax.imshow(M_, cmap='Blues', vmin=0, vmax=1, aspect='auto')
     for i in range(len(rows)):
         for j in range(len(cols)):

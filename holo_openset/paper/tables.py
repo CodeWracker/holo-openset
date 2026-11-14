@@ -12,15 +12,27 @@ import pandas as pd
 
 from holo_openset import paths
 from holo_openset.flows import FLOWS
-from holo_openset.sim.variants import BASE as VBASE, VARIANTS
+from holo_openset.reconstruct import BLIND, FOCUS
+from holo_openset.sim.variants import ALL, BASE as VBASE, VARIANTS
 
 R = paths.RESULTS
-ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'rec_af', 'rec_edf', 'rec_twin']
+# the flows of the paper, in the order of every table and figure (style.py takes it from here)
+ORDER = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'rec_af', 'rec_afc', 'rec_edf', 'rec_twin']
 NAME = {'raw': 'hologram crops', 'learned': 'learned layer', 'complex': 'complex layer', 'wiener': 'Wiener filter',
-        'prop': 'propagation layer', 'bank_jit': 'focal stack (5)', 'bank_w3': 'focal stack (7)', 'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'autofocus', 'rec_edf': 'per-object focus',
-        'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
+        'prop': 'propagation layer', 'bank_jit': 'focal stack (5)', 'bank_w3': 'focal stack (7)',
+        'rec_z0': 'reconstruction at $z_0$', 'rec_af': 'blind autofocus', 'rec_afc': 'narrow autofocus',
+        'rec_edf': 'per-object focus', 'rec_twin': 'autofocus + twin removal', 'oracle_pixel': 'pixel oracle'}
+
+
+def narrow_range_pct(f=FOCUS['afc']):
+    """How far from z0 the narrow autofocus can land: its coarse range plus the one coarse step its fine pass may go
+    beyond the best candidate (%)."""
+    return 100 * (f.hi - 1 + (f.hi - f.lo) / (f.n_coarse - 1))
+
+
 NEEDS = {'raw': '--', 'learned': '--', 'complex': '--', 'prop': '--', 'bank_jit': '--', 'bank_w3': '--', 'wiener': '$\\lambda,\\Delta,z_0$',
-         'rec_z0': '$\\lambda,\\Delta,z_0,B$', 'rec_af': '$\\lambda,\\Delta,B$', 'rec_edf': '$\\lambda,\\Delta,B$',
+         'rec_z0': '$\\lambda,\\Delta,z_0,B$', 'rec_af': '$\\lambda,\\Delta,B$',
+         'rec_afc': f'$\\lambda,\\Delta,B,z_0{{\\pm}}{narrow_range_pct():.0f}\\%$', 'rec_edf': '$\\lambda,\\Delta,B$',
          'rec_twin': '$\\lambda,\\Delta,B$', 'oracle_pixel': '$\\lambda,\\Delta,z_0,B$'}
 M = {}   # macros
 
@@ -310,6 +322,8 @@ def tab_discovery():
 
 # ------------------------------------------------------------------------------------------------ cost
 SAME_LAYER = {'bank_jit': 'bank'}   # the same architecture (5 distances), so the same cost per frame
+# the flows that do not repeat the reconstruction: the detector's share of the computation is quoted over these
+ONE_PASS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'rec_z0', 'rec_afc']
 STAGE_GROUPS = {'read': ['load', 'normalise'],   # reading the frame (and, for a reconstruction, its blank frame)
                 'compute': ['reconstruct', 'autofocus', 'per_object', 'twin', 'channels', 'layer'],
                 'embed + decide': ['embed', 'decide']}
@@ -325,13 +339,16 @@ def tab_full_frames():
     macro('FullDetectS', det, '{:.2f}')
     per = t[t.flow != 'all'].groupby(['flow', 'frame', 'rep', 'stage']).seconds.sum().unstack('stage').fillna(0)
     timed = set(per.index.get_level_values(0))
+    share = {}
     for f in ORDER:
-        src = f if f in timed else SAME_LAYER.get(f)   # not timed yet: the times of a flow with the same layer
+        src = f if f in timed else SAME_LAYER.get(f)   # not timed in this run: the times of a flow with the same layer
         if src not in timed:
             continue
         p = per.loc[src]
         name = NAME[f] + ('' if src == f else '$^\\dagger$')
         g = {k: p[[c for c in v if c in p]].sum(1).median() for k, v in STAGE_GROUPS.items()}
+        # the detector's share of the computation of a frame (reading the files from disk left out)
+        share[f] = 100 * det / (det + g['compute'] + g['embed + decide'])
         a = acc[acc.flow == f]
         gt, dt = a[a.boxes == 'gt'], a[a.boxes == 'det']
         total = det + sum(g.values())
@@ -345,6 +362,14 @@ def tab_full_frames():
         macro(f'Full{k}Fone', dt.novel_open_macro_f1.mean() if len(dt) else None)
         macro(f'Full{k}FoneGt', gt.novel_open_macro_f1.mean() if len(gt) else None)
         macro(f'Full{k}Rej', dt.novel_unknown_rejection.mean() if len(dt) else None)
+        macro(f'FullDetectPct{k}', share[f], '{:.1f}')
+    one = {f: v for f, v in share.items() if f in ONE_PASS}
+    if one:   # its minimum over the flows that reconstruct at most once, and which flow gives it
+        low = min(one, key=one.get)
+        macro('FullDetectPctMin', one[low], '{:.1f}')
+        macro('FullDetectPctMinFloor', float(np.floor(one[low])), '{:.0f}')
+        macro('FullDetectPctMinFlow', NAME[low])
+        macro('FullDetectPctMinOf', len(one), '{}')
     if len(acc[acc.boxes == 'det']):
         det = acc[(acc.boxes == 'det') & acc.flow.isin(ORDER)]   # a property of the detector: the flows of the paper
         macro('FullRecall', det.detector_recall.mean())
@@ -355,8 +380,10 @@ def tab_full_frames():
 
 STAGES = [('flat_field', 'flat field $\\sqrt{I/B}$'), ('layer_real', 'learned layer (real)'),
           ('layer_complex', 'learned layer (complex)'), ('layer_prop', 'propagation layer'),
-          ('layer_bank', 'focal stack, 5 distances'), ('backprop', 'one back-propagation'),
-          ('autofocus', 'autofocus (114 reconstructions)'), ('per_object', 'per-object focus (25 more)'),
+          ('layer_bank_jit', 'focal stack, 5 distances'), ('backprop', 'one back-propagation'),
+          ('autofocus', f'blind autofocus ({BLIND.n} reconstructions)'),
+          ('autofocus_afc', f'narrow autofocus ({FOCUS["afc"].n} reconstructions of 1/{FOCUS["afc"].bin ** 2} of the '
+                            'pixels)'), ('per_object', 'per-object focus (25 more)'),
           ('twin', 'twin removal (50 passes)'), ('channels', 'channels of the network input'),
           ('yolo_tiled', 'YOLO localiser, tiles'), ('embed', 'ResNet18 embedding, all boxes'),
           ('decide', 'gallery search (5k)')]
@@ -393,10 +420,25 @@ def tab_stages():
                                ('CpuBig', c, big, 'median_s')]:
         b_, l_ = get(df, 'backprop', size, key), get(df, 'layer_real', size, key)
         macro(f'BackOverLayer{tag}', b_ / l_ if b_ and l_ else None, '{:.1f}')
+    # how many times cheaper the narrow search is than the blind one, on a full frame
+    for tag, df, key in [('Gpu', g, 'min_s'), ('Cpu', c, 'median_s')]:
+        b_, n_ = get(df, 'autofocus', big, key), get(df, 'autofocus_afc', big, key)
+        macro(f'TBlindOverNarrow{tag}Big', b_ / n_ if b_ and n_ else None, '{:.0f}')
     write_table('tab_stages', lines)
 
 
 # ------------------------------------------------------------------------------------------------ robustness
+def robustness_sets():
+    """The rows of the robustness table and figure: the base set, then the battery of the paper (VARIANTS) with the
+    sets whose distance changes from image to image (frame_2, frame_5, walk_05) right after the distance between
+    sessions. The order holds whether those sets are kept apart from VARIANTS or are part of it."""
+    sets = list(VARIANTS)
+    within = [v for v in ALL if v not in VARIANTS]
+    between = [v for v in sets if ALL[v][0].startswith('distance between sessions')]
+    k = sets.index(between[-1]) + 1 if between else len(sets)
+    return ['base'] + sets[:k] + within + sets[k:]
+
+
 def tab_robustness():
     d, o = load_csv('robustness'), load_csv('oracle')
     lines = []
@@ -407,10 +449,10 @@ def tab_robustness():
     opiv = o[o.boxes == 'det'].groupby('variant').novel_open_macro_f1.mean() if len(o) else pd.Series(dtype=float)
     base = piv.loc['base'] if 'base' in piv.index else None
     effect = None
-    for v in ['base'] + list(VARIANTS):
+    for v in robustness_sets():
         if v not in piv.index:
             continue
-        eff, val, _ = VARIANTS.get(v, ('base', 'bench', {}))
+        eff, val, _ = ALL.get(v, ('base', 'bench', {}))
         if eff != effect and v != 'base':
             lines.append('\\midrule')
             effect = eff
@@ -483,10 +525,27 @@ def fidelity_numbers():
     macro('AfErrPct', 100 * d['autofocus_rel_error_median'], '{:.2f}')
 
 
+def focus_numbers():
+    """The two searches of the distance as the code defines them (reconstruct.BLIND, FOCUS['afc']), for the text."""
+    b, n = BLIND, FOCUS['afc']
+    macro('FocusBlindCoarse', len(b.candidates), '{}')
+    macro('FocusBlindFine', b.n_fine, '{}')
+    macro('FocusBlindN', b.n, '{}')
+    macro('FocusBlindLo', float(b.candidates[0]), '{:.1f}')     # in units of z0
+    macro('FocusBlindHi', float(b.candidates[-1]), '{:.1f}')
+    macro('FocusNarrowCoarse', n.n_coarse, '{}')
+    macro('FocusNarrowFine', n.n_fine, '{}')
+    macro('FocusNarrowN', n.n, '{}')
+    macro('FocusNarrowBin', n.bin, '{}')                        # the amplitude averaged in bin x bin blocks
+    macro('FocusNarrowPixels', n.bin ** 2, '{}')                # so the search runs on 1 / bin^2 of the pixels
+    macro('FocusNarrowRangePct', 100 * (n.hi - 1), '{:.0f}')
+    macro('FocusNarrowRangeEffPct', narrow_range_pct(n), '{:.0f}')
+
+
 def main():
     paths.PAPER.mkdir(parents=True, exist_ok=True)
     for fn in [data_numbers, tab_main, tab_ablation, tab_stack, tab_enroll, tab_e2e, tab_discovery, tab_full_frames,
-               tab_stages, tab_robustness, tab_ideal, tab_scale, fidelity_numbers]:
+               tab_stages, tab_robustness, tab_ideal, tab_scale, fidelity_numbers, focus_numbers]:
         try:
             fn()
         except Exception as e:  # noqa: BLE001  one missing result must not stop the others
