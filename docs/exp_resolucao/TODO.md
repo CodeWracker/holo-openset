@@ -130,7 +130,8 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
       (ele tem 278 ciclos/mm a 2 mm; o nosso modelo deu 266) — subagente "piloto".
 - [x] Z3. (feito: `holo_openset/sim/envelope.py`, `scripts/exp_resolucao/envelope_table.py --configs <csv> --out <csv>`)
       Ferramenta E(f)/b_max para qualquer configuração (CSV de configurações → tabela) — subagente "piloto".
-- [~] Z4. Levantamento de 8–15 bancadas lensless, valores com página → `docs/exp_resolucao/LEVANTAMENTO_Z.md`;
+- [x] Z4. (feito, `7a5dcf6`: `LEVANTAMENTO_Z.md`, 710 linhas; `results_exp_resolucao/envelope_candidates.csv`)
+      Levantamento de 8–15 bancadas lensless, valores com página → `docs/exp_resolucao/LEVANTAMENTO_Z.md`;
       PDFs em `../referencias/z/` (fora do git) — subagente "levantamento-z". Inclui o suplemento do artigo de 2015
       (Eq. S3: unidade do "k").
 - [~] Z6. Consequências (subagente "piloto", sem regravar conjunto nem treinar): prévia com `small_near`;
@@ -215,4 +216,30 @@ errado".
   candidatas com `envelope_table.py`, escrever a proposta e as consequências, e **parar no Checkpoint Z**.
 - 2026-11-14, 13:50: **atualização do orientador: z ≈ 1 mm** (seção 4b). "levantamento-z" redirecionado para fechar o
   número (lamínula + vidro do sensor + folga); "piloto" recebe Z6 (consequências e custo, sem regravar nem treinar).
+- 2026-11-14, 14:05: **"levantamento-z" devolveu** (`7a5dcf6`). Conferi por amostragem duas citações nos arquivos
+  baixados (Bishara 2011, "placed directly atop the protective glass of the image sensor, i.e., approximately
+  z ≈ 0.7 mm"; folha de dados MT9J003, "Borosilicate glass 0.4 thickness. Refractive index ... 1.5255 @ 546 nm"):
+  batem. Resultado:
+  - **Orçamento da distância** (pilha A = amostra na face interna de uma lamínula 1½ virada para o sensor):
+    lamínula 0,16/0,17/0,19 mm (ISO 8255-1:2011) + folga de ar 0,05/0,2/0,5 (sem fonte: comunicação pessoal) + vidro
+    do sensor 0,4 mm (n = 1,5255) + folga vidro–chip 0,125 ± 0,05 (folha de dados MT9J003): geométrica
+    0,69 / **0,90** / 1,27 mm; efetiva em ar (soma de t/n) 0,49 / **0,70** / 1,06 mm. Pilha B (amostra sobre lâmina
+    de 1 mm): efetiva 1,01 / 1,25 / 1,63. Pilha C (sem vidro do sensor): 0,13 / 0,21 / 0,43.
+  - **Proposta dele:** z = 0,7 mm efetivo (≈ 0,9 geométrico), faixa 0,5–1,1; alternativas 1,0 mm (redondo) e
+    1,25 mm (lâmina). D = 100 µm e pinhole a 15 cm do SENSOR ficam (nada no levantamento pede mudar).
+  - **Unidade no artigo de 2015:** o suplemento diz "We used z×λ to compute the distance…", então 50k = 50 000 λ é a
+    leitura certa da unidade; o que descarta 19,25 mm é a física (resoluções 2,76 / 2,19 / 1,55 µm) e, talvez, a
+    escala de z nas imagens super-resolvidas (50 000 λ / 49 = 0,39 mm; inferência, não fato).
+  - Literatura on-chip com vidro do sensor: z ≈ 0,7–1 mm (Bishara 2010, 2011; Greenbaum & Ozcan 2012), até 2 mm
+    (Mudanyali 2010, Tseng 2010); fontes a 3–10 cm; pinholes/fibras de 50–150 µm; banda 2–30 nm.
+  - **Sem fonte lida:** a banda de 10 nm do LED (o artigo nomeia o Thorlabs M385L2 e não dá a banda; a página do
+    catálogo bloqueou o acesso); o modelo do sensor (o artigo diz só "Aptina 10 megapixel"; MT9J003 é inferência pela
+    área óptica 6,413 × 4,589 mm); a folga de ar; deriva térmica de z (só o aquecimento em si tem fonte: Greenbaum
+    2012, "above 40 °C after continuous operation").
+  - **Erros achados em documentos nossos:** `docs/EQUIPMENT.md` tem "100 mm" de pinhole (vem da versão PMC do
+    artigo; o PDF diz 100 µm) e cita mal Greenbaum 2012; o pinhole fica a 15 cm do sensor, não da amostra.
+  - Várias linhas da tabela citam seção de manuscrito PMC, sem número de página (o PMC não tem páginas): avisar o
+    orientador, que pediu página.
+  - Não acessados: Isikman 2011 PNAS, Repetto 2004, McLeod & Ozcan 2016 (sem cópia aberta).
+  Aguardando: Z6 do "piloto" (consequências; já commitou a prévia dos três conjuntos, `2cf9d00`) e "levantamento-c".
 
