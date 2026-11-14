@@ -47,6 +47,10 @@ STACKS = ['bank_jit', 'bank_wide', 'bank_w2']
 PAIRS = [('rec_afs', 'rec_af'), ('rec_afsc', 'rec_af'), ('rec_afc', 'rec_af'), ('rec_afr', 'rec_af'),
          ('rec_afM', 'rec_af'), ('bank_jit', 'rec_afc'), ('bank_wide', 'rec_afc'), ('bank_w2', 'rec_afc'),
          ('bank_wide', 'rec_af')]
+FRAME_PAIRS = [('rec_afc', 'rec_af'), ('bank_jit', 'rec_afc'), ('bank_wide', 'rec_afc'), ('bank_w2', 'rec_afc'),
+               ('rec_edfw', 'rec_afc')]                                  # the full frames, where both flows ran
+CONV_FLOWS = ['rec_z0', 'rec_af', 'rec_afs', 'rec_afsc', 'rec_afM', 'rec_afc', 'rec_afr']   # conventional (criterion)
+F1_TOL = 0.02                       # protocol, section 3: the stack within 0.02 of the best conventional flow
 METHODS = ['af', 'afs', 'afsc', 'afM', 'afc', 'afr']                     # focus_error.csv: the searches of the distance
 SESSION_SETS = ['session_5', 'fullwell_500', 'beam_narrow']
 VAL_SETS = [('realistic', 'realistic'), ('variants_val/frame_5', 'frame_5'),
@@ -565,6 +569,109 @@ def tab_dist_breakeven():
                    f'timing: GPU {g}, CPU {c}'])
 
 
+READINGS = {'A': 'conventional flows with F1 >= best - 0.02 (the tolerance given to the stack)',
+            'B': 'conventional flows with F1 >= the F1 of the stack'}
+
+
+def criterion(f1, stack, gpu, cpu, tol=F1_TOL):
+    """The pre-registered criterion of a legitimate gain of time (protocol, section 3), applied mechanically to one set
+    and one stack. f1: {flow: mean F1}; gpu, cpu: {flow: front end}. The stack must have F1 >= best - tol, best being
+    the highest mean F1 among the conventional flows (CONV_FLOWS), and a front end cheaper than the cheapest
+    conventional flow 'that reaches this F1', which reads two ways, both computed: A, the conventional flows with
+    F1 >= best - tol; B, those with F1 >= the F1 of the stack. Cheapest on the GPU and on the CPU separately.
+    -> {'best', 'f1_ok', 'A' | 'B': {'gpu': flow | None, 'cpu': flow | None, 'cheaper_gpu', 'cheaper_cpu', 'verdict'}};
+    None if the stack or no conventional flow has an F1."""
+    conv = {f: f1[f] for f in CONV_FLOWS if ok(f1.get(f))}
+    if not conv or not ok(f1.get(stack)):
+        return None
+    best = max(conv, key=conv.get)
+    res = {'best': best, 'f1_ok': f1[stack] >= conv[best] - tol}
+    for r, thr in [('A', conv[best] - tol), ('B', f1[stack])]:
+        q = [f for f in conv if conv[f] >= thr]
+        x = {}
+        for dev, c in [('gpu', gpu), ('cpu', cpu)]:
+            qc = [f for f in q if ok(c.get(f))]
+            x[dev] = min(qc, key=c.get) if qc else None
+            x[f'cheaper_{dev}'] = c[stack] < c[x[dev]] if x[dev] and ok(c.get(stack)) else None
+        if not res['f1_ok']:
+            v = 'F1 fails'
+        elif not q:
+            v = 'none reaches it'
+        elif x['cheaper_gpu'] is None or x['cheaper_cpu'] is None:
+            v = '--'
+        else:
+            v = {(True, True): 'met (GPU and CPU)', (True, False): 'cheaper on GPU only',
+                 (False, True): 'cheaper on CPU only', (False, False): 'not cheaper'}[(x['cheaper_gpu'],
+                                                                                     x['cheaper_cpu'])]
+        x['verdict'] = v
+        res[r] = x
+    return res
+
+
+def tab_dist_criterion():
+    """The criterion of section 3 of the protocol on the eight window sets and the three stacks: F1 of the windows,
+    front ends of the full frame (E5; flows that reuse a distance amortised over n = N_SESSION), both readings."""
+    d, T = load('robustness'), load_timing()
+    tg, tc = T['gpu'].get(FULL, {}), T['cpu'].get(FULL, {})
+    gpu = {f: front_end(f, tg) for f in CONV_FLOWS + STACKS}
+    cpu = {f: front_end(f, tc) for f in CONV_FLOWS + STACKS}
+    lines, md, met = [], [], {'A': 0, 'B': 0}
+
+    def cost(f, c, scale, unit):
+        return f'{f} {c[f] * scale:.2f} {unit}' if f and ok(c.get(f)) else (f'{f} --' if f else 'none reaches it')
+    for i, v in enumerate(SETS):
+        if i:
+            lines.append('\\midrule')
+        f1 = {f: mean(per_rep(d, F1, variant=v, flow=f)) for f in CONV_FLOWS + STACKS}
+        for j, s in enumerate(STACKS):
+            c = criterion(f1, s, gpu, cpu)
+            k = f'Crit{camel(v)}{camel(s)}'
+            if c is None:
+                cells = ['--'] * 11
+            else:
+                diff = (per_rep(d, F1, variant=v, flow=s) - per_rep(d, F1, variant=v, flow=c['best'])).dropna()
+                m = float(diff.mean()) if len(diff) else None
+                sign = f'{int((np.sign(diff) == np.sign(m)).sum())}/{len(diff)}' if len(diff) else '--'
+                stack_cost = f'{num(gpu[s] * 1e3 if ok(gpu[s]) else None, 2)} ms / {num(cpu[s], 2)} s'
+                cells = [f'{c["best"]} {num(f1[c["best"]], 3)}', num(f1[s], 3), f'{num(m, 4, sign=True)} ({sign})',
+                         'yes' if c['f1_ok'] else 'no', stack_cost]
+                for r in 'AB':
+                    cells += [cost(c[r]['gpu'], gpu, 1e3, 'ms'), cost(c[r]['cpu'], cpu, 1, 's'), c[r]['verdict']]
+                    met[r] += c[r]['verdict'] == 'met (GPU and CPU)'
+                    macro(f'{k}Verdict{r}', c[r]['verdict'])
+                    for dev, cc, scale, fmt in [('Gpu', gpu, 1e3, '{:.2f}'), ('Cpu', cpu, 1, '{:.2f}')]:
+                        fl = c[r][dev.lower()]
+                        macro(f'{k}Cheapest{dev}{r}', tt(fl) if fl else 'none')
+                        macro(f'{k}Cheapest{dev}{r}Cost', cc[fl] * scale if fl and ok(cc.get(fl)) else None, fmt)
+                macro(f'{k}Best', tt(c['best']))
+                macro(f'{k}Diff', m, '{:+.4f}')
+                macro(f'{k}Sign', sign if len(diff) else None)
+            lab = set_label(v) if j == 0 else ''
+            lines.append(f'{lab} & {tt(s)} & ' + ' & '.join(cells).replace('_', '\\_').replace('−', '$-$') + ' \\\\')
+            md.append([set_label(v, False) if j == 0 else '', s] + cells)
+    for r in 'AB':
+        macro(f'CritMetCount{r}', met[r], '{}')
+    macro('CritRows', len(SETS) * len(STACKS), '{}')
+    g, c_ = map(rel, timing_dirs())
+    write('tab_dist_criterion', lines,
+          ['set', 'stack', 'best conventional (F1)', 'stack F1', 'stack − best: mean (same sign)',
+           f'F1 within {F1_TOL}', 'stack front end: GPU / CPU', 'A: cheapest qualified, GPU',
+           'A: cheapest qualified, CPU', 'A: verdict', 'B: cheapest qualified, GPU', 'B: cheapest qualified, CPU',
+           'B: verdict'], md,
+          notes=['The criterion of section 3 of the protocol, applied mechanically: the stack has F1 within '
+                 f'{F1_TOL} of the best conventional flow ({", ".join(CONV_FLOWS)}; prop is neither) and a front end '
+                 'cheaper than the cheapest conventional flow "that reaches this F1", on the GPU and on the CPU. That '
+                 f'phrase reads two ways, both shown: A = {READINGS["A"]}; B = {READINGS["B"]}. F1: open-set F1 of the '
+                 'test windows, mean over the repetitions; stack − best: paired difference per repetition, mean and the '
+                 'repetitions with the sign of the mean. Cost: front end per FULL FRAME as a sum of measured stage '
+                 f'times (GPU minimum, {g}; CPU one core, median, {c_}); flows that reuse a distance amortised over '
+                 f'n = {N_SESSION} frames, as in tab_dist_time. Cheapest: by the front end on that device.'],
+          comment=['set & stack & best conventional (F1) & stack F1 & stack - best mean (same sign) & F1 within 0.02 & '
+                   'stack front end GPU / CPU & A cheapest GPU & A cheapest CPU & A verdict & B cheapest GPU & '
+                   'B cheapest CPU & B verdict',
+                   f'A: {READINGS["A"]}; B: {READINGS["B"]}', f'timing: GPU {g}, CPU {c_}'])
+
+
 STAGE_GROUPS = {'read': ['load', 'normalise'],
                 'compute': ['reconstruct', 'autofocus', 'per_object', 'twin', 'channels', 'layer'],
                 'embed + decide': ['embed', 'decide']}
@@ -579,8 +686,11 @@ def frames_per_session(focus, flow):
 
 
 def measured(set_name='full_frames', root=None):
-    """Per flow: medians over frames and repetitions of the stage groups of NAME_time.csv (s), the detector, and the
-    frames that share a search (None if the flow searches every frame)."""
+    """Per flow: medians over frames and repetitions of the stage groups of NAME_time.csv (s); 'flow': the median over
+    frames and repetitions of the sum of all the stages of the flow in a frame (the detector apart); the detector; and
+    the frames that share a search (None if the flow searches every frame). For a flow that shares a search, the
+    search is left out of the sums per frame and its median over the frames where it ran, divided by the frames that
+    share it, is added (to 'compute' and to 'flow')."""
     t, focus = load(f'{set_name}_time', root), load(f'{set_name}_focus', root)
     res = {}
     if not has(t, 'flow', 'stage', 'seconds', 'rep', 'frame'):
@@ -597,50 +707,65 @@ def measured(set_name='full_frames', root=None):
         per = (x[x.stage != 'autofocus'] if amort else x).groupby(['rep', 'frame', 'stage']).seconds.sum() \
             .unstack('stage').fillna(0)
         g = {k: float(per[[c for c in v if c in per]].sum(1).median()) for k, v in STAGE_GROUPS.items()}
+        g['flow'] = float(per.sum(1).median())
         k = None
         if amort:
             k = frames_per_session(focus, f)
             g['compute'] += float(af.seconds.median()) / k
+            g['flow'] += float(af.seconds.median()) / k
         res[f] = dict(g, shared=k)
     return res, det
 
 
 def tab_dist_time_measured():
-    """The timed run of full frames (E5), in the format of the paper's tab_full."""
+    """The timed run of full frames (E5), in the format of the paper's tab_full: per flow the stage groups, the time per
+    frame without and with the detector (ms) and that total over the total of the stack of the paper (bank_jit)."""
     g, _ = timing_dirs()
     res, det = measured('full_frames', g)
     acc = load('full_frames', g)
     lines, md, shared = [], [], {}
-    macro('MeasDetectS', det, '{:.2f}')
+    macro('MeasDetectMs', det * 1e3 if ok(det) else None, '{:.1f}')
+    tot = {f: det + r['flow'] if ok(det) else None for f, r in res.items()}
+    ref = tot.get('bank_jit')
     for f in FLOWS_FULL:
         r = res.get(f)
         dt = per_rep(acc, F1, flow=f, boxes='det') if has(acc, 'boxes') else pd.Series(dtype=float)
-        total = det + sum(v for k, v in r.items() if k != 'shared') if r and ok(det) else None
+        total = tot.get(f)
+        ratio = total / ref if ok(total) and ok(ref) and ref > 0 else None
         if r and r['shared']:
             shared[f] = r['shared']
-        cells = [num(r['read'] * 1e3, 0) if r else '--', num(r['compute'] * 1e3, 1) if r else '--',
-                 num(r['embed + decide'] * 1e3, 0) if r else '--', num(total, 2)]
+        cells = [num(r[k] * 1e3, 1) if r else '--' for k in ['read', 'compute', 'embed + decide', 'flow']] + \
+                [num(total * 1e3 if ok(total) else None, 0), num(ratio, 2)]
         mark = '$^\\dagger$' if f in shared else ''
         lines.append(tt(f) + mark + ' & ' + ' & '.join(cells) + f' & {num(mean(dt), 3)} \\\\')
         md.append([f + (' †' if f in shared else '')] + cells + [pm(dt)])
         k = camel(f)
-        macro(f'Meas{k}ReadMs', r['read'] * 1e3 if r else None, '{:.0f}')
+        macro(f'Meas{k}ReadMs', r['read'] * 1e3 if r else None, '{:.1f}')
         macro(f'Meas{k}ComputeMs', r['compute'] * 1e3 if r else None, '{:.1f}')
-        macro(f'Meas{k}EmbedMs', r['embed + decide'] * 1e3 if r else None, '{:.0f}')
-        macro(f'Meas{k}TotalS', total, '{:.2f}')
+        macro(f'Meas{k}EmbedMs', r['embed + decide'] * 1e3 if r else None, '{:.1f}')
+        macro(f'Meas{k}FlowMs', r['flow'] * 1e3 if r else None, '{:.1f}')
+        macro(f'Meas{k}TotalMs', total * 1e3 if ok(total) else None, '{:.0f}')
+        macro(f'Meas{k}OverBankJit', ratio, '{:.2f}')
         macro(f'Meas{k}Fone', mean(dt))
     note = ('† the search of the distance ran on the first frame of each session only: its median over the frames '
             'where it ran is divided by the frames of a session of the set (' +
             ', '.join(f'{f}: {v:g}' for f, v in shared.items()) + ').') if shared else \
         f'Flows that reuse a distance (rec_afs, rec_afsc): the search is divided by the frames of a session ({FRAMES_PER_SESSION}).'
     write('tab_dist_time_measured', lines, ['flow', 'read (ms)', 'compute (ms)', 'embed + decide (ms)',
-                                            'total with the detector (s)', 'F1 end to end'], md,
-          notes=[f'Timed run of the full frames in {rel(g)}: medians over frames and repetitions, one GPU; total = detector '
-                 f'({num(det, 3)} s, median) + read + compute + embed + decide. F1 on the detected boxes, mean '
-                 f'({reps_note(acc)}).', note],
-          comment=['flow & read ms & compute ms & embed+decide ms & total with the detector s & F1 (detected boxes)',
-                   'medians over frames and repetitions; dagger: the search ran on one frame per session and is '
-                   'divided by the frames of a session', f'source: {rel(g)}'])
+                                            'without the detector (ms)', 'total with the detector (ms)', 'x stack 5',
+                                            'F1 end to end'], md,
+          notes=[f'Timed run of the full frames in {rel(g)}, one GPU. read = load (layers) or normalise (reconstructions: '
+                 'read the frame and the blank frame and normalise); compute = reconstruction, search of the distance, '
+                 'per-object focus, channels or layer. read, compute, embed + decide: medians over frames and repetitions '
+                 'of each group; "without the detector": median over frames and repetitions of the sum of all the stages '
+                 'of the flow in a frame (so the three groups do not add up to it exactly); total = that + the detector '
+                 f'({num(det * 1e3 if ok(det) else None, 1)} ms, median). x stack 5: total over the total of bank_jit. '
+                 f'F1 on the detected boxes, mean ({reps_note(acc)}).', note],
+          comment=['flow & read ms & compute ms & embed+decide ms & per frame without the detector ms & total with the '
+                   'detector ms & total over bank_jit & F1 (detected boxes)',
+                   'groups: medians over frames and repetitions; without the detector: median of the sum per frame; '
+                   'dagger: the search ran on one frame per session and is divided by the frames of a session',
+                   f'source: {rel(g)}'])
 
 
 # ------------------------------------------------------------------------------------------------ full frames
@@ -674,6 +799,39 @@ def tab_dist_frames():
           comment=['rows: flows; columns: ' + ', '.join(s for s, _, _ in FRAME_SETS) + '; last row: detector recall'])
 
 
+def tab_dist_frames_paired():
+    """Paired differences of the end-to-end F1 (detected boxes) per repetition on the sets of full frames, where both
+    flows ran; the format of tab_dist_paired."""
+    accs = {s: load(s) for s, _, _ in FRAME_SETS}
+    reps = sorted(set(range(1, 6)) | {int(r) for a in accs.values() if has(a, 'rep') for r in a.rep.dropna()})
+    lines, md = [], []
+    for s, key, lab in FRAME_SETS:
+        rows = []
+        for a, b in FRAME_PAIRS:
+            diff = (per_rep(accs[s], F1, flow=a, boxes='det') - per_rep(accs[s], F1, flow=b, boxes='det')).dropna()
+            if len(diff):
+                rows.append((a, b, diff))
+        if not rows:
+            continue
+        if lines:
+            lines.append('\\midrule')
+        for j, (a, b, diff) in enumerate(rows):
+            m = float(diff.mean())
+            sign = f'{int((np.sign(diff) == np.sign(m)).sum())}/{len(diff)}'
+            cells = [num(diff.get(r), 3, sign=True) for r in reps]
+            lines.append(f'{tex(lab) if j == 0 else ""} & {tt(a)} $-$ {tt(b)} & {num(m, 3, sign=True)} & ' +
+                         ' & '.join(cells) + f' & {sign} \\\\')
+            md.append([lab if j == 0 else '', f'{a} − {b}', num(m, 3, sign=True)] + cells + [sign])
+            macro(f'FramePair{key}{camel(a)}Minus{camel(b)}', m, '{:+.3f}')
+            macro(f'FramePairSign{key}{camel(a)}Minus{camel(b)}', sign)
+    write('tab_dist_frames_paired', lines, ['set of full frames', 'pair', 'mean'] + [f'r{r}' for r in reps] +
+          ['same sign'], md,
+          notes=['End-to-end open-set F1 (boxes found by the detector) of the first flow minus the second, per '
+                 'repetition (the same frames and the same held-out classes); only the pairs where both flows ran on '
+                 'that set. "same sign": repetitions whose difference has the sign of the mean.'],
+          comment=['set & pair & mean difference & ' + ' & '.join(f'r{r}' for r in reps) + ' & same sign'])
+
+
 def tab_dist_frames_focus():
     """Distance error on the full frames, from NAME_focus.csv."""
     focs = {s: load(f'{s}_focus') for s, _, _ in FRAME_SETS}
@@ -703,8 +861,8 @@ CAPTIONS = {
         '(frames per mounting, log scale). Curves: the blind search of the paper (AF once/session) and the cheap '
         'search (cheap AF once/session) done once and reused by the n frames; the cost falls as 1/n. Horizontal '
         'lines: the three learned focal stacks (5, 7 and 9 distances), which cost the same whatever n, and two '
-        'conventional references, the reconstruction at the nominal distance and the cheap search on every frame. '
-        'Where a curve crosses a stack line (open circles, with the value of n*), focusing once per mounting becomes '
+        'conventional references, the reconstruction at the nominal distance and the cheap search on every frame; '
+        'each is named on the right, joined to its line by a thin connector. Where a curve crosses a stack line (open circles, with the value of n*), focusing once per mounting becomes '
         'cheaper than the stack: below n* the stack is cheaper, above it the conventional flow is. (a) One GPU '
         '(minimum time over the repetitions). (b) One CPU core (median). All times are sums of measured stage times.'),
     'fig_dist_cost_f1': (
@@ -718,7 +876,8 @@ CAPTIONS = {
         'Open-set F1 end to end on full frames against the tilt of the slide (bottom axis, degrees). The top axis '
         'gives the change of distance this tilt makes at the edge of the frame, 3.2 mm x tan(tilt), in micrometres. '
         'Each line is a flow: reconstructions at the nominal distance, after a global autofocus, with per-object '
-        'focus over a wide range, the cheap autofocus, and the three focal stacks.'),
+        'focus over a wide range, the cheap autofocus, and the three focal stacks (legend below the axis). Single '
+        'panel; mean over the five repetitions.'),
     'fig_dist_sets': (
         'Open-set F1 of every flow (columns) in every set of test windows (rows): the bench, the distance changing '
         'between sessions (2 and 5 %), at every image (2 and 5 %) or drifting 0.5 % per image, strong shot noise and '
@@ -749,17 +908,32 @@ def empty(ax, text='not measured yet'):
     ax.set_yticks([])
 
 
-def spread(ys, ax, gap=0.055):
-    """Label positions (data units, log y axis) at least gap (axes fraction) apart, in the order of ys."""
+def spread(ys, ax, gap=0.07):
+    """Label positions (data units, log y axis) at least gap (axes fraction) apart, in the order of ys, each as close
+    to its own value as the others allow (overlapping labels are pooled into a block centred on their values) and
+    kept inside the axis."""
     lo, hi = np.log10(ax.get_ylim())
-    order = np.argsort(ys)
-    pos = np.log10(np.asarray(ys, float))
-    out_ = pos.copy()
     step = gap * (hi - lo)
-    for k, i in enumerate(order):
-        if k:
-            out_[i] = max(pos[i], out_[order[k - 1]] + step)
-    return 10 ** out_
+    order = np.argsort(ys)
+    want = np.log10(np.asarray(ys, float))[order]
+    blocks = []                                   # [first index (in order), base]: positions base + k * step
+    for i, y in enumerate(want):
+        blocks.append([i, y])
+        while len(blocks) > 1:
+            (i0, b0), (i1, b1) = blocks[-2], blocks[-1]
+            n0 = i1 - i0
+            if b0 + (n0 - 1) * step + step <= b1 + 1e-12:
+                break
+            members = range(i0, i + 1)
+            blocks[-2:] = [[i0, float(np.mean([want[k] - (k - i0) * step for k in members]))]]
+    pos = np.empty(len(want))
+    for (i0, b), nxt in zip(blocks, blocks[1:] + [[len(want), None]]):
+        pos[i0:nxt[0]] = b + step * np.arange(nxt[0] - i0)
+    pos += max(0.0, lo + step / 2 - pos.min()) if len(pos) else 0.0   # inside the axis: first up, then down
+    pos -= max(0.0, pos.max() - (hi - step / 2)) if len(pos) else 0.0
+    res = np.empty(len(want))
+    res[order] = pos
+    return 10 ** res
 
 
 def fig_dist_breakeven():
@@ -768,7 +942,7 @@ def fig_dist_breakeven():
         print('skipped fig_dist_breakeven: no timing of the full frame')
         return
     n = np.logspace(0, 2, 300)
-    fig, axs = plt.subplots(1, 2, figsize=(7.16, 2.6), gridspec_kw=dict(wspace=0.55))
+    fig, axs = plt.subplots(1, 2, figsize=(7.16, 2.6), gridspec_kw=dict(wspace=0.62))
     for ax, dev, letter, scale, unit in [(axs[0], 'gpu', 'a', 1e3, 'ms'), (axs[1], 'cpu', 'b', 1, 's')]:
         panel(ax, letter)
         t = T[dev].get(FULL, {})
@@ -791,7 +965,7 @@ def fig_dist_breakeven():
             if v is None:
                 continue
             ax.axhline(v * scale, color=COLORS[f], lw=1.0, ls='--' if f in STACKS else ':')
-            labels.append((v * scale, SHORT[f]))
+            labels.append((v * scale, SHORT[f], COLORS[f]))
             drawn = True
         if not drawn:
             empty(ax)
@@ -801,8 +975,12 @@ def fig_dist_breakeven():
         ax.set_xlim(1, 100)
         ax.set_xticks([1, 2, 5, 10, 20, 50, 100])
         ax.set_xticklabels(['1', '2', '5', '10', '20', '50', '100'])
-        for y, lab in zip(spread([y for y, _ in labels], ax), [lab for _, lab in labels]):
-            ax.text(1.01, y, lab, transform=ax.get_yaxis_transform(), color=INK, fontsize=5.5, va='center')
+        ax.set_ylim(ax.get_ylim())                # freeze the limits before placing the labels
+        tr = ax.get_yaxis_transform()             # x in axis fraction, y in data
+        for (y0, lab, col), y in zip(labels, spread([y for y, _, _ in labels], ax)):
+            ax.annotate(lab, (1.0, y0), xycoords=tr, xytext=(1.07, y), textcoords=tr, color=INK, fontsize=5.5,
+                        va='center', annotation_clip=False,
+                        arrowprops=dict(arrowstyle='-', color=col, lw=0.6, shrinkA=0, shrinkB=1))
         ax.set_xlabel('frames per mounting, n')
         ax.set_ylabel(f'front end per frame ({unit})')
         ax.set_title('one GPU' if dev == 'gpu' else 'one CPU core', fontsize=7)
@@ -872,7 +1050,8 @@ def fig_dist_tilt():
                                                lambda u: np.degrees(np.arctan(np.asarray(u) / HALF_WIDTH_UM))))
     top.set_xticks([0, 100, 250, 500, 850])
     top.set_xlabel('change of distance at the edge of the frame ($\\mu$m)', fontsize=7, color=MUTED)
-    ax.legend(fontsize=5.8, ncol=2, loc='lower left', handlelength=1.6)
+    ax.legend(fontsize=5.8, ncol=4, loc='upper center', bbox_to_anchor=(0.5, -0.2), handlelength=1.6,
+              handletextpad=0.3, columnspacing=0.9)   # below the axis, off the curves
     save(fig, 'fig_dist_tilt')
 
 
@@ -948,7 +1127,8 @@ def write_captions():
 
 # ------------------------------------------------------------------------------------------------ main
 TABLES = [tab_dist_metrics, tab_dist_paired, tab_dist_focus, tab_dist_focus_val, tab_dist_sessions, tab_dist_time,
-          tab_dist_time_measured, tab_dist_breakeven, tab_dist_frames, tab_dist_frames_focus, tab_dist_own]
+          tab_dist_time_measured, tab_dist_breakeven, tab_dist_criterion, tab_dist_frames, tab_dist_frames_paired,
+          tab_dist_frames_focus, tab_dist_own]
 FIGURES = [fig_dist_breakeven, fig_dist_cost_f1, fig_dist_tilt, fig_dist_sets, fig_dist_sweep]
 
 

@@ -250,8 +250,27 @@ def test_distance_report_runs_with_every_input_missing(tmp_path, monkeypatch, ca
     assert 'FAILED' not in capsys.readouterr().out
     d = tmp_path / 'out' / 'distance'
     for name in ['f1', 'rejection', 'auroc', 'known', 'paired', 'focus', 'focus_val', 'sessions', 'time',
-                 'time_measured', 'breakeven', 'frames', 'frames_focus', 'own']:
+                 'time_measured', 'breakeven', 'criterion', 'frames', 'frames_paired', 'frames_focus', 'own']:
         assert (d / 'tables' / f'tab_dist_{name}.tex').exists() and (d / 'tables' / f'tab_dist_{name}.md').exists()
     num = (d / 'numbers_distancia.tex').read_text()
     assert '\\newcommand{\\DistFoneFrameFiveBankWide}{?}' in num and '\\newcommand{\\DistRejBaseRecZZero}{?}' in num
     assert (d / 'figures' / 'captions.md').exists()
+
+
+def test_distance_criterion_reads_the_phrase_two_ways():
+    from holo_openset.paper import distance as D
+    # invented numbers: rec_z0 is within 0.02 of the best but below the stack, which is cheaper than rec_afc only
+    f1 = dict(rec_z0=0.955, rec_af=0.970, rec_afc=0.969, prop=0.990, bank_jit=0.960)
+    gpu = dict(rec_z0=3.0, rec_af=100.0, rec_afc=5.0, prop=0.1, bank_jit=4.0)
+    cpu = dict(rec_z0=2.0, rec_af=90.0, rec_afc=3.0, prop=0.1, bank_jit=2.5)
+    c = D.criterion(f1, 'bank_jit', gpu, cpu)
+    assert c['best'] == 'rec_af' and c['f1_ok']                    # prop is not conventional: never the best
+    assert c['A']['gpu'] == c['A']['cpu'] == 'rec_z0' and c['A']['verdict'] == 'not cheaper'
+    assert c['B']['gpu'] == c['B']['cpu'] == 'rec_afc' and c['B']['verdict'] == 'met (GPU and CPU)'
+    assert D.criterion(dict(f1, bank_jit=0.940), 'bank_jit', gpu, cpu)['A']['verdict'] == 'F1 fails'
+    above = D.criterion(dict(f1, bank_jit=0.980), 'bank_jit', gpu, cpu)
+    assert above['A']['verdict'] == 'not cheaper' and above['B']['gpu'] is None
+    assert above['B']['verdict'] == 'none reaches it'
+    cpu_only = D.criterion(f1, 'bank_jit', dict(gpu, bank_jit=6.0), cpu)
+    assert cpu_only['B']['verdict'] == 'cheaper on CPU only'
+    assert D.criterion(dict(rec_af=0.97), 'bank_jit', gpu, cpu) is None   # the stack has no F1
