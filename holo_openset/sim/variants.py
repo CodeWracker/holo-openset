@@ -46,21 +46,20 @@ VARIANTS = {
     'session_0': ('distance between sessions (%)', 0, dict(session_z_std=0.0)),
     'session_2': ('distance between sessions (%)', 2, dict(session_z_std=0.02)),
     'session_5': ('distance between sessions (%)', 5, dict(session_z_std=0.05)),
+    # the distance within a session (the distance study, docs/exp_distancia): drawn for every image, or a random walk
+    # of 0.5 % per image (about 5 % away from the first image after 100 images)
+    'frame_2': ('distance per frame (%)', 2, dict(frame_z_std=0.02)),
+    'frame_5': ('distance per frame (%)', 5, dict(frame_z_std=0.05)),
+    'walk_05': ('distance drift per frame (%)', 0.5, dict(frame_z_walk=0.005)),
     # objects outside the sensor
     'no_outside': ('outside the sensor', 'no objects outside', dict(reach=0)),
     'periodic': ('outside the sensor', 'periodic window', dict(margin=0, reach=0, dust_density=0.0,
                                                               sensor_dust_density=0.0)),
 }
 
-# Sets of the distance and autofocus study (docs/exp_distancia): the distance changes from image to image WITHIN a
-# session, where the robustness sets above change it between sessions. They are kept apart from VARIANTS so that the
-# queue, the tables and the figures of the paper, which run over VARIANTS, stay as they are.
-STUDY = {
-    'frame_2': ('distance per frame (%)', 2, dict(frame_z_std=0.02)),
-    'frame_5': ('distance per frame (%)', 5, dict(frame_z_std=0.05)),
-    # a random walk of 0.5 % per image: about 5 % away from the first image after 100 images
-    'walk_05': ('distance drift per frame (%)', 0.5, dict(frame_z_walk=0.005)),
-}
+# Sets of the distance and autofocus study that are not part of the battery of the paper: none since the three sets
+# whose distance changes within a session (frame_2, frame_5, walk_05) joined VARIANTS.
+STUDY = {}
 ALL = {**VARIANTS, **STUDY}
 
 BASE = {'shot noise (full well, e-)': int(B.full_well), 'read noise (e-)': int(B.read_noise), 'bit depth': B.bits,

@@ -199,8 +199,9 @@ def test_study_flows_borrow_a_model_and_stay_out_of_the_queue_of_the_paper():
     from holo_openset.sim.variants import ALL as ALL_VARIANTS, STUDY as STUDY_VARIANTS, VARIANTS
     assert weights_of('rec_af') == 'rec_af' and weights_of('rec_edfw') == 'rec_edf'
     assert all(weights_of(f) in PAPER_FLOWS for f in STUDY) and not set(STUDY) & set(ALL) and set(STUDY) <= set(FLOWS)
-    assert len(VARIANTS) == 32 and not set(STUDY_VARIANTS) & set(VARIANTS) and len(ALL_VARIANTS) == 32 + len(STUDY_VARIANTS)
-    assert len(jobs()) == 575   # as before the study
+    assert len(VARIANTS) == 35 and not set(STUDY_VARIANTS) & set(VARIANTS) and len(ALL_VARIANTS) == 35 + len(STUDY_VARIANTS)
+    assert {'frame_2', 'frame_5', 'walk_05'} <= set(VARIANTS)   # part of the battery of the paper
+    assert len(jobs()) == 583   # 575 before the study: 3 caches of the new sets and the 5 evaluations of rec_afc
 
 
 # ------------------------------------------------------------------------------------ the report of the distance study

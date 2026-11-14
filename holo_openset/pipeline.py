@@ -16,11 +16,17 @@ from pathlib import Path
 
 from holo_openset import paths
 from holo_openset.flows import FLOWS, PAPER_FLOWS
+from holo_openset.reconstruct import METHODS
 from holo_openset.sim.variants import VARIANTS
 
 REPS = [1, 2, 3, 4, 5]
 PY = [sys.executable, '-m', 'holo_openset']
 ALL = list(PAPER_FLOWS)   # the flows of the distance study borrow these models and are not part of the queue
+# ... except the narrow autofocus, a flow of the paper with no model of its own (it uses that of rec_af): its cache is
+# built with the others, and it is evaluated and run by the experiments of the paper, never trained
+NARROW = 'rec_afc'
+RUN = ALL + [NARROW]      # what the experiments of the paper run
+REC = list(METHODS) + [FLOWS[NARROW]['rec']]   # the caches of the base set and of the robustness sets
 IDEAL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'rec_z0']
 SMALL_FLOWS = ['raw', 'learned', 'complex', 'wiener', 'prop', 'bank_jit', 'bank_w3', 'rec_z0', 'rec_af', 'rec_twin']
 
@@ -42,7 +48,7 @@ def jobs():
     add('sim_full', 'simulate', ['simulate', 'full', '--n-images', '40', '--workers', '16'], ['sim_base'])
     add('sim_small', 'simulate', ['simulate', 'small', '--workers', '16'], ['sim_base'])
 
-    add('rec_base', 'reconstruct', ['reconstruct'], ['sim_base'])
+    add('rec_base', 'reconstruct', ['reconstruct', '--methods', *REC], ['sim_base'])
     add('rec_ideal', 'reconstruct', ['reconstruct', '--set', 'ideal', '--methods', 'z0'], ['sim_ideal'])
     for s in ['small_z0', 'small_near']:
         add(f'rec_{s}', 'reconstruct', ['reconstruct', '--set', s, '--methods', 'z0', 'af', 'twin'], ['sim_small'])
@@ -53,7 +59,8 @@ def jobs():
         add(f'rec_aux_ideal_r{r}', 'reconstruct', ['reconstruct', '--set', 'ideal', '--aux', f'r{r}', '--methods', 'z0'],
             [f'sim_aux_ideal_r{r}'])
     for v in VARIANTS:
-        add(f'rec_var_{v}', 'reconstruct', ['reconstruct', '--set', f'variants/{v}'], ['sim_variants'])
+        add(f'rec_var_{v}', 'reconstruct', ['reconstruct', '--set', f'variants/{v}', '--methods', *REC],
+            ['sim_variants'])
 
     for r in REPS:
         add(f'yolo_r{r}', 'yolo', ['yolo', '--rep', str(r)], ['sim_base'])
@@ -72,6 +79,8 @@ def jobs():
         for f in ALL:
             add(f'train_{f}_r{r}', 'train', ['train', '--flow', f, '--rep', str(r)], needs(f, r))
             add(f'eval_{f}_r{r}', 'evaluate', ['evaluate', '--flow', f, '--rep', str(r)], [f'train_{f}_r{r}'])
+        add(f'eval_{NARROW}_r{r}', 'evaluate', ['evaluate', '--flow', NARROW, '--rep', str(r)],
+            [f'train_{FLOWS[NARROW]["weights"]}_r{r}', 'rec_base'])
         for f in ['learned', 'prop', 'rec_z0']:   # calibration twins of discovery
             add(f'train_{f}_cal_r{r}', 'train', ['train', '--flow', f, '--rep', str(r), '--cal'], needs(f, r, cal=True))
         # ablations of the proposed layer: learning rate of the layer, auxiliary font scenes
@@ -101,12 +110,14 @@ def jobs():
                     [f'train_{s}_{f}_r{r}'])
 
     trained = [f'train_{f}_r{r}' for f in ALL for r in REPS]
-    add('exp_e2e', 'experiment', ['experiment', 'e2e'], trained + [f'yolo_r{r}' for r in REPS])
-    add('exp_robustness', 'experiment', ['experiment', 'robustness'], trained + [f'rec_var_{v}' for v in VARIANTS])
+    add('exp_e2e', 'experiment', ['experiment', 'e2e', '--flows', *RUN], trained + ['rec_base'] +
+        [f'yolo_r{r}' for r in REPS])
+    add('exp_robustness', 'experiment', ['experiment', 'robustness', '--flows', *RUN],
+        trained + ['rec_base'] + [f'rec_var_{v}' for v in VARIANTS])
     add('exp_oracle', 'experiment', ['experiment', 'oracle', '--workers', '16'], ['sim_variants'], dev='cpu')
     add('exp_discovery', 'experiment', ['experiment', 'discovery'],
         trained + [f'train_{f}_cal_r{r}' for f in ['learned', 'prop', 'rec_z0'] for r in REPS])
-    add('exp_full_frames', 'experiment', ['experiment', 'full_frames'], trained + ['sim_full'] +
+    add('exp_full_frames', 'experiment', ['experiment', 'full_frames', '--flows', *RUN], trained + ['sim_full'] +
         [f'yolo_r{r}' for r in REPS])
     add('exp_timing_gpu', 'experiment', ['experiment', 'timing', '--rep', '1'], ['sim_full', 'yolo_r1',
                                                                                  'train_learned_r1', 'train_complex_r1',
