@@ -1564,3 +1564,54 @@ Agora está estabelecido: o código do paper, rodado neste build, grava exatamen
 conjuntos do estudo; só z (e a profundidade, na inclinação) muda, exatamente como o desenho manda; o ruído da câmera é
 o mesmo (uma imagem com z movido 0,0001 % muda 0,07 % dos pixels); e o código novo com os efeitos desligados é o
 código do paper, bit a bit, nas janelas e nos quadros inteiros.
+
+## 2026-11-14 — A5: a suposição da busca barata
+
+Sem run. A faixa sai do código (`reconstruct.FOCUS['afc']`: 7 candidatos grossos em [0,90; 1,10] z₀, passo 0,0333; a
+passada fina vai de um passo abaixo a um acima do melhor), agora também como macros do gerador:
+`\DistSearchAfcRangePct` = 10, `\DistSearchAfcRangeEffPct` = 13,3 (e `afr`: 15 e 17,1). Texto novo no relatório: Seção 1
+(Q3), Seção 3 (parágrafo "A faixa da busca barata": z₀ conhecido a ±13,3 % efetivos, o que uma bancada calibrada dá;
+fora disso falha por construção, não testado; o stack também supõe coisas: α calibrado e desvios dentro do jitter de
+treino, e em `frame_5` o stack de 5 fica com F1 ≥ 0,94 até 6 % e cai depois, A1), Seção 4 (uma frase para o paper) e
+Seção 5.
+
+## 2026-11-14 — A7: relatório revisado, saídas regeneradas
+
+Relatório (`docs/exp_distancia/RELATORIO.md`):
+
+- Seção 1: Q2 sem o 1,3×/1,4× como ganho (a diferença vem de detalhes de implementação, Seção 2) e com a leitura A; Q3
+  com a suposição de z₀; Q1 sem "menos que o stack".
+- Q2: parágrafo e Tabela 2 nova de `frame_5` × `session_5` (A1); tempo sem argumento com o 1,28×; parágrafo do
+  critério reescrito (A6); parágrafo de n\* reescrito com D, a regra e "custa o mesmo que uma reconstrução" (A3); Tabela 5
+  nova (D, n\* com ±3 %, n\* cru em CPU; sem as colunas "per frame").
+- Seção 2: (a) com a fração do detector (95–98 % em GPU, 82–94 % em CPU nos fluxos baratos); (b) reescrita (A4 e as
+  duas assimetrias da A3); (c) com a conta sem a leitura do blank frame e "não é argumento".
+- Seção 3: parágrafo da faixa da busca barata (A5).
+- Seção 4: frases novas (ver abaixo); Seção 5 atualizada.
+- Cortes para manter o tamanho: a tabela do erro de distância e a dos quadros inteiros por inclinação saíram do
+  relatório (ficam em `tab_dist_focus.md` e `tab_dist_frames.md`, citados no texto); a antiga Tabela 7 virou a 6;
+  parágrafo por sessão de Q1 encurtado; itens da Seção 5 enxugados.
+
+Frases da Seção 4: a do tempo agora diz que nenhuma rota é mais barata de um jeito que importe (o detector, 166,82 de
+172,2 ms em GPU; busca barata em todo quadro e stack com razão 1,01/1,04 fim a fim); a do ruído diz que a fragilidade
+era da busca cega na resolução do sensor; uma frase da suposição de z₀ (`\DistSearchAfcRange...`); a de n\* virou "o
+stack de 5 custa o mesmo que uma reconstrução" com D e a fração da camada, sem número de quadros; uma frase da linha de
+5 % (`\DistSessFive...`); e o que sobra do stack (sem λ, Δ, z ou blank frame; +0,0127 sob shot noise forte, 5/5;
+−0,081 sob feixe estreito; −0,035 e −0,032 nos quadros inteiros para os stacks largos; números conferidos nas
+tabelas). Todas as 34 macros do bloco existem em `results_exp_distancia/numbers_distancia.tex` (conferido por script).
+Todos os números das tabelas do relatório aparecem nas tabelas `.md` regeneradas (conferido por script, 76 linhas).
+
+```bash
+bash scripts/exp_distancia/relatorio.sh                      # 1915 macros
+env -u HOLO_RESULTS python -m pytest -q                      # 1 failed, 24 passed
+env -u HOLO_RESULTS python -m holo_openset reproduce check   # 9/12: differs numbers.tex, tab_e2e.tex, tab_stages.tex
+```
+
+Os 24 testes que passam incluem os três do estudo de distância novos ou mudados. A falha
+(`test_tables_of_the_paper_match_the_results`) e o `reproduce check` 9/12 vêm de `results/`, que o outro agente
+(integração) está mudando agora (commits `18112a7`, `7f2c072`, `b4b2cbe`: tempos da sessão E5, `rec_afc` e fluxos novos):
+as tabelas do paper deixaram de bater com `expected/`, o que esse trabalho vai ter de atualizar. Nada disso depende dos
+arquivos desta tarefa.
+
+Commits desta tarefa (A1–A7): `ea592c8`, `3ada8fe`, `66ec0bd`, `4cc6914`, `a043ff4`, `53e9154`, `60486cc`, `2143bf9`,
+`1c8b70d`, `8124325` e o deste registro.
