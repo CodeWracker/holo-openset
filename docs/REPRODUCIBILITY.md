@@ -7,7 +7,7 @@ matches the time and hardware you have.
 |---|---|---|---|
 | **1. Check** | rebuilds every table and number from `results/` and compares with the paper | CPU, 1 minute, no data | byte-identical |
 | **2. Evaluate** | downloads the models and holograms, reconstructs, evaluates every model and reruns the end-to-end, discovery, full-frame and fidelity experiments | GPU, about 1 hour on two GPUs, 90 GB of disk | the same numbers, within 0.01 |
-| **3. Rebuild** | everything from the seeds: simulation, reconstruction, 240 models, all experiments | several GPUs, 280 GB of disk | within the spread of the five repetitions |
+| **3. Rebuild** | everything from the seeds: simulation, reconstruction, 240 models, all experiments | several GPUs, 330 GB of disk | within the spread of the five repetitions |
 
 Set up the environment first: see *Installation* in the [README](../README.md). `requirements-lock.txt` is the exact
 environment of the paper.
@@ -18,8 +18,9 @@ environment of the paper.
 python -m holo_openset reproduce check
 ```
 
-It rebuilds `numbers.tex` and the ten tables into a temporary folder and compares them byte by byte with `expected/`,
-the snapshot used in the paper. Expected output: `11/11 files identical to expected/`.
+It rebuilds `numbers.tex` and the eleven tables from `results/`, and `numbers_distancia.tex` (the numbers of the
+distance study, from its stored results in `results_exp_distancia/`), into a temporary folder, and compares them byte
+by byte with `expected/`, the snapshot used in the paper. Expected output: `13/13 files identical to expected/`.
 
 ## Level 2: evaluate
 
@@ -29,8 +30,11 @@ python -m holo_openset reproduce evaluate --gpus 0        # several GPUs: --gpus
 ```
 
 Results go to `output/level2/results`, and the run ends by comparing them with the paper: every number must be within
-0.01 or 1 %. Stage times are not compared, because they measure the machine. The robustness and oracle experiments
-need the robustness sets, so they belong to level 3; level 2 reuses their results from `results/`.
+0.01 or 1 %. Stage times are not compared, because they measure the machine (nor what is computed from them: their
+ratios, the detector's share of a frame and, in the distance study, n\* and the verdicts on cost). The robustness and
+oracle experiments need the robustness sets, so they belong to level 3; level 2 reuses their results from `results/`.
+The numbers of the distance study come from its stored results at every level (`HOLO_DIST_RESULTS` points the
+generator at another run of it).
 
 Measured in a clean clone, on two H100 GPUs, with the archives of the data record unpacked by hand: 7 minutes of
 reconstruction and 46 minutes of evaluation and experiments, 178 jobs, none failed. Of the 137 numbers of the paper
@@ -68,8 +72,10 @@ What to expect:
 * **Training.** Seeds are fixed, but GPU training is not fully deterministic. Numbers come out close to the paper, not
   identical. Compare them with the standard deviation over the five repetitions in the tables.
 * **Times.** They depend on the machine and on its load. Compare the growth with image size and the ratios between
-  stages, not the absolute values. The CPU times of the paper were measured in one run with the server at a load of
-  about 230 on 224 cores; GPU times on a GPU that nothing else was using.
+  stages, not the absolute values. The stage times of the paper come from the timing session of the distance study
+  (`results_exp_distancia/e5/`, copied to `results/timing_*.csv`): the CPU times in one run with the server at a load
+  of 59 to 89 on 224 cores, the GPU times on a GPU that nothing else was using. An earlier session at a load of about
+  230 gave CPU times two to three times as long.
 * **The propagation phase.** `calibrate_alpha` finds the phase of the propagation on 32 training holograms. The
   models of the base set were calibrated with a linear grid of candidates (0.002 to 0.08, step 0.001); the code now
   uses a geometric grid with the same relative step at every distance, which the small-object set at 2 mm needs. Both
@@ -85,14 +91,16 @@ What to expect:
 | discovery table | `results/discovery*.csv` | `experiment discovery` | 2 |
 | full-frame table; Figs. cost, full frame | `results/full_frames*.csv` | `experiment full_frames` | 2 |
 | stage times table | `results/timing_*.csv` | `experiment timing` | 3 (machine-dependent) |
-| robustness table and figure | `results/robustness.csv`, `results/oracle.csv` | `experiment robustness`, `experiment oracle` | 3 |
+| robustness table and figure (with the sets whose distance changes per image) | `results/robustness.csv`, `results/oracle.csv` | `experiment robustness`, `experiment oracle` | 3 |
+| numbers of the distance study (`numbers_distancia.tex`) | `results_exp_distancia/` | the study, `docs/exp_distancia/`; `paper distance` | 1 |
 | idealised and small-object tables | `results/eval/ideal`, `results/eval/small_*` | `evaluate --set` | 2 |
 | fidelity numbers | `results/fidelity.json` | `experiment fidelity` | 2 |
 | gaps of the idealised model | `results/gaps.json` | `experiment gaps` | 3 |
 | Figs. bench, spectrum, formation, acquisition, variants, autofocus, flows, filter | none | `python -m holo_openset paper figures` | 2 |
 
-Tables, numbers and figures are written to `output/paper/`. Figures need the data of level 2 and take a few minutes
-on one GPU (`HOLO_PAPER_DEVICE=cuda:0`).
+Tables, numbers and figures are written to `output/paper/` (`python -m holo_openset paper tables distance figures`;
+`distance` adds `numbers_distancia.tex` and, under `distance/`, the tables and figures of the study's report). Figures
+need the data of level 2 and take a few minutes on one GPU (`HOLO_PAPER_DEVICE=cuda:0`).
 
 ## Hardware of the paper
 

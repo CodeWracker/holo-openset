@@ -44,9 +44,14 @@ The conventional flows compared in the paper use the same network and change onl
 | `prop` | the layer with the phase of the propagation: one scalar, calibrated on the holograms (the proposed method) |
 | `bank_jit` | the same at 5 distances over $\pm$5 %, trained with distance jitter (the variant robust to a drifting distance); `bank_w1`, `bank_w3`, `bank_wide` are wider stacks of the ablation |
 | `rec_z0` | back-propagation at the nominal distance |
-| `rec_af` | blind autofocus, 114 reconstructions |
+| `rec_af` | blind autofocus: 73 + 41 candidate distances over 0.2-2.1 times the nominal one, 114 reconstructions |
+| `rec_afc` | narrow autofocus: 7 + 11 candidates within $\pm$10 % of the nominal distance (so it needs it within $\pm$13 %), on the amplitude averaged 4 x 4 (18 reconstructions of 1/16 of the pixels); no model of its own, it uses that of `rec_af` |
 | `rec_edf` | focus per object |
-| `rec_twin` | autofocus and twin-image removal |
+| `rec_twin` | blind autofocus and twin-image removal |
+
+The narrow autofocus comes from a pre-registered study of the distance and the autofocus (`docs/exp_distancia/`, in
+Portuguese): its results are kept in `results_exp_distancia/`, and `python -m holo_openset paper distance` turns them
+into the second file of numbers of the paper, `numbers_distancia.tex`.
 
 ## Demonstration
 
@@ -99,7 +104,8 @@ holo_openset/
   paper/          figures and tables        pipeline.py             queue of jobs, one GPU per job
   reproduce.py    the three levels of reproduction
 results/          csv and json behind every table and figure
-expected/         the tables and numbers of the paper, for comparison
+results_exp_distancia/  the results of the distance study (numbers_distancia.tex), docs/exp_distancia/
+expected/         the tables and the two files of numbers of the paper, for comparison
 checksums/        SHA-256 of the Zenodo archives and of every simulated set
 docs/             REPRODUCIBILITY.md, DATA.md, EQUIPMENT.md
 ```
