@@ -155,15 +155,16 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
       Levantamento de 8–15 bancadas lensless, valores com página → `docs/exp_resolucao/LEVANTAMENTO_Z.md`;
       PDFs em `../referencias/z/` (fora do git) — subagente "levantamento-z". Inclui o suplemento do artigo de 2015
       (Eq. S3: unidade do "k").
-- [~] Z6. Consequências (subagente "piloto", sem regravar conjunto nem treinar): prévia com `small_near`;
+- [x] Z6. (feito: `2cf9d00`…`9b93a95`) Consequências (subagente "piloto", sem regravar conjunto nem treinar): prévia com `small_near`;
       fração do padrão dentro do crop contra z para os tamanhos de letra do base e dos pequenos; se o simulador grava
       direito a ≈ 1 mm (amostragem, faixa do α, spread de profundidade relativo, faixas do autofocus); inventário e
       custo de regravar e retreinar; configurações candidatas na ferramenta do envelope.
-- [~] Z7. Tabela de todos os parâmetros do simulador com valor e fonte (`docs/exp_resolucao/PARAMETROS.md` + csv) —
+- [x] Z7. (feito: `7ca6da0`, `PARAMETROS.md`: 45 parâmetros; 6 artigo, 2 datasheet, 2 comunicação pessoal, 35
+      suposição nossa) Tabela de todos os parâmetros do simulador com valor e fonte (`docs/exp_resolucao/PARAMETROS.md` + csv) —
       subagente "levantamento-z" (retomado), que leu o artigo de 2015, o suplemento e as folhas de dados.
-- [~] Z8. Comparação base × `small_near` (métricas + vazamento do padrão) e a figura "o que muda com o setup" —
+- [x] Z8. (feito: `6d2914f`, `results_exp_resolucao/setup_comparison.csv`, `img/fig_setup.{pdf,png}`) Comparação base × `small_near` (métricas + vazamento do padrão) e a figura "o que muda com o setup" —
       subagente "piloto", junto com Z6.
-- [ ] Z5. Proposta de configuração + coerência com as resoluções reportadas + consequências (eu, com Z3 e Z4).
+- [x] Z5. (feito: `docs/exp_resolucao/CHECKPOINT_Z.md`, `18d67a3`) Proposta de configuração + coerência com as resoluções reportadas + consequências (eu, com Z3 e Z4).
 - [!] **Checkpoint Z**: mandar tudo ao orientador e **parar**; A só anda com a aprovação dele.
 
 ### Fase A: experimento da resolução
@@ -297,4 +298,22 @@ errado".
     filtro de ano; depois `python3 -I scripts/exp_resolucao/refs_merge.py <pasta>`); 8 textos abertos que os
     servidores recusaram a cliente automático; paginação de Liu (manuscrito aceito) e de dois lidos no arXiv.
   Ainda rodando: Z6/Z8 ("piloto") e Z7 ("levantamento-z").
+- 2026-11-14, 14:05: **CHECKPOINT Z ENTREGUE — PARADO, AGUARDANDO APROVAÇÃO EXPLÍCITA DO ORIENTADOR.**
+  Documento: `docs/exp_resolucao/CHECKPOINT_Z.md` (PDF enviado no chat, com a figura `img/fig_setup.png`).
+  Conteúdo: unidade do z (metros; 50k = 50 000 λ; confirmado pelo suplemento); levantamento de 15 bancadas;
+  orçamento de z (geométrico 0,69/0,90/1,27 mm; efetivo 0,49/0,70/1,06); proposta z₀ = 0,7 mm efetivo (alternativa
+  1,0 mm), D e L mantidos, banda 10 nm agora com fonte (tabela da Thorlabs arquivada em 2015-05-04, conferida por mim);
+  45 parâmetros com fonte; comparação dos três conjuntos; vazamento do padrão contra z; consequências; custo; três
+  opções (1 não regravar; 2 piloto na distância certa, minha recomendação; 3 regravar tudo).
+  Achados que mudam o que está em jogo: (i) letras do base a ≈ 1 mm vazam só 1–5 % do padrão para fora do crop: a
+  premissa central do paper não vale ali e nenhum conjunto existente cobre esse regime; `small_near` NÃO é prévia
+  dele (vaza 49 %, como o base de hoje); (ii) o simulador calcula o campo no passo do pixel e descarta a faixa
+  299–414 ciclos/mm: gravar a ≈ 1 mm pede sobreamostragem 2–3× (código novo); (iii) a 0,7 mm o α sai da faixa de
+  `calibrate_alpha`, a profundidade de campo cai para ≈ 29 µm, a média 4 × 4 da busca estreita corta sinal, a
+  variação entre montagens (≈ 0,1 mm) passa da faixa da busca estreita.
+  Decisões pedidas ao orientador: (a) z₀ 0,7 ou 1,0 mm efetivo; (b) opção 1, 2 ou 3; (c) tamanho dos objetos na
+  configuração próxima; (d) perguntar ao prof. Sobieranski folga, lado da lamínula e modelo do sensor.
+  Pendências paralelas dele: .RIS de Scopus/ScienceDirect; páginas 365–369 do [11].
+  **Não fazer nada da parte A, nem gravar, nem treinar, até a resposta dele.** Parte C: levantamento pronto
+  (`LEVANTAMENTO_C.md`); a escrita do Related Work e do parágrafo espera o texto (B) e os .RIS.
 
