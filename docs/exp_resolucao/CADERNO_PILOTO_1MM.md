@@ -819,3 +819,64 @@ Commits `b43b815` (script `scripts/exp_resolucao/depth_training.sh` e tabela `de
   `pytest`/`reproduce check`; o git não vê mudança).
 - Disco desta etapa: `data/bench_1mm_depth50` 8,7 GB; modelos `models_exp_resolucao/bench_1mm` 669 MB (15),
   `bench_1mm_depth50` 134 MB, `realistic` 134 MB.
+
+## 2026-11-14, 19:43 — K2: controle C (vizinhança) rodado: `bench_1mm_dense` gravado, conferido, treinado e avaliado em r1 (execução, controles)
+
+GPU 5 (H100, compartilhada), um processo de GPU por vez, 4 threads, 3 construtores de cena, tmux `res_ctrl_*`, logs
+`logs/exp_resolucao/controls_<passo>.log`.
+
+| passo | comando | parede |
+|---|---|---|
+| dense_record | `bash scripts/exp_resolucao/controls_1mm.sh 5 dense_record` | 5018 s |
+| dense_verify | `... 5 dense_verify` (`controls_checks.py dense` + `bench_sanity.py`) | 338 s |
+| dense_reconstruct | `... 5 dense_reconstruct` | 76 s |
+| dense_train | `... 5 dense_train` (raw 96 s, prop 111 s, rec_z0 ≈ 110 s) | 318 s |
+| dense_evaluate | `... 5 dense_evaluate` | 42 s |
+
+O comando de gravação é o do `pilot_1mm.sh record` (`DEPTH=2.6 DENSITY=base`) com `fill_mean=154` a mais no
+`--layout`. Disco: `data/bench_1mm_dense` 9,0 GB (com `rec_z0.npy`), modelos 134 MB.
+
+### Conferências (`results_exp_resolucao/bench_1mm_dense_checks.json`, `bench_1mm_dense_sanity.json`)
+
+- `annotations.csv`: **idêntico byte a byte** ao do `bench_1mm` (40 309 linhas; treino 28 227, validação 5711, teste
+  6371; todas as 21 colunas iguais). Também idênticos: os 5000 rótulos YOLO, os 1600 mapas de verdade (`objects/`),
+  `dust.csv`, `sessions.csv`, `backgrounds.npy`, e as colunas comuns de `metadata.csv`. `physics.json`: a única
+  diferença é `layout_params.fill_mean = 154`.
+- **O enchimento é a única diferença:** imagens 100 (treino) e 0 (teste) refeitas das sementes: sem o enchimento,
+  iguais ao `holograms.npy` do `bench_1mm` (diferença máxima 0 níveis); com ele, iguais ao `holograms.npy` do
+  `bench_1mm_dense` (0 níveis). O enchimento muda o holograma em 15,8–16,9 níveis rms.
+- Letras por janela 640 × 640 (todas as 5000 imagens): anotadas 8,06 + enchimento 146,04 = **154,10** (dp 12,36;
+  p5 / p50 / p95 = 134 / 154 / 175; mín. 116, máx. 205; treino 154,12, validação 154,21, teste 153,93). Na faixa do
+  alcance, por área de 640 × 640: 7,97 (as de fora, como no piloto) → **153,84** com o enchimento. Nenhuma letra de
+  enchimento deixou de caber (0 puladas).
+- Área coberta (100 cenas refeitas; soma das caixas de tinta das letras na janela / área da janela, média por imagem):
+  **10,54 %** no denso (anotadas: 0,56 %) contra **10,70 %** no base (`realistic`, das anotações); pela soma do lado
+  maior ao quadrado, 12,23 % contra 12,38 %. O "≈ 11,6 %" do brief é a mediana do lado ao quadrado × 8 do base
+  (77² × 8 / 640² = 11,58 %); as duas medidas por imagem dão 10,7 % e 12,4 %.
+- Sanidade (só treino): lados de caixa e de tinta iguais aos do piloto (as mesmas letras); nível médio 99,63 (piloto
+  101,49: mais letras cobrem mais área); quadros em branco 101,51; ruído rebuilt das sementes: média 0,002–0,006
+  níveis, rms 2,069–2,081.
+- Folha de contato `docs/exp_resolucao/img/bench_1mm_dense_examples.png` (mesmo estilo de `bench_1mm_examples.png`):
+  janela cheia de padrões de anéis; as caixas anotadas são 3–18 entre ~150 letras.
+
+### α da camada (prop, r1)
+
+Calibrado (grade estendida 12 passos, 32 hologramas de treino): 0,001059 (precisão do log) → ≈ 1,000 mm. Depois do
+treino: 0,0010366 → **0,9790 mm** (piloto: 0,0010332 → 0,9758 mm).
+
+### Resultados de r1 (`results_exp_resolucao/eval/bench_1mm_dense/<fluxo>_r1.json`; teste lido uma vez)
+
+| fluxo | F1 | rejeição | fechada | conhecidas | limiar | F1 − piloto | rejeição − piloto |
+|---|---|---|---|---|---|---|---|
+| raw | 0,7957 | 0,0797 | 0,9004 | 0,8947 | 0,5747 | −0,1326 | −0,5427 |
+| prop | 0,9595 | 0,8994 | 0,9871 | 0,9499 | 0,9779 | −0,0174 | −0,0958 |
+| rec_z0 | 0,9676 | 0,9517 | 0,9951 | 0,9538 | 0,9829 | −0,0089 | −0,0483 |
+
+prop − raw no denso: F1 +0,1638, rejeição +0,8197.
+
+### Regra de leitura do P2 (C), aplicada mecanicamente (só crops)
+
+R_pil = (0,9283; 0,6224) (`eval/bench_1mm/raw_r1.json`); R_ant = (0,7742; 0,0733) (`eval/realistic/raw_r1.json`,
+a referência sem auxiliares do P2-B, do outro executor). Controle C (raw): (0,7957; 0,0797). Distâncias: F1 0,0215
+a R_ant contra 0,1326 a R_pil; rejeição 0,0064 contra 0,5427. **Mais perto de R_ant nas duas: pela regra, a
+vizinhança explica a melhora.** (`results_exp_resolucao/controls.csv`, `controls_reading.json`.)
