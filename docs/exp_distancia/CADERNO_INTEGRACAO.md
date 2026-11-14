@@ -546,7 +546,7 @@ sendo alterados por outro agente; `expected/` é refeito depois. Não rodei `pap
 Escritor desta seção: agente "geradores". Ambiente: `source scripts/exp_distancia/env.sh`, comandos do paper com
 `env -u HOLO_RESULTS` (leem `results/`), 4 threads, uma GPU (4) só para as figuras.
 
-### Código (commits `fae1cdc`, `5ee85a4`, `5f…` abaixo)
+### Código (commits `fae1cdc`, `5ee85a4`, `821f985`; saídas `09406bf`, `c0dabe0`, `49c3f06`; docs `6be9587`)
 
 - `sim/variants.py`: `frame_2`, `frame_5`, `walk_05` entram em `VARIANTS` logo depois de `session_5` (`STUDY` fica
   vazio); as strings de efeito continuam "distance per frame (%)" / "distance drift per frame (%)" (código e csv).
@@ -581,7 +581,7 @@ bash scripts/exp_distancia/relatorio.sh        # só muda numbers_distancia.tex:
   anteriores de `output/paper`: mudaram `fig_cost`, `fig_enroll`, `fig_flows`, `fig_robustness` (36 linhas, 11
   colunas), `fig_stack` (as que deviam); `fig_variants` em 0,01 % dos pixels (os conjuntos de robustez em disco foram
   re-simulados neste build) e `fig_scores` em menos de 0,01 % (arredondamento); as outras 8 idênticas. Olhei as cinco
-  que mudaram; ajustei os rótulos de `fig_cost` (c) e `fig_stack` (commit `figures`) e redesenhei só essas duas.
+  que mudaram; ajustei os rótulos de `fig_cost` (c) e `fig_stack` (commit `821f985`) e redesenhei só essas duas.
 
 ### `numbers.tex`: antigo (`expected/`) → novo
 
