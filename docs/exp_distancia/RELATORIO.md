@@ -208,12 +208,40 @@ Até 5° nenhum fluxo muda o F1 em mais de 0,001 (caderno, E4). A 15°, `rec_z0`
 
 Os pontos estão nas Seções 1 e 2. Frases para adaptar (todas as macros existem em `numbers_distancia.tex`):
 
-- "With the distance fixed within a session, the cheap search done once per session gives the open-set F1 of a search on every frame (paired difference \DistPairSessionFiveRecAfscMinusRecAf\ with 5\,\% between sessions) at \DistTimeRecAfscFrontGpuBigMs~ms per frame on one GPU, the front end of a reconstruction at $z_0$ (\DistTimeRecZZeroFrontGpuBigMs~ms) and less than the focal stack (\DistTimeBankJitFrontGpuBigMs~ms)."
-- "Against the blind search on every frame, the front end of the focal stack is \DistTimeRecAfFrontRatioGpuBig$\times$ cheaper on one GPU and \DistTimeRecAfFrontRatioCpuBig$\times$ on one CPU core (\DistTimeRecAfTotalRatioGpuBig$\times$ and \DistTimeRecAfTotalRatioCpuBig$\times$ end to end); against a cheap search on every frame, only \DistTimeRecAfcFrontRatioGpuBig$\times$ and \DistTimeRecAfcFrontRatioCpuBig$\times$ (\DistTimeRecAfcTotalRatioGpuBig$\times$ and \DistTimeRecAfcTotalRatioCpuBig$\times$ end to end)."
-- "The fragility of the autofocus under strong shot noise and a narrow beam belonged to the blind search at the full resolution of the sensor: the same Tamura criterion on the amplitude averaged $4\times4$ over $\pm$10\,\% of $z_0$ costs \DistSearchBlindOverAfcGpu$\times$ less, lowers the gross failures from \DistErrFullwellFiveZeroZeroAfGross\,\% to \DistErrFullwellFiveZeroZeroAfcGross\,\% and from \DistErrBeamNarrowAfGross\,\% to \DistErrBeamNarrowAfcGross\,\%, and recovers \DistPairFullwellFiveZeroZeroRecAfcMinusRecAf\ and \DistPairBeamNarrowRecAfcMinusRecAf\ of open-set F1."
-- "With this cheap search done once per mounting, reconstructing is cheaper than the focal stack of five distances once a mounting yields more than \DistNstarBankJitAfcGpu\ frames on one GPU and \DistNstarBankJitAfcCpu\ on one CPU core."
-- "The focal stack keeps a constant cost with no search, and under strong shot noise its F1 is \DistCritFullwellFiveZeroZeroBankJitDiff\ above the best conventional flow; under a narrow beam it loses \DistPairBeamNarrowBankJitMinusRecAfc\ against the cheap search."
-- "A tilted slide is no argument for the stack: at 15$^\circ$ it differs from the cheap search by \DistFramePairTiltFifteenBankJitMinusRecAfc\ (\DistFramePairSignTiltFifteenBankJitMinusRecAfc\ repetitions with that sign)."
+```latex
+With the distance fixed within a session, the cheap search done once per session gives the open-set
+F1 of a search on every frame (paired difference \DistPairSessionFiveRecAfscMinusRecAf\ with 5\,\%
+between sessions) at \DistTimeRecAfscFrontGpuBigMs~ms per frame on one GPU, the front end of a
+reconstruction at $z_0$ (\DistTimeRecZZeroFrontGpuBigMs~ms) and less than the focal stack
+(\DistTimeBankJitFrontGpuBigMs~ms).
+
+Against the blind search on every frame, the front end of the focal stack is
+\DistTimeRecAfFrontRatioGpuBig$\times$ cheaper on one GPU and \DistTimeRecAfFrontRatioCpuBig$\times$
+on one CPU core (\DistTimeRecAfTotalRatioGpuBig$\times$ and \DistTimeRecAfTotalRatioCpuBig$\times$
+end to end); against a cheap search on every frame, only \DistTimeRecAfcFrontRatioGpuBig$\times$ and
+\DistTimeRecAfcFrontRatioCpuBig$\times$ (\DistTimeRecAfcTotalRatioGpuBig$\times$ and
+\DistTimeRecAfcTotalRatioCpuBig$\times$ end to end).
+
+The fragility of the autofocus under strong shot noise and a narrow beam belonged to the blind
+search at the full resolution of the sensor: the same Tamura criterion on the amplitude averaged
+$4\times4$ over $\pm$10\,\% of $z_0$ costs \DistSearchBlindOverAfcGpu$\times$ less, lowers the gross
+failures from \DistErrFullwellFiveZeroZeroAfGross\,\% to \DistErrFullwellFiveZeroZeroAfcGross\,\%
+and from \DistErrBeamNarrowAfGross\,\% to \DistErrBeamNarrowAfcGross\,\%, and recovers
+\DistPairFullwellFiveZeroZeroRecAfcMinusRecAf\ and \DistPairBeamNarrowRecAfcMinusRecAf\ of open-set
+F1.
+
+With this cheap search done once per mounting, reconstructing is cheaper than the focal stack of
+five distances once a mounting yields more than \DistNstarBankJitAfcGpu\ frames on one GPU and
+\DistNstarBankJitAfcCpu\ on one CPU core.
+
+The focal stack keeps a constant cost with no search, and under strong shot noise its F1 is
+\DistCritFullwellFiveZeroZeroBankJitDiff\ above the best conventional flow; under a narrow beam it
+loses \DistPairBeamNarrowBankJitMinusRecAfc\ against the cheap search.
+
+A tilted slide is no argument for the stack: at 15$^\circ$ it differs from the cheap search by
+\DistFramePairTiltFifteenBankJitMinusRecAfc\ (\DistFramePairSignTiltFifteenBankJitMinusRecAfc\
+repetitions with that sign).
+```
 
 Para o critério: `\DistCritMetCountA` (1) e `\DistCritMetCountB` (2) de `\DistCritRows` (24) linhas; vereditos em `\DistCrit<Conjunto><Stack>VerdictA` e `...VerdictB`.
 
