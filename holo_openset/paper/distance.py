@@ -511,6 +511,65 @@ def tab_dist_own():
           comment=['set & F1 rec_afc (borrowed model) & F1 rec_afc+own & difference'])
 
 
+FS_FLOWS, FS_METRICS = ['rec_z0', 'prop', 'bank_jit'], [('open_macro_f1', 'F1'), ('known_acc', 'Known')]
+
+
+def tab_dist_frame_session():
+    """frame_5 against session_5 (scripts/exp_distancia/frame_vs_session.py): the same nominal distribution of the
+    distance, 800 draws per image against 8 per session. The value of session_5 predicted from the response of frame_5
+    for its 8 draws, and where a draw of 8 sessions from N(0, 5 %) falls (Monte Carlo)."""
+    d = load('frame_vs_session_mc')
+    lines, md = [], []
+    if has(d, 'scheme', 'flow', 'metric'):
+        z = d[d.scheme == 'z only'].set_index('metric')
+        for k, name, sc, fmt in [('rms', 'Rms', 100, '{:.1f}'), ('mean_abs', 'MeanAbs', 100, '{:.1f}'),
+                                 ('max_abs', 'MaxAbs', 100, '{:.1f}')]:
+            if k in z.index:
+                macro(f'SessFiveDev{name}', z.session_5[k] * sc, fmt)
+                macro(f'SessFiveDev{name}Mc', z.mc_mean[k] * sc, fmt)
+                macro(f'SessFiveDev{name}Pctile', z.pct_session_5[k], '{:.0f}')   # share of the draws at or below
+        if 'n_beyond_2sigma' in z.index:     # sessions beyond 2 sigma, and the chance of as many among 8 (binomial)
+            n = int(z.session_5['n_beyond_2sigma'])
+            p = math.erfc(2 / math.sqrt(2))
+            macro('SessFiveDevBeyondTwoSigma', n, '{}')
+            macro('SessFiveDevBeyondTwoSigmaMc', z.mc_mean['n_beyond_2sigma'], '{:.2f}')
+            macro('SessFiveDevBeyondTwoSigmaProbPct', 100 * sum(math.comb(8, j) * p ** j * (1 - p) ** (8 - j)
+                                                                for j in range(n, 9)), '{:.1f}')
+        a = d[d.scheme == 'abs']
+        for metric, mname in FS_METRICS:
+            for f in FS_FLOWS:
+                x = a[(a.flow == f) & (a.metric == metric)]
+                if not len(x):
+                    continue
+                x = x.iloc[0]
+                k = f'SessFive{camel(f)}{mname}'
+                for col, suffix in [('base', 'Base'), ('frame_5', 'FrameFive'), ('session_5', 'Measured'),
+                                    ('pred_actual', 'Pred'), ('pred_actual_paired', 'PredPaired'), ('mc_mean', 'McMean'),
+                                    ('mc_p05', 'McPFive'), ('mc_p95', 'McPNinetyFive'),
+                                    ('mc_paired_mean', 'McPairedMean'), ('pct_session_5', 'PctMeasured'),
+                                    ('pct_pred_actual', 'PctPred'), ('pct_session_5_paired', 'PctMeasuredPaired')]:
+                    if col in x:
+                        macro(k + suffix, x[col], '{:.0f}' if col.startswith('pct') else '{:.3f}')
+                cells = [num(x.get('base'), 3), num(x.get('frame_5'), 3), num(x.get('session_5'), 3),
+                         num(x.get('pred_actual'), 3), num(x.get('pred_actual_paired'), 3),
+                         f'{num(x.get("mc_mean"), 3)} ({num(x.get("mc_p05"), 3)}–{num(x.get("mc_p95"), 3)})',
+                         num(x.get('pct_session_5'), 0)]
+                lines.append(f'{tex(mname)} & {tt(f)} & ' + ' & '.join(cells).replace('–', '--') + ' \\\\')
+                md.append([mname if f == FS_FLOWS[0] else '', f] + cells)
+    write('tab_dist_frame_session', lines,
+          ['metric', 'flow', 'base', 'frame_5', 'session_5', 'predicted for its 8 draws',
+           'predicted, paired with base', 'Monte Carlo: mean (5–95 %)', 'percentile of session_5'], md,
+          notes=['frame_5 and session_5 have the same nominal distance distribution (5 %), drawn per image (800 draws) '
+                 'and per session (8). Predicted: 100 images per session of session_5 drawn from the frame_5 images '
+                 'whose |z / z0 - 1| is in the bin of that session (bins 0-1-2-3-4-6-8-10-12 %), metrics of the strict '
+                 'protocol on the pooled queries, 200 draws, mean over r1-r5; paired: the same drawn scenes minus '
+                 'their value in the base set, plus the base value. Monte Carlo: 1000 draws of 8 sessions from '
+                 'N(0, 5 %), each predicted the same way. F1: open-set F1; Known: accepted and correct share of the '
+                 'seen classes. scripts/exp_distancia/frame_vs_session.py; frame_vs_session_mc.csv.'],
+          comment=['metric & flow & base & frame_5 & session_5 & predicted & predicted paired & MC mean (5-95 %) & '
+                   'percentile of session_5'])
+
+
 # ------------------------------------------------------------------------------------------------ cost
 def tab_dist_time():
     """Front end and end to end per flow on the full frame and on the 640 window, one GPU and one CPU core."""
@@ -640,6 +699,12 @@ def tab_dist_breakeven():
             lab = tt(s) if j == 0 else ''
             lines.append(f'{lab} & {name} & ' + ' & '.join(cells_t) + ' \\\\')
             md.append([s if j == 0 else '', name] + cells_m)
+    from holo_openset.reconstruct import FOCUS      # the range the cheap search assumes z0 is known within
+    for name in ['afc', 'afr']:
+        f = FOCUS[name]
+        step = (f.hi - f.lo) / (f.n_coarse - 1)      # the fine pass goes one coarse step beyond the best candidate
+        macro(f'Search{camel(name)}RangePct', 100 * (f.hi - 1), '{:.0f}')
+        macro(f'Search{camel(name)}RangeEffPct', 100 * (f.hi - 1 + step), '{:.1f}')
     tab = out() / 'tables'
     tab.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(raw).to_csv(tab / 'tab_dist_breakeven.csv', index=False)
@@ -1244,7 +1309,7 @@ def write_captions():
 # ------------------------------------------------------------------------------------------------ main
 TABLES = [tab_dist_metrics, tab_dist_paired, tab_dist_focus, tab_dist_focus_val, tab_dist_sessions, tab_dist_time,
           tab_dist_time_measured, tab_dist_breakeven, tab_dist_criterion, tab_dist_frames, tab_dist_frames_paired,
-          tab_dist_frames_focus, tab_dist_own]
+          tab_dist_frames_focus, tab_dist_own, tab_dist_frame_session]
 FIGURES = [fig_dist_breakeven, fig_dist_cost_f1, fig_dist_tilt, fig_dist_sets, fig_dist_sweep]
 
 

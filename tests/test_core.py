@@ -250,7 +250,8 @@ def test_distance_report_runs_with_every_input_missing(tmp_path, monkeypatch, ca
     assert 'FAILED' not in capsys.readouterr().out
     d = tmp_path / 'out' / 'distance'
     for name in ['f1', 'rejection', 'auroc', 'known', 'paired', 'focus', 'focus_val', 'sessions', 'time',
-                 'time_measured', 'breakeven', 'criterion', 'frames', 'frames_paired', 'frames_focus', 'own']:
+                 'time_measured', 'breakeven', 'criterion', 'frames', 'frames_paired', 'frames_focus', 'own',
+                 'frame_session']:
         assert (d / 'tables' / f'tab_dist_{name}.tex').exists() and (d / 'tables' / f'tab_dist_{name}.md').exists()
     num = (d / 'numbers_distancia.tex').read_text()
     assert '\\newcommand{\\DistFoneFrameFiveBankWide}{?}' in num and '\\newcommand{\\DistRejBaseRecZZero}{?}' in num
