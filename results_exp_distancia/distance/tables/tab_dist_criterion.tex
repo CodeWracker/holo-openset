@@ -1,5 +1,5 @@
 % set & stack & best conventional (F1) & stack F1 & stack - best mean (same sign) & F1 within 0.02 & stack front end GPU / CPU & A cheapest GPU & A cheapest CPU & A verdict & B cheapest GPU & B cheapest CPU & B verdict
-% A: conventional flows with F1 >= best - 0.02 (the tolerance given to the stack); B: conventional flows with F1 >= the F1 of the stack
+% A (reported): conventional flows with F1 >= best - 0.02 (the tolerance given to the stack); B (alternative): conventional flows with F1 >= the F1 of the stack
 % timing: GPU e5, CPU e5
 base (bench) & \texttt{bank\_jit} & rec\_afr 0.964 & 0.963 & -0.0015 (2/5) & yes & 3.52 ms / 2.42 s & rec\_z0 2.93 ms & rec\_z0 2.31 s & not cheaper & rec\_z0 2.93 ms & rec\_z0 2.31 s & not cheaper \\
  & \texttt{bank\_wide} & rec\_afr 0.964 & 0.952 & -0.0119 (5/5) & yes & 4.72 ms / 3.14 s & rec\_z0 2.93 ms & rec\_z0 2.31 s & not cheaper & rec\_z0 2.93 ms & rec\_z0 2.31 s & not cheaper \\
