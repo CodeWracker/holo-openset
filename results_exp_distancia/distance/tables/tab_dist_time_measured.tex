@@ -1,0 +1,14 @@
+% flow & read ms & compute ms & embed+decide ms & per frame without the detector ms & total with the detector ms & total over bank_jit & F1 (detected boxes)
+% groups: medians over frames and repetitions; without the detector: median of the sum per frame; dagger: the search ran on one frame per session and is divided by the frames of a session
+% source: e5
+\texttt{rec\_z0} & 17.9 & 3.3 & 3.7 & 25.6 & 204 & 1.08 & 0.975 \\
+\texttt{rec\_af} & 17.8 & 126.5 & 3.9 & 148.3 & 326 & 1.73 & 0.975 \\
+\texttt{rec\_afs}$^\dagger$ & 17.9 & 27.9 & 3.7 & 49.5 & 228 & 1.20 & 0.975 \\
+\texttt{rec\_afsc}$^\dagger$ & 17.8 & 3.6 & 3.6 & 25.1 & 203 & 1.07 & 0.975 \\
+\texttt{rec\_afc} & 17.7 & 5.1 & 3.6 & 26.4 & 205 & 1.08 & 0.975 \\
+\texttt{rec\_afr} & 17.8 & 14.6 & 3.6 & 36.1 & 214 & 1.13 & 0.975 \\
+\texttt{rec\_edfw} & 17.9 & 209.2 & 3.9 & 230.9 & 409 & 2.16 & 0.972 \\
+\texttt{prop} & 2.8 & 1.2 & 3.6 & 7.6 & 186 & 0.98 & 0.973 \\
+\texttt{bank\_jit} & 2.8 & 3.6 & 4.6 & 11.1 & 189 & 1.00 & 0.974 \\
+\texttt{bank\_wide} & 2.8 & 4.9 & 5.0 & 12.6 & 191 & 1.01 & 0.940 \\
+\texttt{bank\_w2} & 2.8 & 6.1 & 5.5 & 14.4 & 192 & 1.02 & 0.944 \\

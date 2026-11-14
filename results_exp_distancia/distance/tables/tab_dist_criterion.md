@@ -1,0 +1,28 @@
+| set | stack | best conventional (F1) | stack F1 | stack − best: mean (same sign) | F1 within 0.02 | stack front end: GPU / CPU | A: cheapest qualified, GPU | A: cheapest qualified, CPU | A: verdict | B: cheapest qualified, GPU | B: cheapest qualified, CPU | B: verdict |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| base (bench) | bank_jit | rec_afr 0.964 | 0.963 | -0.0015 (2/5) | yes | 3.52 ms / 2.42 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper |
+|  | bank_wide | rec_afr 0.964 | 0.952 | -0.0119 (5/5) | yes | 4.72 ms / 3.14 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper |
+|  | bank_w2 | rec_afr 0.964 | 0.952 | -0.0119 (5/5) | yes | 5.93 ms / 4.10 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper |
+| distance between sessions (%): 2 | bank_jit | rec_afc 0.964 | 0.957 | -0.0078 (5/5) | yes | 3.52 ms / 2.42 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper |
+|  | bank_wide | rec_afc 0.964 | 0.952 | -0.0121 (5/5) | yes | 4.72 ms / 3.14 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper |
+|  | bank_w2 | rec_afc 0.964 | 0.953 | -0.0115 (5/5) | yes | 5.93 ms / 4.10 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper | rec_afsc 2.94 ms | rec_afsc 2.32 s | not cheaper |
+| distance between sessions (%): 5 | bank_jit | rec_afsc 0.964 | 0.839 | -0.1255 (5/5) | no | 3.52 ms / 2.42 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails |
+|  | bank_wide | rec_afsc 0.964 | 0.944 | -0.0204 (5/5) | no | 4.72 ms / 3.14 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails |
+|  | bank_w2 | rec_afsc 0.964 | 0.944 | -0.0204 (5/5) | no | 5.93 ms / 4.10 s | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails | rec_afsc 2.94 ms | rec_afsc 2.32 s | F1 fails |
+| distance per frame (%): 2 | bank_jit | rec_afc 0.965 | 0.961 | -0.0042 (5/5) | yes | 3.52 ms / 2.42 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_afc 4.50 ms | rec_afc 3.36 s | met (GPU and CPU) |
+|  | bank_wide | rec_afc 0.965 | 0.952 | -0.0123 (5/5) | yes | 4.72 ms / 3.14 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper |
+|  | bank_w2 | rec_afc 0.965 | 0.953 | -0.0119 (5/5) | yes | 5.93 ms / 4.10 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper |
+| distance per frame (%): 5 | bank_jit | rec_afr 0.964 | 0.924 | -0.0405 (5/5) | no | 3.52 ms / 2.42 s | rec_afc 4.50 ms | rec_afc 3.36 s | F1 fails | rec_afc 4.50 ms | rec_afc 3.36 s | F1 fails |
+|  | bank_wide | rec_afr 0.964 | 0.949 | -0.0154 (5/5) | yes | 4.72 ms / 3.14 s | rec_afc 4.50 ms | rec_afc 3.36 s | cheaper on CPU only | rec_afc 4.50 ms | rec_afc 3.36 s | cheaper on CPU only |
+|  | bank_w2 | rec_afr 0.964 | 0.948 | -0.0161 (5/5) | yes | 5.93 ms / 4.10 s | rec_afc 4.50 ms | rec_afc 3.36 s | not cheaper | rec_afc 4.50 ms | rec_afc 3.36 s | not cheaper |
+| distance drift per frame (%): 0.5 | bank_jit | rec_afc 0.965 | 0.953 | -0.0122 (5/5) | yes | 3.52 ms / 2.42 s | rec_afc 4.50 ms | rec_afc 3.36 s | met (GPU and CPU) | rec_afc 4.50 ms | rec_afc 3.36 s | met (GPU and CPU) |
+|  | bank_wide | rec_afc 0.965 | 0.951 | -0.0137 (5/5) | yes | 4.72 ms / 3.14 s | rec_afc 4.50 ms | rec_afc 3.36 s | cheaper on CPU only | rec_afc 4.50 ms | rec_afc 3.36 s | cheaper on CPU only |
+|  | bank_w2 | rec_afc 0.965 | 0.952 | -0.0131 (5/5) | yes | 5.93 ms / 4.10 s | rec_afc 4.50 ms | rec_afc 3.36 s | not cheaper | rec_afc 4.50 ms | rec_afc 3.36 s | not cheaper |
+| shot noise (full well, e-): 500 | bank_jit | rec_afr 0.950 | 0.963 | +0.0127 (5/5) | yes | 3.52 ms / 2.42 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | none reaches it | none reaches it | none reaches it |
+|  | bank_wide | rec_afr 0.950 | 0.952 | +0.0017 (3/5) | yes | 4.72 ms / 3.14 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | none reaches it | none reaches it | none reaches it |
+|  | bank_w2 | rec_afr 0.950 | 0.952 | +0.0023 (3/5) | yes | 5.93 ms / 4.10 s | rec_z0 2.93 ms | rec_z0 2.31 s | not cheaper | none reaches it | none reaches it | none reaches it |
+| beam waist (half diagonals): 0.9-1.3 | bank_jit | rec_afr 0.959 | 0.878 | -0.0808 (5/5) | no | 3.52 ms / 2.42 s | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails |
+|  | bank_wide | rec_afr 0.959 | 0.871 | -0.0877 (5/5) | no | 4.72 ms / 3.14 s | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails |
+|  | bank_w2 | rec_afr 0.959 | 0.875 | -0.0841 (5/5) | no | 5.93 ms / 4.10 s | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails | rec_z0 2.93 ms | rec_z0 2.31 s | F1 fails |
+
+The criterion of section 3 of the protocol, applied mechanically: the stack has F1 within 0.02 of the best conventional flow (rec_z0, rec_af, rec_afs, rec_afsc, rec_afM, rec_afc, rec_afr; prop is neither) and a front end cheaper than the cheapest conventional flow "that reaches this F1", on the GPU and on the CPU. That phrase reads two ways, both shown: A = conventional flows with F1 >= best - 0.02 (the tolerance given to the stack); B = conventional flows with F1 >= the F1 of the stack. F1: open-set F1 of the test windows, mean over the repetitions; stack − best: paired difference per repetition, mean and the repetitions with the sign of the mean. Cost: front end per FULL FRAME as a sum of measured stage times (GPU minimum, e5; CPU one core, median, e5); flows that reuse a distance amortised over n = 100 frames, as in tab_dist_time. Cheapest: by the front end on that device.

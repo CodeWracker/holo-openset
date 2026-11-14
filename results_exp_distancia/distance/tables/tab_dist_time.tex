@@ -1,0 +1,17 @@
+% SUMS OF MEASURED STAGE TIMES (not end-to-end measurements); total = front end + yolo_tiled + embed + decide
+% composition: rec_z0 = flat_field + backprop + channels; rec_af = flat_field + autofocus + backprop + channels; rec_afs = flat_field + autofocus/n + backprop + channels; rec_afsc = flat_field + autofocus_afc/n + backprop + channels; rec_afM = flat_field + autofocus/10 + backprop + channels; rec_afc = flat_field + autofocus_afc + backprop + channels; rec_afr = flat_field + autofocus_afr + backprop + channels; rec_edfw = flat_field + autofocus + per_object_wide + channels; prop = layer_prop; bank_jit = layer_bank_jit; bank_wide = layer_bank_wide; bank_w2 = layer_bank_w2
+% amortised rows (dagger): rec_afs (search / n), rec_afM (search / 10), rec_afsc (search / n); n = 100
+% columns: flow & GPU front ms & GPU total ms & CPU front s & CPU total s (full frame) & GPU front ms & GPU total ms & CPU front ms & CPU total ms (640 window) & front/total over bank_jit, GPU & CPU (full frame)
+% timing: GPU e5, CPU e5
+\texttt{rec\_z0} & 2.9 & 172 & 2.3 & 24.4 & 0.59 & 10.2 & 25.6 & 407 & 0.83 / 1.00 & 0.96 / 1.00 \\
+\texttt{rec\_af} & 126 & 295 & 119 & 141 & 5.4 & 15.0 & 3608 & 3990 & 35.71 / 1.71 & 49.10 / 5.75 \\
+\texttt{rec\_afs}$^\dagger$ & 4.2 & 173 & 3.5 & 25.5 & 0.64 & 10.3 & 61.4 & 443 & 1.18 / 1.00 & 1.44 / 1.04 \\
+\texttt{rec\_afsc}$^\dagger$ & 2.9 & 172 & 2.3 & 24.4 & 0.60 & 10.2 & 25.7 & 407 & 0.83 / 1.00 & 0.96 / 1.00 \\
+\texttt{rec\_afM}$^\dagger$ & 15.2 & 184 & 14.0 & 36.0 & 1.1 & 10.7 & 384 & 765 & 4.32 / 1.07 & 5.77 / 1.47 \\
+\texttt{rec\_afc} & 4.5 & 174 & 3.4 & 25.4 & 1.1 & 10.8 & 38.7 & 420 & 1.28 / 1.01 & 1.39 / 1.04 \\
+\texttt{rec\_afr} & 14.1 & 183 & 11.8 & 33.9 & 1.4 & 11.0 & 174 & 555 & 4.00 / 1.06 & 4.88 / 1.38 \\
+\texttt{rec\_edfw} & 210 & 379 & 166 & 188 & 7.8 & 17.4 & 5074 & 5455 & 59.47 / 2.19 & 68.67 / 7.69 \\
+\texttt{prop} & 1.1 & 170 & 0.78 & 22.8 & 0.13 & 9.8 & 4.2 & 385 & 0.31 / 0.99 & 0.32 / 0.93 \\
+\texttt{bank\_jit} & 3.5 & 173 & 2.4 & 24.5 & 0.19 & 9.8 & 25.2 & 406 & 1.00 / 1.00 & 1.00 / 1.00 \\
+\texttt{bank\_wide} & 4.7 & 174 & 3.1 & 25.2 & 0.23 & 9.9 & 46.5 & 428 & 1.34 / 1.01 & 1.30 / 1.03 \\
+\texttt{bank\_w2} & 5.9 & 175 & 4.1 & 26.2 & 0.28 & 9.9 & 62.9 & 444 & 1.68 / 1.01 & 1.69 / 1.07 \\
