@@ -1362,3 +1362,96 @@ para `rec_z0` e 0,917 para o stack de 5, perto de `frame_5` (0,865 e 0,924), con
 paper exagera o dano em cerca de 0,10 de F1 para `rec_z0` e `prop` e 0,08 para o stack, perto do dobro da queda
 esperada (0,21 contra 0,11 em `rec_z0`; 0,12 contra 0,05 no stack). E mostra que uma linha de 8 sessões é instável:
 o intervalo de 5–95 % do F1 de `rec_z0` vai de 0,75 a 0,94. `frame_5` (800 sorteios) é a estimativa estável.
+
+## 2026-11-14 — A3: n\*, o denominador e quando a medição não resolve o cruzamento
+
+Nenhum run: só o gerador (`holo_openset/paper/distance.py`, commit `3ada8fe`), sobre `e5/timing_{gpu,cpu}.csv` e,
+para comparar, `e5_a1/timing_gpu.csv`.
+
+**Regra** (fixada antes de olhar a tabela nova, com o exemplo da revisão): n\* = T_busca / D, D = T_camada − T_conv
+(completa: T_conv = flat field + back-propagation + canais; simplificada: só a back-propagation). Movo T_camada e T_conv
+em ±3 % em sentidos opostos (o pior caso). O cruzamento **não é resolvido pela medição** se o sinal de D muda dentro
+dessa caixa (a tabela imprime "≈ same cost": o stack custa o mesmo que uma reconstrução) ou se n\* muda mais que um
+fator 2 (a tabela imprime a faixa). Vale para GPU e CPU. T_busca só escala n\* (±3 % nele dão ±3 % em n\*) e fica fora
+da regra. Os valores crus ficam em `tab_dist_breakeven.csv` (com ±1 % também) e nas macros `\DistNstarRaw...`;
+`\DistNstar...` passa a ser a célula impressa; macros novas `\DistNstarDen...`, `\DistNstarDenShare...`,
+`\DistNstarResolved...`, `\DistNstarThreeLo/Hi...`. Na Figura 1 o círculo de um cruzamento não resolvido fica cinza,
+com rótulo "≈" ou a faixa.
+
+```bash
+bash scripts/exp_distancia/relatorio.sh     # 1827 macros
+```
+
+Denominador da conta completa (não depende da busca):
+
+| stack | GPU D (ms) | % da camada | CPU D (s) | % da camada |
+|---|---|---|---|---|
+| bank_jit | 3,523 − 2,925 = 0,598 | 17 % | 2,419 − 2,313 = 0,106 | 4 % |
+| bank_wide | 4,720 − 2,925 = 1,795 | 38 % | 3,137 − 2,313 = 0,824 | 26 % |
+| bank_w2 | 5,931 − 2,925 = 3,006 | 51 % | 4,097 − 2,313 = 1,784 | 44 % |
+
+Na simplificada D fica entre 58 % e 84 % da camada, e nenhuma célula muda.
+
+**Células que a regra afeta: só as três de `bank_jit` em CPU, conta completa** (busca cega 1099, `afc` 9,9, `afr` 90
+crus): com ±3 % o D vai de +0,25 a −0,04 s, o sinal muda, e a tabela imprime "≈ same cost". Com ±1 % D fica positivo,
+mas n\* da `afc` já vai de 6,8 a 17,8 (fator 2,6). Em GPU, `bank_jit` com a conta completa fica **no limite**: com ±3 %,
+n\* da `afc` vai de 2,0 a 3,9 e o da cega de 155 a 304 (fator 1,96, abaixo de 2 por pouco), então a regra o dá como
+resolvido. As duas tentativas de GPU dão 2,75 e 2,64 (`afc`) e 212 e 205 (cega): 4 % e 3 % de diferença, dentro da faixa que ±3 % dá.
+Todas as outras células variam no máximo 1,5× com ±3 % (`bank_wide`, cega, CPU: 118–176).
+
+**Um achado sobre a conta de estágios (já reportada).** No run medido de quadros inteiros (`e5/full_frames_time.csv`),
+os fluxos de reconstrução pagam um estágio `layer` de 0,359 ms (mediana; mínimo 0,354) em GPU: a conversão da
+entrada de 3 canais uint8 para float e a centralização (`HoloEmbedder.filtered`, camada de Fourier identidade). A soma
+de estágios da Tabela 3 não cobra isso dos fluxos convencionais (`timing.py` não tem esse estágio), enquanto o
+`layer_bank_jit` do stack inclui a mesma conversão para o seu único canal. Se fosse cobrado, o D de `bank_jit` em GPU
+cairia de 0,60 para 0,24 ms, n\* da `afc` iria de 2,6 para 6,6 e o da cega de 205 para 515, e a regra daria "não
+resolvido" também em GPU (D entre 0,03 e 0,44 ms com ±3 %). Em CPU esse estágio não foi medido; ele só pode baixar ainda
+mais o D de 0,106 s. Não mudei a Tabela 3 (o estágio só existe no run medido, em mediana e só em GPU; a regra 10.4
+não deixa misturar). Vai para o relatório como mais um detalhe de implementação do mesmo tipo dos canais: reforça
+que o stack de 5 custa o mesmo que uma reconstrução.
+
+Conclusão para o relatório: o stack de 5 custa o mesmo que uma reconstrução em z₀ (D é 4 % da camada em CPU e 17 %
+em GPU, e um estágio não cobrado de 0,36 ms comeria 60 % do D em GPU); não há ponto de cruzamento preciso para ele. Os
+stacks largos custam mais que uma reconstrução, com D de 26–51 % da camada, e os n\* deles são resolvidos.
+
+Uma segunda assimetria, no sentido oposto, vista no mesmo run: o `embed` do `timing.py` é medido com o modelo de
+`rec_z0` (entrada de 3 canais) e entra igual para todos os fluxos na soma de estágios; no run medido o embedding do
+stack, com 15 canais na entrada, custa 3,58 ms (`bank_jit`), 3,96 (`bank_wide`) e 4,42 (`bank_w2`) contra 2,53–2,61 ms
+dos fluxos de reconstrução. Isso favorece o stack em cerca de 1,0–1,9 ms no fim a fim da Tabela 3 (de cerca de 173 ms) e
+não entra no front end nem em n\*.
+
+## 2026-11-14 — A4: os canais e a leitura do blank frame como detalhe de implementação
+
+Só contas sobre `e5/timing_{gpu,cpu}.csv` (quadro inteiro; GPU mínimo, CPU um core mediana) e
+`e5/full_frames_time.csv` (medianas por estágio). Nenhum run.
+
+| | GPU (ms) | CPU (s) |
+|---|---|---|
+| `channels` | 1,777 | 1,192 |
+| `rec_afc` (flat field + busca barata + back-propagation + canais) | 4,502 | 3,357 |
+| `rec_afc` sem os canais | 2,725 | 2,165 |
+| `rec_z0` / sem os canais | 2,925 / 1,148 | 2,313 / 1,121 |
+| stack de 5 (`layer_bank_jit`) | 3,523 | 2,419 |
+| `rec_afc` / stack de 5: com os canais, sem eles | 1,28 / 0,77 | 1,39 / 0,90 |
+
+Sem o estágio `channels` (escala por percentil com `torch.quantile`, três canais) o `rec_afc` ficaria abaixo do stack
+de 5 nos dois dispositivos. Ressalvas: uma escala fixa calibrada uma vez ainda custa uma passada elemento a elemento
+(multiplicar, arredondar, limitar), que não foi medida; o percentil faz parte da entrada com que a rede foi treinada, e
+uma escala fixa **não foi testada em F1**; e o estágio não cobrado de 0,36 ms (A3) iria no sentido contrário. Nada
+disso é argumento para o paper.
+
+Leitura do blank frame (run medido, só GPU, Tabela 7): o grupo "read" dos fluxos de reconstrução é 17,7–17,9 ms
+(`normalise`: ler quadro e blank frame em float32 e calcular √(I/B)) contra 2,8 ms (`load`) dos de camada; o flat
+field em si custa 0,18 ms. Com o blank frame na memória, `rec_afc` ficaria em cerca de 26,4 − 14,9 = 11,5 ms sem o
+detector, contra 11,1 do stack de 5 (o run medido dá 1,08× com detector; sem a leitura, cerca de 1,00×). Também não é
+argumento para o paper.
+
+## 2026-11-14 — A6: leitura A do critério como principal
+
+Gerador (commit `66ec0bd`): o veredito das macros sem sufixo (`\DistCrit<Conjunto><Stack>Verdict`,
+`...Cheapest{Gpu,Cpu}`, `...Cost`) e a contagem `\DistCritMetCount` são os da leitura A (`PRIMARY = 'A'`); as macros
+`...VerdictA/B`, `\DistCritMetCountA/B` continuam; a coluna da A é "verdict (reading A)" e a da B "B (alternative):
+verdict". Teste novo `test_distance_report_gives_reading_a_and_keeps_reading_b` (caso inventado em que A e B divergem,
+passando pelos csv: sem sufixo = A = "not cheaper", B = "met"); o teste antigo das duas leituras ficou como estava.
+Resultado nos dados: o mesmo de antes, `\DistCritMetCount` = 1 de 24 (`bank_jit` em `walk_05`); na B, 2. A escolha não
+muda a conclusão.
