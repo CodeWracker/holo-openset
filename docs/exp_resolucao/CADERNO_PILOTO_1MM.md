@@ -778,3 +778,44 @@ R_ant (referência do B, raw) = (0,7742; 0,0733).
 (17:47:30, conteúdo idêntico: o git não o vê modificado). Esse arquivo é reescrito por qualquer `paper tables` com
 `HOLO_RESULTS` desligado, isto é, por `pytest` ou `reproduce check` (`tables.data_numbers`); às 17:47 eu não rodei
 nenhum dos dois (o outro executor ou o responsável sim, presumo).
+
+## 2026-11-14, 18:57 — P2-D: treino com 50 µm de profundidade (execução)
+
+Commits `b43b815` (script `scripts/exp_resolucao/depth_training.sh` e tabela `depth_training.py`), `8cbe98b`
+(resultados). Passos: `bash scripts/exp_resolucao/depth_training.sh 5 <passo>`, tmux `res_pilot_depth_*`, logs
+`logs/exp_resolucao/depth_<passo>.log`.
+
+- **Desvio / erro meu, parado a tempo:** a primeira tentativa usou `simulate like --like bench_1mm --name
+  bench_1mm_depth50` sem `--split`, mas o `--split` do `simulate` tem padrão `test`: começou a gravar só as 800
+  imagens de teste. Parei em 30 s (só os quadros em branco tinham sido escritos), apaguei `data/bench_1mm_depth50` e
+  gravei chamando `generate(like=bench_1mm, split=None, phys=dict(depth_std=50e-6, depth_max=150e-6))` direto (não
+  mexi em `cli.py`, que é do outro executor agora). Nada foi lido nem avaliado nesse meio-tempo.
+- `record`: 18:20:37–18:46:05, 1528 s (GPU 5 dividida com a gravação do `bench_1mm_dense`); 8,7 GB com o
+  `rec_z0.npy`. Conferido: 40 309 anotações iguais às do `bench_1mm` em todas as colunas a menos de `depth` e `z`;
+  profundidades na razão exata 50/2,6 (desvio 49,97 µm); z − profundidade (a distância da sessão) igual;
+  `metadata.csv` idêntico; o split de teste igual **pixel a pixel** ao `bench_1mm_robust/depth50` nas 800 imagens
+  (também nas 13 escolhidas antes); a imagem 0 difere da do `bench_1mm`.
+- `reconstruct` 74 s; `train` 318 s (prop: α calibrado 0,0010440 → 0,98601 mm; depois do treino 0,0010521 →
+  0,99369 mm, +0,78 %); `evaluate` 50 s; `cross` 25 s: `experiment robustness --set bench_1mm_depth50
+  --variants-root . --variants bench_1mm --flows raw prop rec_z0 --rep 1 --out robustness_bench_1mm_depth50` (modelos
+  de 50 µm, galeria e limiar da validação do próprio conjunto, padrões de teste do `bench_1mm`; as anotações conferem).
+
+`results_exp_resolucao/depth_training.csv` (r1, teste; a linha treinado 2,6 / testado 50 copiada de
+`robustness_bench_1mm.csv`, sem recalcular):
+
+| treinado / testado | F1 raw / prop / rec_z0 | rejeição raw / prop / rec_z0 |
+|---|---|---|
+| 2,6 µm / 2,6 µm | 0,9283 / 0,9770 / 0,9765 | 0,6224 / 0,9952 / 1,0000 |
+| 2,6 µm / 50 µm | 0,9288 / 0,7732 / 0,8014 | 0,6296 / 0,9968 / 1,0000 |
+| 50 µm / 50 µm | 0,9239 / 0,9767 / 0,9751 | 0,6047 / 0,9976 / 0,9944 |
+| 50 µm / 2,6 µm | 0,9233 / 0,9836 / 0,9762 | 0,5950 / 0,9968 / 1,0000 |
+
+### Conferências finais (P2)
+
+- `env -u HOLO_RESULTS -u HOLO_MODELS python -m pytest -q`: 64 passam (os 56 de antes e os 8 do outro executor);
+  `env -u HOLO_RESULTS -u HOLO_MODELS python -m holo_openset reproduce check`: 13/13.
+- `data/realistic`, `models/`, `results/`, `expected/`: listagem com data e tamanho de cada arquivo igual à de
+  17:44, salvo a data de `results/data_summary.json` (reescrito com o mesmo conteúdo por `paper tables`, isto é, por
+  `pytest`/`reproduce check`; o git não vê mudança).
+- Disco desta etapa: `data/bench_1mm_depth50` 8,7 GB; modelos `models_exp_resolucao/bench_1mm` 669 MB (15),
+  `bench_1mm_depth50` 134 MB, `realistic` 134 MB.
