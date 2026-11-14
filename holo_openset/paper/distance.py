@@ -135,6 +135,47 @@ def break_even(t, stack, search, simple=False):
     return math.inf if den <= 0 else t[search] / den
 
 
+# n* is a ratio over a DIFFERENCE of two times (the layer and what a reconstruction costs besides the search): when the
+# two are close, a small error in either moves n* a lot. Rule (fixed before the table was looked at, on the review of
+# 2026-11-14): a crossover is "not resolved by the measurement" when moving the two times by +-NSTAR_TOL in opposite
+# directions flips the sign of the denominator (then the stack costs the same as one reconstruction) or changes n* by
+# more than a factor NSTAR_FACTOR (then n* is printed as a range).
+NSTAR_TOL, NSTAR_FACTOR = 0.03, 2.0
+
+
+def break_even_detail(t, stack, search, simple=False, tol=NSTAR_TOL):
+    """n* with its denominator D = T_layer - T_conv and its sensitivity: dict(search, layer, conv, den, share = D /
+    T_layer, nstar, lo, hi = n* with the two times moved by +-tol in opposite directions (lo: D largest), flip = the sign
+    of D changes inside that box, resolved); None if not measured."""
+    conv_st = ['backprop'] if simple else CONVENTIONAL
+    need = [search, LAYER[stack]] + conv_st
+    if any(t.get(s) is None or not np.isfinite(t[s]) for s in need):
+        return None
+    lay, conv, ts = t[LAYER[stack]], sum(t[s] for s in conv_st), t[search]
+    den = lay - conv
+
+    def ns(d):
+        return math.inf if d <= 0 else ts / d
+    d_hi, d_lo = lay * (1 + tol) - conv * (1 - tol), lay * (1 - tol) - conv * (1 + tol)
+    lo, hi = ns(d_hi), ns(d_lo)
+    flip = (d_hi > 0) != (d_lo > 0)
+    wide = not flip and den > 0 and hi / lo > NSTAR_FACTOR
+    return dict(search=ts, layer=lay, conv=conv, den=den, share=den / lay, nstar=ns(den), lo=lo, hi=hi, flip=flip,
+                resolved=not (flip or wide))
+
+
+def nstar_shown(d, latex=True):
+    """The cell of a table for break_even_detail d: n*, a range, or 'about the same cost'."""
+    if d is None:
+        return '--'
+    if d['flip']:
+        return '$\\approx$ same cost' if latex else '≈ same cost'
+    if not d['resolved']:
+        return f'{nstar_text(d["lo"])}--{nstar_text(d["hi"])}' if latex else \
+            f'{nstar_text(d["lo"], False)}–{nstar_text(d["hi"], False)}'
+    return nstar_text(d['nstar'], latex)
+
+
 # ------------------------------------------------------------------------------------------------ helpers
 def out():
     return paths.PAPER / 'distance'
@@ -524,11 +565,25 @@ def tab_dist_time():
                    '(full frame)', f'timing: GPU {g}, CPU {c}'])
 
 
+def load_timing_replica():
+    """{(height, width): {stage: s}} of the other GPU attempt of the timing session (HOLO_DIST_TIMING_REPLICA, default
+    'e5_a1'; min_s): only to show how far n* moves between two measurements, never mixed into a table of times."""
+    r = os.environ.get('HOLO_DIST_TIMING_REPLICA', 'e5_a1')
+    df = load('timing_gpu', Path(r) if Path(r).is_absolute() else paths.RESULTS / r)
+    if not has(df, 'height', 'width', 'stage', 'min_s'):
+        return {}, r
+    return {(int(h), int(w)): dict(zip(x.stage, x.min_s.astype(float))) for (h, w), x in
+            df.groupby(['height', 'width'])}, r
+
+
 def tab_dist_breakeven():
-    """n* for every stack and search, full frame, GPU and CPU; and per frame (n = 1) the front end of the search on
-    every image over the front end of the stack."""
+    """n* for every stack and search, full frame, GPU and CPU, with its denominator and its sensitivity (the rule of
+    NSTAR_TOL / NSTAR_FACTOR decides what is printed); and per frame (n = 1) the front end of the search on every image
+    over the front end of the stack. The raw values go to tab_dist_breakeven.csv."""
     T = load_timing()
-    lines, md = [], []
+    rep, rep_name = load_timing_replica()
+    rep = rep.get(FULL, {})
+    lines, md, raw = [], [], []
     for i, s in enumerate(STACKS):
         if i:
             lines.append('\\midrule')
@@ -537,41 +592,86 @@ def tab_dist_breakeven():
             for dev in ['gpu', 'cpu']:
                 t = T[dev].get(FULL, {})
                 ta = t.get(stage)
-                full, simple = break_even(t, s, stage), break_even(t, s, stage, simple=True)
+                scale = 1e3 if dev == 'gpu' else 1
+                full, simple = break_even_detail(t, s, stage), break_even_detail(t, s, stage, simple=True)
                 fe, fs = front_end(every, t), front_end(s, t)
                 ratio = fe / fs if ok(fe) and ok(fs) and fs > 0 else None
-                row.append((ta * (1e3 if dev == 'gpu' else 1) if ok(ta) else None, full, simple, ratio))
+                row.append((ta * scale if ok(ta) else None, full, simple, ratio))
                 tag = camel(dev)
-                macro(f'Nstar{camel(s)}{camel(name)}{tag}', full, '{:.1f}' if ok(full) and full < 10 else '{:.0f}')
-                macro(f'NstarSimple{camel(s)}{camel(name)}{tag}', simple,
-                      '{:.1f}' if ok(simple) and simple < 10 else '{:.0f}')
+                for acc, d in [('', full), ('Simple', simple)]:
+                    k = f'Nstar{acc}{camel(s)}{camel(name)}{tag}'
+                    v = d['nstar'] if d else None
+                    macro(k, nstar_shown(d) if d else None)
+                    macro(k.replace('Nstar', 'NstarRaw', 1), v, '{:.1f}' if ok(v) and v < 10 else '{:.0f}')
+                    macro(k.replace('Nstar', 'NstarResolved', 1), ('yes' if d['resolved'] else 'no') if d else None)
+                    for side in ['lo', 'hi']:
+                        w = d[side] if d else None
+                        macro(k.replace('Nstar', f'NstarThree{camel(side)}', 1), w,
+                              '{:.1f}' if ok(w) and w < 10 else '{:.0f}')
+                    if j == 0:   # the denominator does not depend on the search
+                        macro(f'NstarDen{acc}{camel(s)}{tag}', d['den'] * scale if d else None,
+                              '{:.2f}' if dev == 'gpu' else '{:.3f}')
+                        macro(f'NstarDenShare{acc}{camel(s)}{tag}', 100 * d['share'] if d else None, '{:.0f}')
+                    if d is None:
+                        continue
+                    one = break_even_detail(t, s, stage, simple=bool(acc), tol=0.01)
+                    other = break_even_detail(rep, s, stage, simple=bool(acc)) if dev == 'gpu' else None
+                    raw.append(dict(stack=s, search=name, device=dev, accounting='simple' if acc else 'complete',
+                                    search_s=d['search'], layer_s=d['layer'], conv_s=d['conv'], den_s=d['den'],
+                                    den_share=d['share'], nstar=d['nstar'], lo_1pct=one['lo'], hi_1pct=one['hi'],
+                                    lo_3pct=d['lo'], hi_3pct=d['hi'], flip_3pct=d['flip'], resolved=d['resolved'],
+                                    shown=nstar_shown(d, False),
+                                    nstar_replica=other['nstar'] if other else np.nan,
+                                    den_replica_s=other['den'] if other else np.nan))
                 macro(f'PerFrame{camel(every)}Over{camel(s)}{tag}', ratio, '{:.1f}')
             cells_t = [c for ta, full, simple, ratio in row for c in
-                       (adaptive(ta), nstar_text(full), nstar_text(simple), num(ratio, 1))]
-            cells_m = [c for ta, full, simple, ratio in row for c in
-                       (adaptive(ta), nstar_text(full, False), nstar_text(simple, False), num(ratio, 1))]
+                       (adaptive(ta), nstar_shown(full), nstar_shown(simple), num(ratio, 1))]
+            cells_m = []
+            for dev, (ta, full, simple, ratio) in zip(['gpu', 'cpu'], row):
+                sc, k = (1e3, 2) if dev == 'gpu' else (1, 3)
+                den = f'{full["den"] * sc:.{k}f} ({100 * full["share"]:.0f} %)' if full else '--'
+                rng = (f'{nstar_text(full["lo"], False)}–{nstar_text(full["hi"], False)}' if full else '--')
+                cells_m += [adaptive(ta), den, nstar_shown(full, False), nstar_text(full['nstar'] if full else None,
+                                                                                      False), rng]
+                if dev == 'gpu':
+                    other = break_even_detail(rep, s, stage)
+                    cells_m.append(nstar_text(other['nstar'], False) if other else '--')
+                cells_m += [nstar_shown(simple, False), num(ratio, 1)]
             lab = tt(s) if j == 0 else ''
             lines.append(f'{lab} & {name} & ' + ' & '.join(cells_t) + ' \\\\')
             md.append([s if j == 0 else '', name] + cells_m)
+    tab = out() / 'tables'
+    tab.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame(raw).to_csv(tab / 'tab_dist_breakeven.csv', index=False)
+    macro('NstarTolPct', 100 * NSTAR_TOL, '{:.0f}')
+    macro('NstarFactor', NSTAR_FACTOR, '{:.0f}')
     for dev in ['gpu', 'cpu']:          # how many times cheaper the frozen searches are than the blind one, full frame
         t = T[dev].get(FULL, {})
         for name, stage, _, _ in SEARCHES[1:]:
             r = t['autofocus'] / t[stage] if ok(t.get('autofocus')) and ok(t.get(stage)) and t[stage] > 0 else None
             macro(f'SearchBlindOver{camel(name)}{camel(dev)}', r, '{:.0f}')
     g, c = map(rel, timing_dirs())
+    tol, fac = f'{100 * NSTAR_TOL:.0f} %', f'{NSTAR_FACTOR:g}'
+    rule = (f'Rule: a crossover is not resolved by the measurement when moving T_layer and T_conv by ±{tol} in '
+            f'opposite directions flips the sign of D (printed "≈ same cost": the stack costs the same as one '
+            f'reconstruction) or changes n* by more than a factor {fac} (printed as the range n* takes inside ±{tol}).')
     write('tab_dist_breakeven', lines,
-          ['stack', 'search', 'GPU search (ms)', 'GPU n*', 'GPU n* simple', 'GPU per frame (x)', 'CPU search (s)',
-           'CPU n*', 'CPU n* simple', 'CPU per frame (x)'], md,
+          ['stack', 'search', 'GPU search (ms)', 'GPU D (ms; % of the layer)', 'GPU n*', 'GPU n* raw',
+           f'GPU n* ±{tol}', f'GPU n* raw, {rep_name}', 'GPU n* simple', 'GPU per frame (x)', 'CPU search (s)',
+           'CPU D (s; % of the layer)', 'CPU n*', 'CPU n* raw', f'CPU n* ±{tol}', 'CPU n* simple',
+           'CPU per frame (x)'], md,
           notes=['Full frame. n*: frames per mounting above which searching the distance once per mounting is cheaper '
-                 'than the focal stack. Complete accounting (the main figure): n* = T_search / (T_layer − (T_flat_field '
-                 '+ T_backprop + T_channels)); simple (protocol, Q2): n* = T_search / (T_layer − T_backprop); "never": '
-                 'the stack is cheaper at every n. Per frame: the front end of the search on every image (rec_af, '
-                 'rec_afc, rec_afr) over the front end of the stack, n = 1. Sums of measured stage times; timing from '
-                 f'{g} (GPU, minimum) and {c} (CPU, one core, median).'],
+                 'than the focal stack. Complete accounting (the main figure): n* = T_search / D, D = T_layer − T_conv, '
+                 'T_conv = T_flat_field + T_backprop + T_channels; simple (protocol, Q2): T_conv = T_backprop; "never": '
+                 'the stack is cheaper at every n. ' + rule + ' Raw: n* as computed, kept for the record; '
+                 f'{rep_name}: the other GPU attempt of the timing session (min_s), the same stages measured again '
+                 '(not mixed into any time). All values, with ±1 % too: tab_dist_breakeven.csv. Per frame: the front '
+                 'end of the search on every image (rec_af, rec_afc, rec_afr) over the front end of the stack, n = 1. '
+                 f'Sums of measured stage times; timing from {g} (GPU, minimum) and {c} (CPU, one core, median).'],
           comment=['stack & search & GPU search ms & GPU n* & GPU n* simple & GPU per-frame ratio & CPU search s & '
                    'CPU n* & CPU n* simple & CPU per-frame ratio', 'n* = T_search / (T_layer - (T_flat_field + '
                    'T_backprop + T_channels)); simple: T_search / (T_layer - T_backprop); $\\infty$: never',
-                   f'timing: GPU {g}, CPU {c}'])
+                   rule.replace('±', '+-').replace('≈', '~'), f'timing: GPU {g}, CPU {c}'])
 
 
 READINGS = {'A': 'conventional flows with F1 >= best - 0.02 (the tolerance given to the stack)',
@@ -868,7 +968,10 @@ CAPTIONS = {
         'lines: the three learned focal stacks (5, 7 and 9 distances), which cost the same whatever n, and two '
         'conventional references, the reconstruction at the nominal distance and the cheap search on every frame; '
         'each is named on the right, joined to its line by a thin connector. Where a curve crosses a stack line (open circles, with the value of n*), focusing once per mounting becomes '
-        'cheaper than the stack: below n* the stack is cheaper, above it the conventional flow is. (a) One GPU '
+        'cheaper than the stack: below n* the stack is cheaper, above it the conventional flow is. A grey circle '
+        'marks a crossover the measurement does not resolve (moving the two times that n* subtracts by 3 % in '
+        'opposite directions flips the sign of their difference, label "≈": the stack costs the same as one '
+        'reconstruction, or changes n* by more than a factor 2, label: the range). (a) One GPU '
         '(minimum time over the repetitions). (b) One CPU core (median). All times are sums of measured stage times.'),
     'fig_dist_cost_f1': (
         'Cost against accuracy on full frames of the sensor. Each point is a flow; up and to the left is better. Time '
@@ -960,9 +1063,11 @@ def fig_dist_breakeven():
                 ns = break_even(t, s, stage)
                 if ok(ns) and 1 <= ns <= 100:
                     y = front_end(s, t) * scale
-                    ax.plot(ns, y, 'o', mfc='white', mec=COLORS[f], ms=4, mew=1, zorder=5)
-                    ax.annotate(f'{ns:.0f}' if ns >= 10 else f'{ns:.1f}', (ns, y), xytext=(2, 4),
-                                textcoords='offset points', fontsize=5.5, color=INK)
+                    d = break_even_detail(t, s, stage)
+                    ax.plot(ns, y, 'o', mfc='white', mec=COLORS[f] if d['resolved'] else MUTED, ms=4, mew=1, zorder=5)
+                    lab = (f'{ns:.0f}' if ns >= 10 else f'{ns:.1f}') if d['resolved'] else \
+                        '≈' if d['flip'] else nstar_shown(d, False)
+                    ax.annotate(lab, (ns, y), xytext=(2, 4), textcoords='offset points', fontsize=5.5, color=INK)
             drawn = True
         labels = []
         for f in STACKS + ['rec_z0', 'rec_afc']:

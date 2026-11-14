@@ -274,3 +274,21 @@ def test_distance_criterion_reads_the_phrase_two_ways():
     cpu_only = D.criterion(f1, 'bank_jit', dict(gpu, bank_jit=6.0), cpu)
     assert cpu_only['B']['verdict'] == 'cheaper on CPU only'
     assert D.criterion(dict(rec_af=0.97), 'bank_jit', gpu, cpu) is None   # the stack has no F1
+
+
+def test_distance_break_even_says_when_the_measurement_does_not_resolve_it():
+    import math
+    from holo_openset.paper import distance as D
+    t = dict(flat_field=1.0, backprop=2.0, channels=3.0, autofocus=120.0, layer_bank_jit=5.0, layer_bank_wide=8.0,
+             layer_bank_w2=7.0)
+    never = D.break_even_detail(t, 'bank_jit', 'autofocus')            # D = -1 at every +-3 %: never, resolved
+    assert never['nstar'] == math.inf and never['resolved'] and D.nstar_shown(never) == '$\\infty$'
+    clear = D.break_even_detail(t, 'bank_wide', 'autofocus')           # D = 2, 1.58-2.42 at +-3 %: 60, resolved
+    assert clear['nstar'] == 60.0 and clear['resolved'] and D.nstar_shown(clear) == '60'
+    assert abs(clear['den'] - 2.0) < 1e-12 and abs(clear['share'] - 0.25) < 1e-12
+    wide = D.break_even_detail(t, 'bank_w2', 'autofocus')              # D = 1, 0.61-1.39: more than a factor 2
+    assert not wide['resolved'] and not wide['flip'] and D.nstar_shown(wide, False) == '86–197'
+    flip = D.break_even_detail(dict(t, layer_bank_w2=6.1), 'bank_w2', 'autofocus')   # D = 0.1, its sign flips
+    assert flip['flip'] and not flip['resolved'] and D.nstar_shown(flip) == '$\\approx$ same cost'
+    assert D.break_even_detail(dict(t, layer_bank_w2=6.1), 'bank_w2', 'autofocus', tol=0.001)['resolved']
+    assert D.break_even_detail(t, 'bank_w2', 'autofocus_afc') is None  # not measured
