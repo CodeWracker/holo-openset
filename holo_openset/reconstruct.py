@@ -349,15 +349,33 @@ def distances(src, focus, dev, ids=None, log=None):
 def build_caches(root, methods, dev, aux=None, log=print):
     """Write <root>/rec_<method>.npy (or <root>/aux/<aux>_rec_<method>.npy), uint8 [N, 3, h, w], and the autofocus
     log (autofocus.csv / aux/<aux>_autofocus.csv). The per-object method uses the annotated boxes.
-    The methods of FOCUS write their own log, autofocus_<method>.csv, and leave autofocus.csv alone."""
-    unknown = [m for m in methods if m not in METHODS and m not in FOCUS]
+    The methods of FOCUS write their own log, autofocus_<method>.csv, and leave autofocus.csv alone; so do the
+    per-object methods of the study in EDF (edfw: blind autofocus, then the per-object focus over its own range, as
+    on the full frames)."""
+    wide = [m for m in methods if m in EDF and m not in METHODS]
+    unknown = [m for m in methods if m not in METHODS and m not in FOCUS and m not in wide]
     if unknown:
-        raise SystemExit(f'unknown reconstruction {unknown}: one of {list(METHODS) + list(FOCUS)}')
+        raise SystemExit(f'unknown reconstruction {unknown}: one of {list(METHODS) + list(FOCUS) + list(EDF)}')
     study = [m for m in methods if m in FOCUS]
     methods = [m for m in methods if m in METHODS]
     src = Holograms(root, aux)
     pre = f"{src.root / 'aux' / aux}_" if aux else f'{src.root}/'
     h, w = src.holo.shape[1:]
+    for m in wide:
+        arr = np.lib.format.open_memmap(f'{pre}rec_{m}.npy', mode='w+', dtype=np.uint8, shape=(len(src.ids), 3, h, w))
+        rows = []
+        for k, i in enumerate(src.ids):
+            i = int(i)
+            a = src.amplitude(i, dev)
+            z_af, n = autofocus(a, src.z0)
+            u, zb = per_object(a, z_af, src.boxes.get(i, np.zeros((0, 4))), *EDF[m])
+            arr[k] = channels(u).cpu().numpy()
+            rows.append(dict(image_id=i, true_z=src.true_z.get(i), z_af=z_af, n_reconstructions=n,
+                             z_objects=';'.join(f'{v:.7f}' for v in zb)))
+            if k % 500 == 0:
+                log(f'{m} {k}/{len(src.ids)}')
+        arr.flush()
+        pd.DataFrame(rows).to_csv(f'{pre}autofocus_{m}.csv', index=False)
     for m in study:
         if aux and FOCUS[m].every != 1:
             raise SystemExit(f'{m} reuses a distance within a session; the auxiliary scenes are not acquired in order')
