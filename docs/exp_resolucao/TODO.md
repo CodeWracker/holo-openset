@@ -193,17 +193,26 @@ base.
       `scripts/exp_resolucao/pilot_1mm.sh <GPU> <passo>`; pytest 54, `reproduce check` 13/13 (conferi eu). Revisei o
       diff de `sim/physics.py`: achei que a poeira fora do plano da amostra era pré-propagada só no comprimento de
       onda central (a 1 mm isso deixa a poeira a 2 mm nítida demais) e mandei corrigir no caminho fino (R1).
-- [~] P3. Subagente "simulador" retomado às ≈ 16:35 com R1–R5: R1 correção do plano de poeira + teste + par (4, 8)
-      de novo; R2 conferência cruzada com `sim_sampling.py::fine_recording`; R3 passo `record_depth50` e linhas da
-      variante por razão; R4 **rodar o piloto em r1** (tmux `res_pilot_*`: record, reconstruct, train, evaluate,
-      record_07, robust_a, robust_b, depth50); R5 vazamento do padrão no conjunto novo e
-      `results_exp_resolucao/sets_by_fresnel.csv`. **Ao voltar: conferir os números do relatório dele nos arquivos
-      (`results_exp_resolucao/eval/bench_1mm/*_r1.json`, `robustness_bench_1mm.csv`), olhar a folha de exemplos
-      (`docs/exp_resolucao/img/bench_1mm_examples.png`), rodar pytest e `reproduce check`.**
-- [ ] P4. Vazamento do padrão para fora do crop no conjunto novo (mesma medida do Z6.2) e figura/tabela dos conjuntos
-      pelo N_F (base, `small_z0`, `small_near`, `bench_1mm`).
-- [ ] P5. **Checkpoint do piloto**: mandar r1 ao orientador (F1 e rejeição de crops/prop/rec_z0, convergência,
-      robustez a 0,7 mm, custo das 5 repetições) e **PARAR**. As 5 repetições só com a aprovação dele.
+- [x] P3. (feito, `2eb3fec`…`1f2680d`; caderno do piloto R1–R5) Correção do plano de poeira (cada plano propaga
+      z + profundidade em cada comprimento de onda; mudou as gravações em 1–5 % do padrão; (4, 8) continua
+      passando); conferência cruzada com `fine_recording` (7e-15); **piloto em r1 rodado**: `data/bench_1mm`
+      (5000 imagens, 8,7 GB), `data/bench_1mm_robust/{z07,z07_val,depth50}`, modelos em `models_exp_resolucao/`,
+      resultados em `results_exp_resolucao/eval/bench_1mm/*_r1.json` e `robustness_bench_1mm.csv`.
+      **r1 (teste): raw 0,928 / 0,622; prop 0,977 / 0,995; rec_z0 0,977 / 1,000 (F1 / rejeição). prop − raw: +0,049
+      F1 (abaixo de 0,10) e +0,373 rejeição (acima de 0,30).** Robustez: 0,7 mm como está → prop e rec_z0 rejeitam
+      tudo (F1 0,015), raw 0,897; recalibrado sem rótulo: prop 0,545 (literal) / 0,913 (por razão), rec_z0 0,956 /
+      0,958; profundidade 50 µm → prop 0,773, rec_z0 0,801, raw 0,929. α calibrado 0,9999 mm, depois do treino
+      0,9758 mm (−2,4 %). Conferi os números nos arquivos, pytest 56, `reproduce check` 13/13 (com `HOLO_RESULTS` e
+      `HOLO_MODELS` fora do ambiente).
+- [x] P4. (feito) Vazamento no conjunto novo: 61 / 55 / 39 % (p5 / p50 / p95), igual ao do base (59 / 51 / 39 %);
+      `results_exp_resolucao/sets_by_fresnel.csv` (conjuntos pelo N_F, média de 5 e r1).
+- [!] P5. **CHECKPOINT DO PILOTO ENTREGUE (17:30): `docs/exp_resolucao/CHECKPOINT_PILOTO.md` + PDF + folha de
+      exemplos. PARADO, aguardando o orientador.** Decisões pedidas: (1) rodar as outras quatro repetições (≈ 8 min
+      cada, sem regravar; recomendo); (2) dois controles em r1, pré-registrados: letras do base a 19,25 mm com o
+      gravador e a cena novos (controle do código) e o conjunto de 1 mm com a densidade relativa do base, ≈ 154
+      letras por janela (controle da vizinhança); (3) treinar também com 50 µm de profundidade. **Nada disso roda
+      sem a resposta dele.** Não investiguei por que os crops melhoraram (candidatos: coerência, vizinhas mais
+      longe, código novo; o `small_near` não fecha com os dois primeiros).
 - [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
       afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
       reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
@@ -379,3 +388,10 @@ errado".
   espalhamento de profundidade). Ver a Fase P do plano. **Próximo passo ao voltar: ler o relatório do subagente do
   simulador, revisar o diff (s = 1 idêntico? `reproduce check` 13/13? pytest?), registrar as respostas do orientador
   como entrada P1 do caderno do piloto, e só então mandar gravar o conjunto.**
+- **2026-11-14, 17:30 — CHECKPOINT DO PILOTO ENTREGUE. PARADO.** r1 a 1,0 mm: os crops ficaram muito melhores que
+  no base (0,928 / 0,622 contra 0,785 / 0,105), a camada e a reconstrução empatam em 0,977 e ≈ 1,0 de rejeição. A
+  condição de F1 do critério (≥ 0,10) não é cumprida em r1 (+0,049; com raw em 0,928 o teto é 0,072); a de rejeição
+  é (+0,373). A 1 mm os fluxos de distância fixa quebram com 0,7 mm sem recalibrar e perdem ≈ 0,2 de F1 com 50 µm de
+  profundidade; os crops não. **Próximo passo ao voltar: ler a resposta do orientador ao checkpoint do piloto (ver
+  P5); só então rodar repetições ou controles, com pré-registro no caderno do piloto antes.** A parte B (reescrita)
+  depende do resultado das cinco repetições: se o critério falhar, "a tese muda e a gente reescreve" (palavras dele).
