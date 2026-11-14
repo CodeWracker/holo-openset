@@ -1,0 +1,52 @@
+{
+ "R_pil": {
+  "f1": 0.9283292093138139,
+  "rej": 0.6223832528180354
+ },
+ "R_ant": {
+  "f1": 0.7741827261421727,
+  "rej": 0.07326892109500806
+ },
+ "B": {
+  "control": {
+   "f1": 0.7628643404939534,
+   "rej": 0.061191626409017714
+  },
+  "distances": {
+   "f1": {
+    "to_R_ant": 0.011318385648219298,
+    "to_R_pil": 0.16546486881986056
+   },
+   "rej": {
+    "to_R_ant": 0.012077294685990343,
+    "to_R_pil": 0.5611916264090177
+   }
+  },
+  "nearer": {
+   "f1": "R_ant",
+   "rej": "R_ant"
+  },
+  "outcome": "the new code reproduces the old one: the improvement at 1.0 mm is not an effect of the code"
+ },
+ "C": {
+  "control": {
+   "f1": 0.795725260767468,
+   "rej": 0.07971014492753623
+  },
+  "distances": {
+   "f1": {
+    "to_R_ant": 0.021542534625295318,
+    "to_R_pil": 0.13260394854634594
+   },
+   "rej": {
+    "to_R_ant": 0.006441223832528167,
+    "to_R_pil": 0.5426731078904992
+   }
+  },
+  "nearer": {
+   "f1": "R_ant",
+   "rej": "R_ant"
+  },
+  "outcome": "the neighbours explain the improvement"
+ }
+}

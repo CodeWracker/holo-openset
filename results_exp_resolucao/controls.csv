@@ -1,0 +1,16 @@
+set,role,flow,rep,source,novel_open_macro_f1,novel_unknown_rejection,novel_closed_acc,novel_known_acc,threshold
+base_newrec,B control: new code at 19.25 mm,raw,1,results_exp_resolucao/eval/base_newrec/raw_r1.json,0.762864,0.0611916,0.871905,0.867031,0.548315
+base_newrec,B control: new code at 19.25 mm,prop,1,results_exp_resolucao/eval/base_newrec/prop_r1.json,0.960188,0.86715,0.990836,0.955937,0.97055
+base_newrec,B control: new code at 19.25 mm,rec_z0,1,results_exp_resolucao/eval/base_newrec/rec_z0_r1.json,0.956544,0.839775,0.989277,0.954182,0.972397
+realistic,"B reference: base set on disk, --no-aux",raw,1,results_exp_resolucao/eval/realistic/raw_r1.json,0.774183,0.0732689,0.879119,0.87405,0.559816
+realistic,"B reference: base set on disk, --no-aux",prop,1,results_exp_resolucao/eval/realistic/prop_r1.json,0.958822,0.86876,0.993566,0.953792,0.970249
+realistic,"B reference: base set on disk, --no-aux",rec_z0,1,results_exp_resolucao/eval/realistic/rec_z0_r1.json,0.956247,0.861514,0.992006,0.949698,0.973598
+bench_1mm_dense,C control: bench_1mm + fillers,raw,1,results_exp_resolucao/eval/bench_1mm_dense/raw_r1.json,0.795725,0.0797101,0.90037,0.894716,0.574679
+bench_1mm_dense,C control: bench_1mm + fillers,prop,1,results_exp_resolucao/eval/bench_1mm_dense/prop_r1.json,0.959526,0.899356,0.987132,0.949893,0.977895
+bench_1mm_dense,C control: bench_1mm + fillers,rec_z0,1,results_exp_resolucao/eval/bench_1mm_dense/rec_z0_r1.json,0.967562,0.951691,0.995126,0.953792,0.982907
+bench_1mm,pilot r1 (copied),raw,1,results_exp_resolucao/eval/bench_1mm/raw_r1.json,0.928329,0.622383,0.977968,0.953987,0.873185
+bench_1mm,pilot r1 (copied),prop,1,results_exp_resolucao/eval/bench_1mm/prop_r1.json,0.976957,0.995169,0.997465,0.961201,0.993098
+bench_1mm,pilot r1 (copied),rec_z0,1,results_exp_resolucao/eval/bench_1mm/rec_z0_r1.json,0.976511,1,0.99844,0.959056,0.991514
+bench_1mm_dense - bench_1mm,C paired difference,raw,1,,-0.132604,-0.542673,-0.077598,-0.0592708,-0.298505
+bench_1mm_dense - bench_1mm,C paired difference,prop,1,,-0.0174308,-0.0958132,-0.0103334,-0.0113082,-0.0152023
+bench_1mm_dense - bench_1mm,C paired difference,rec_z0,1,,-0.0089482,-0.0483092,-0.00331449,-0.00526418,-0.00860671
