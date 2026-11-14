@@ -336,3 +336,59 @@ sessão (uma sessão, 32 imagens; é o método como está, não corrigi).
    poeira da janela (0,5 mm), ± 3,5 µm com a variação de z por sessão: a lamínula estaria encostada na janela. A
    simulação aceita (camadas somadas em primeira ordem), mas fisicamente é o limite; a 1,0 mm há 0,3 mm de folga.
 6. `font_size` agora é float nas anotações do conjunto novo (scripts que façam `int(...)` dele continuam funcionando).
+
+## 2026-11-14, 16:32 — P1: respostas do orientador, revisão do gravador e o que fica fixado antes de gravar (responsável)
+
+Escrito depois do S1–S3 (código e teste de convergência) e antes de gravar o conjunto, de treinar e de avaliar.
+
+### Respostas do orientador às duas perguntas (≈ 16:25, pelo diálogo de perguntas)
+
+1. **Letras por janela: 8 por janela de 640 × 640**, como no base e no `small_near` (`DENSITY=base`).
+2. **Espalhamento de profundidade por objeto: 2,6 µm rms (máximo 7,8 µm)**, isto é, os 50 / 150 µm do base escalados
+   com z (`DEPTH=2.6`); **os 50 µm entram como robustez**, com os mesmos modelos, sem retreinar.
+
+### Revisão do S1–S3 (li o diff de `sim/physics.py` e o script do piloto; rodei os testes)
+
+- `pytest`: 54 passam; `reproduce check`: 13/13. O caminho de s = 1 não mudou (o `sensor_intensity` só desvia quando
+  `oversample > 1`).
+- Fator de sobreamostragem: **s = 4**, pela regra do P0 ((2, 4) falha em todas as cenas, 1,04–1,78 %; (4, 8) passa em
+  todas, ≤ 0,46 %). Margem 394 px e alcance 233 px (os do base escalados): aceito.
+- **Um ponto que mando corrigir antes de gravar.** No caminho fino, como no nativo, os objetos fora do plano da
+  amostra são pré-propagados pela sua profundidade só no comprimento de onda central, e depois as sete componentes da
+  banda propagam z. A 19,25 mm a profundidade da poeira (+1,0 mm e −0,2 mm) é 5 % e 1 % de z e o erro é desprezível; a
+  1,0 mm a poeira da face de trás da lâmina está a 2,0 mm do sensor e receberia a perda de coerência temporal de
+  1,0 mm (ficaria mais nítida do que deve). Correção, só no caminho fino: cada plano de poeira é propagado por
+  z + profundidade em cada comprimento de onda (soma no domínio de Fourier, sem transformadas a mais). As letras
+  (2,6 µm, ou 50 µm no teste de robustez) continuam pré-propagadas no comprimento de onda central (erro de fase na
+  borda da banda, na frequência de Nyquist: ≈ 0,02 rad a 7,8 µm e ≈ 0,4 rad a 150 µm, contra ≈ 2,8 rad do termo de z).
+  O borrão da imagem do pinhole continua calculado para a distância da amostra em todos os planos (aproximação
+  declarada: ele é o termo menor a estas distâncias). Depois da correção, o par (4, 8) é conferido de novo.
+- Conferência cruzada pedida: o gravador novo contra a implementação independente de uma letra isolada
+  (`scripts/exp_resolucao/sim_sampling.py::fine_recording`), que já tinha sido validada.
+
+### Decisões sobre as dúvidas que o executor levantou (minhas; o orientador pode reverter)
+
+- **Receita de treino igual à do paper**, incluindo `lr_alpha = 1e-5` (absoluto). Um passo absoluto em α dá a mesma
+  variação de fase do núcleo em qualquer distância, então não há motivo físico para reescalar. Reporta-se o α
+  calibrado e o α depois do treino, em mm.
+- **Robustez a 0,7 mm, leitura (b):** a principal é a literal do P0 (o α calibrado a 0,7 mm substitui o treinado; a
+  distância de `rec_z0` é a calibrada). Reporto ao lado, declarada agora, a variante por razão (α treinado ×
+  α_cal(0,7) / α_cal(1,0), e z = 1,0 mm × a mesma razão), que cancela o viés da calibração.
+- **Robustez à profundidade (pedido do orientador):** as cenas do split de teste gravadas de novo com 50 / 150 µm,
+  z₀ = 1,0 mm, mesmas sementes (`bench_1mm_robust/depth50`); avaliação "como está", com os modelos de r1, a galeria
+  e o limiar do conjunto principal; `rec_z0` na distância nominal.
+- **Geometria a 0,7 mm:** a poeira do topo da lamínula (−0,2 mm da amostra) cai no mesmo plano da poeira da janela do
+  sensor (0,5 mm). Fica como está e vai declarado no checkpoint: com os vidros do simulador, 0,7 mm é o limite em que
+  a lamínula encosta na janela.
+
+### O que será rodado (nesta ordem) e o que será reportado
+
+1. Correção do plano de poeira, teste, par (4, 8) de novo, conferência cruzada.
+2. `record` (`DEPTH=2.6 DENSITY=base`), `reconstruct`, `train` (r1: `raw`, `prop`, `rec_z0`, `--no-aux`), `evaluate`.
+3. `record_07`, `robust_a`, `robust_b` (com a variante por razão), e a robustez de profundidade (`depth50`).
+4. Vazamento do padrão para fora do crop nos tamanhos do conjunto novo e a tabela dos conjuntos pelo número de
+   Fresnel.
+
+O teste é lido uma vez, com o limiar da validação. Reporta-se o que sair. O critério do item 4 não é aplicado a r1
+sozinho; as cinco repetições dependem do checkpoint com o orientador.
+
