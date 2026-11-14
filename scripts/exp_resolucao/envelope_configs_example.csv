@@ -1,0 +1,4 @@
+name,wavelength_nm,bandwidth_nm,pinhole_um,source_distance_mm,z_mm,pixel_um,reference
+simulated bench (paper),385,10,100,150,19.25,1.67,this work
+simulated bench at 2 mm,385,10,100,150,2,1.67,small_near
+laser (coherent) at 19.25 mm,385,0,0,150,19.25,1.67,variant laser

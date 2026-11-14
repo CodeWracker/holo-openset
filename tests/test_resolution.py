@@ -116,3 +116,29 @@ def test_a_checkpoint_keeps_the_grid_of_its_set(tmp_path):
     torch.save({'state_dict': m.state_dict(), 'meta': {}}, tmp_path / 'm.pt')
     back = load_model(tmp_path / 'm.pt')[0]
     assert back.fourier.inv.shape == (160, 160)
+
+
+def test_envelope_of_the_bench_is_that_of_the_paper_figure():
+    from scipy.special import j1
+    from holo_openset.sim.envelope import Setup, envelope, summary
+    s = Setup()
+    assert s.z == Z0 and s.wavelength == WAVELENGTH and s.pixel == PIXEL
+    f = np.linspace(0, 1 / (2 * PIXEL), 3000)   # fig_fresnel (b), as computed there
+    d = 100e-6 * Z0 / 0.15
+    x = math.pi * d * f
+    airy = np.where(x > 1e-9, 2 * j1(x) / np.maximum(x, 1e-9), 1.0)
+    sig = 10e-9 / (2 * math.sqrt(2 * math.log(2))) / WAVELENGTH
+    band = np.exp(-0.5 * (math.pi * WAVELENGTH * Z0 * f ** 2 * sig) ** 2)
+    assert np.allclose(envelope(s, f), airy * np.sinc(f * PIXEL) * band, atol=1e-12)
+    r = summary(s)
+    assert abs(r['f_c_0.1'] - 72.37) < 0.01 and r['b_max_0.1'] == 4 and r['b_max_0.05'] == 3
+    assert r['dominant_0.1'] == 'pinhole' and not r['undersampled_0.1'] and abs(r['blur_um'] - 12.83) < 0.01
+
+
+def test_envelope_cutoff_moves_with_the_set_up_and_flags_under_sampling():
+    from holo_openset.sim.envelope import Setup, cutoff, summary
+    near = summary(Setup(z=1e-3))
+    assert near['undersampled_0.1'] and near['b_max_0.1'] == 1 and abs(near['half_pitch_single_frame_um_0.1'] - 1.67) < 1e-9
+    assert abs(summary(Setup(z=2e-3))['f_c_no_pixel_0.1'] - 278.1) < 0.1      # the source alone, no pixel term
+    assert cutoff(Setup(pinhole=50e-6)) > cutoff(Setup()) > cutoff(Setup(bandwidth=20e-9))
+    assert math.isnan(cutoff(Setup(bandwidth=0, pinhole=0, pixel=0)))          # an ideal set-up never cuts
