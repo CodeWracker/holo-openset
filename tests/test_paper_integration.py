@@ -32,7 +32,8 @@ def _csv(root, name):
 
 
 # ------------------------------------------------------------------------------------ (a)-(c): the shared results
-# Robustness rows computed by both on the same files in this build: identical up to the rounding of a csv round trip.
+# Robustness rows computed by both on the same files in this build (the three new sets, and the narrow autofocus, run
+# for the paper on the sets and caches of this build): identical up to the rounding of a csv round trip.
 FLOAT_NOISE = 1e-12
 # The other shared rows (base, session_2, session_5, fullwell_500, beam_narrow) are not computed on the same files: the
 # study re-simulated those variants and rebuilt the reconstruction caches of the base set in this build, while the
@@ -44,10 +45,11 @@ OTHER_BUILD = 0.01
 def test_robustness_rows_shared_with_the_study_agree():
     paper, study = _csv(paths.PROJECT / 'results', 'robustness'), _csv(STUDY, 'robustness')
     m, d = _differences(paper, study, ['rep', 'variant', 'flow'], skip=('value',))
-    same = m.variant.isin(NEW_SETS)
-    assert same.sum() >= 75   # rec_z0, rec_af, rec_afc, prop, bank_jit x 3 sets x 5 repetitions
-    _, d_same = _differences(paper[paper.variant.isin(NEW_SETS)], study[study.variant.isin(NEW_SETS)],
-                             ['rep', 'variant', 'flow'], skip=('value',))
+    assert m.variant.isin(NEW_SETS).sum() >= 75   # rec_z0, rec_af, rec_afc, prop, bank_jit x 3 sets x 5 repetitions
+
+    def same(df):
+        return df[df.variant.isin(NEW_SETS) | (df.flow == 'rec_afc')]
+    _, d_same = _differences(same(paper), same(study), ['rep', 'variant', 'flow'], skip=('value',))
     assert max(d_same.values()) <= FLOAT_NOISE, d_same
     assert max(d.values()) <= OTHER_BUILD, d
 
