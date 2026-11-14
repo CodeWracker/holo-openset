@@ -118,12 +118,13 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit).
       conjuntos novos); oráculo nos 3 conjuntos; `evaluate` e `e2e` de `rec_afc`; `full_frames` (um run, todos os
       fluxos do paper + `rec_afc`); promover os csv de tempo da E5 e o erro de distância (`focus_error`) para
       `results/`.
-- [~] B2. (fase 1, código, FEITA: commits `08031fa`, `fd90020`, `644c750`, `cba99f0`, `e880564`, `8138b79`,
+- [x] B2. (FEITO; fase 2: commits `fae1cdc`, `5ee85a4`, `821f985`, `09406bf`, `c0dabe0`, `49c3f06`, `6be9587`,
+      `135fa4a`, `592403d`) (fase 1, código, FEITA: commits `08031fa`, `fd90020`, `644c750`, `cba99f0`, `e880564`, `8138b79`,
       `080729b`; fase 2 pendente) Geradores do paper (`style.py`, `tables.py`, `figures.py`): `rec_afc` no `ORDER`, linha da busca em
       `tab_stages`, linhas/coluna novas em `tab_robustness`, macros; figuras que usam `ORDER`
       (`fig_robustness`, `fig_cost`); `pipeline.py` (jobs novos), `reproduce.py`/`expected/` (incluir
       `numbers_distancia.tex`), testes, README/docs. `pytest` e `reproduce check` verdes.
-- [ ] B3. Revisão minha: diff de B1/B2, números das tabelas novas contra `results_exp_distancia/`.
+- [x] B3. (feito 2026-11-14: `pytest` 37 passam, `reproduce check` 13/13, rodados por mim) Revisão minha: diff de B1/B2, números das tabelas novas contra `results_exp_distancia/`.
 
 ### Fase C: projeto LaTeX (`latex-openset-microscopy`, sem push)
 
@@ -325,4 +326,18 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   `expected/`, `reproduce check` 13/13, `pytest` verde, docs, checksums dos 3 conjuntos novos.
   Depois: mandar o agente "latex" aplicar o rascunho (4 commits no clone) no repositório real com os assets finais,
   resolver os CHECK-AFTER-RUNS e compilar; eu reviso o diff final; PDF novo do relatório; mensagem final.
+- 2026-11-14, 12:10: **B2 fase 2 concluída e conferida por mim** (`pytest` 37 passam, sem falha nem pulo;
+  `reproduce check` 13/13). Assets finais em `output/paper/` (`numbers.tex` 807 macros, `numbers_distancia.tex`
+  1916, 11 tabelas, 15 figuras). Nenhuma macro existente que não seja de tempo mudou de valor; 85 macros de tempo
+  mudaram (sessão E5 e run novo de quadros inteiros); 143 macros novas; `TLayerBank*` → `TLayerBankJit*`.
+  Valores para o texto: `rec_afc` nos quadros inteiros F1 0,975, cálculo 5,2 ms, total 0,20 s (`rec_z0` 0,20;
+  `learned` 0,18; cega 0,32; twin 0,41); leitura 20 ms (reconstruções) contra 3 ms (camadas); participação mínima do
+  detector 95,1 % (dada pelo narrow autofocus); `source_5cm` 0,52. Fila do paper: 583 jobs, 35 conjuntos de
+  robustez. `checksums/data.sha256` ganhou os 3 conjuntos novos; as 32 variantes antigas em disco foram
+  re-simuladas neste build e não batem mais com os checksums publicados (explicado em `docs/DATA.md`).
+  Olhei `fig_cost` e `fig_stack` regeneradas: legíveis, com o marcador aberto do narrow AF e linha de chamada.
+  **Agente "latex" disparado para aplicar o rascunho no repositório real** (dois commits: assets + floats; prosa),
+  resolver os CHECK-AFTER-RUNS com os valores finais (o "few tens of milliseconds" vira macros de leitura),
+  acrescentar a frase do build em 05-protocol e compilar. Falta depois: eu revisar o diff final do paper; PDF novo
+  do relatório; atualizar a memória; mensagem final.
 
