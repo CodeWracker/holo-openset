@@ -11,3 +11,5 @@ output/
 runs/
 *.pt
 *.cache
+# models of the distance study (docs/exp_distancia, protocol 6.4): kept out of models/, whose count the tables of the paper use
+models_exp_distancia/

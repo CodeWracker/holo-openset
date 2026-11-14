@@ -895,3 +895,39 @@ Erro de distância por quadro (`full_frames_frame5_focus.csv`, |z − z verdadei
 mediana / p90 / máximo: `rec_af` 10,3 / 24,9 / 32,3; `rec_afc` 30,1 / 59,2 / 67,5; `rec_afr` 11,9 / 22,2 / 29,5;
 `rec_afs` 491,4 / 2174 / 2877; `rec_afsc` 503,9 / 2137 / 2879; `rec_z0` 650,3 / 1676 / 1868.
 
+### Modelo próprio (protocolo 6.4): `rec_afc`, r1
+
+```bash
+# tmux own_aux, cuda:2, desde 22:41:03 (log logs/exp_distancia/own_aux_sim.log): cenas auxiliares da r1 em data/realistic/aux/ (pasta nova)
+python -m holo_openset simulate aux --rep 1 --device cuda:2 --workers 6
+#   r1 (2000, 640, 640), 15813 letras, pronto às 23:18 (GPU 2 a 100 % com outro usuário: ~37 min); o r1_cal, que o
+#   comando também grava e o treino não usa, continua sendo simulado
+# tmux own_rec, cuda:4, 23:18 -> 23:19:19 (log own_rec_afc.log)
+python -m holo_openset reconstruct --aux r1 --methods afc --device cuda:4               # aux/r1_rec_afc.npy, aux/r1_autofocus_afc.csv
+# tmux own_train, cuda:4, 23:19:34 -> 23:20:3x, 3000 passos em 56 s (log own_train_rec_afc.log)
+HOLO_MODELS=$PWD/models_exp_distancia python -m holo_openset train --flow rec_afc --rep 1 --device cuda:4
+# tmux own_rob, cuda:4, 23:20:4x -> 23:21:26 (log own_robustness.log); nenhum outro robustness rodando
+HOLO_MODELS=$PWD/models_exp_distancia python -m holo_openset experiment robustness --device cuda:4 --own --rep 1 --flows rec_afc \
+  --variants base session_2 session_5 fullwell_500 beam_narrow frame_2 frame_5 walk_05
+```
+
+O checkpoint ficou em `models_exp_distancia/realistic/rec_afc_r1.pt` (fora de `models/`); `models_exp_distancia/`
+entrou no `.gitignore`. Load 39–42; GPU 4 com rajadas de outro usuário (12 de 20 amostras a 0 %). O run acrescentou 8
+linhas `rec_afc+own` ao `robustness.csv` (448 linhas no total); com `--own` e sem `--by-session`, nada no
+`robustness_sessions.csv`.
+
+F1 aberto (`novel_open_macro_f1`), r1:
+
+| conjunto | rec_afc (modelo de rec_af) | rec_afc+own | diferença (own − emprestado) |
+|---|---|---|---|
+| base | 0,9567 | 0,9610 | +0,0044 |
+| session_2 | 0,9559 | 0,9619 | +0,0060 |
+| session_5 | 0,9560 | 0,9605 | +0,0044 |
+| fullwell_500 | 0,9400 | 0,9447 | +0,0046 |
+| beam_narrow | 0,9507 | 0,9565 | +0,0058 |
+| frame_2 | 0,9577 | 0,9619 | +0,0041 |
+| frame_5 | 0,9573 | 0,9600 | +0,0026 |
+| walk_05 | 0,9585 | 0,9610 | +0,0025 |
+
+Maior diferença absoluta 0,0060 (`session_2`). Critério pré-registrado (diferença ≤ 0,01 em todos): satisfeito nos oito.
+
