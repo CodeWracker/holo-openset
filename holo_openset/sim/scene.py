@@ -39,12 +39,15 @@ class FresnelLayout(Layout):
     object (letters, dust) on a master grid `factor` times finer than the pixel, which the simulator averages onto the
     grid it records on (physics.sample_mask), so that the same scene is recorded at every oversampling.
     The number of letters per 640 x 640 window keeps the values of Layout unless given (an open question of the
-    pilot). An instance carries its parameters: FresnelLayout(letters_mean=...)."""
+    pilot). An instance carries its parameters: FresnelLayout(letters_mean=...).
+    fill_mean > 0 (default 0, off): un-annotated filler letters bring the mean number of letters per 640 x 640 window,
+    inside the window and in the band around it, to fill_mean (`fill_letters`); the rest of the scene does not move."""
     physical = True
     factor = 16                         # the master grid: 1/16 of a pixel (0.10 um)
     scale = math.sqrt(1.0e-3 / Z0)      # 0.22792: the lengths of Layout for a sample at 1.0 mm
+    fill_mean = 0.0                     # letters per 640 x 640 window with the fillers (0: no fillers)
     PARAMS = ('scale', 'factor', 'letters_mean', 'letters_std', 'letters_min', 'letters_max', 'unique_fraction_mean',
-              'unique_std', 'rotation', 'max_attempts_per_letter')
+              'unique_std', 'rotation', 'max_attempts_per_letter', 'fill_mean')
 
     def __init__(self, **kw):
         for k, v in kw.items():
@@ -58,8 +61,9 @@ class FresnelLayout(Layout):
     margin = property(lambda self: Layout.margin * self.scale)
 
     def params(self):
-        """What physics.json keeps: the parameters, and the lengths they give (for the record)."""
-        return {**{k: getattr(self, k) for k in self.PARAMS},
+        """What physics.json keeps: the parameters, and the lengths they give (for the record). fill_mean only when
+        on, so that a set recorded before it existed keeps its physics.json byte for byte."""
+        return {**{k: getattr(self, k) for k in self.PARAMS if k != 'fill_mean' or self.fill_mean > 0},
                 **{k: getattr(self, k) for k in ('font_min', 'font_max', 'border', 'margin')}}
 
 
@@ -310,11 +314,78 @@ def physical_scene(seed, phys, classes=CLASSES, fonts=FONTS, lay=None, outside_c
             o.update(material(rng, phys))
             objects.append(o)
             placed += 1
+    fill = None
+    if getattr(lay, 'fill_mean', 0) > 0:   # its own generator: nothing above or below moves
+        fillers, fill = fill_letters(seed, phys, lay, occ, len(rows), sum(o['kind'] == 'outside' for o in objects),
+                                     fonts, outside_classes)
+        objects += fillers
     dust = []
     area_mm2 = (hi_y - lo_y) * (hi_x - lo_x) * (PIXEL * 1e3) ** 2
     for depth in phys.dust_depths:
         dust += make_physical_dust(rng, poisson(rng, phys.dust_density * area_mm2), (lo_x, lo_y, hi_x, hi_y), depth, f)
-    return dict(objects=objects, dust=dust, rows=rows, margin=m0, seed=seed)
+    out = dict(objects=objects, dust=dust, rows=rows, margin=m0, seed=seed)
+    if fill is not None:
+        out['fill'] = fill
+    return out
+
+
+FILL_SEED = 900_000_000   # the generator of the fillers of a scene: random.Random(scene seed + FILL_SEED)
+
+
+def fill_letters(seed, phys, lay, occ, n_window, n_band, fonts=FONTS, classes=None):
+    """Un-annotated filler letters (kind 'filler': never in the annotations, the ground-truth maps or the YOLO labels,
+    like the letters around the window) that bring the mean number of letters per 640 x 640 window to lay.fill_mean,
+    counting the letters the scene already has: in the window, Poisson(fill_mean x window / TILE) minus its
+    n_window annotated letters; in the band of the reach around it, Poisson(fill_mean x band area / TILE) minus its
+    n_band letters (never below 0). Each filler as the letters of the scene (class from `classes`, default all, font,
+    continuous size, rotation, material and depth with the same laws), placed uniformly where those letters go (in the
+    window with its border; in the band without touching the window), never overlapping another letter (the spacing
+    of the layout, on the occupancy grid `occ`, which is updated). Drawn by a generator of its own seeded from the
+    scene seed, so that the letters, the dust and every other draw of the scene stay as they are. A filler that finds
+    no place in max_attempts_per_letter positions is skipped (counted in the returned dict).
+    -> (objects, dict(target_window, target_band, placed_window, placed_band))"""
+    frng = random.Random(seed + FILL_SEED)
+    f = lay.factor
+    H, W = phys.canvas
+    h, w = phys.window
+    m0 = phys.margin
+    lo_y, hi_y = max(0, m0 - phys.reach), min(H, m0 + h + phys.reach)
+    lo_x, hi_x = max(0, m0 - phys.reach), min(W, m0 + w + phys.reach)
+    g = max(1, round(lay.margin))
+    density = lay.fill_mean / TILE
+    want = dict(window=max(0, poisson(frng, density * h * w) - n_window),
+                band=max(0, poisson(frng, density * ((hi_y - lo_y) * (hi_x - lo_x) - h * w)) - n_band)
+                if phys.reach > 0 else 0)
+    out, placed = [], dict(window=0, band=0)
+    for where in ('window', 'band'):
+        for _ in range(want[where]):
+            letter = frng.choice(sorted(classes or CLASSES))
+            size, font = frng.uniform(lay.font_min, lay.font_max), frng.choice(fonts)
+            angle = frng.uniform(-lay.rotation, lay.rotation)
+            master = letter_master(letter, font, size * f, angle)
+            fh, fw = master.shape[0] / f, master.shape[1] / f
+            for _ in range(lay.max_attempts_per_letter):
+                if where == 'window':
+                    u = m0 + frng.uniform(lay.border, w - fw - lay.border)
+                    v = m0 + frng.uniform(lay.border, h - fh - lay.border)
+                else:
+                    u, v = frng.uniform(lo_x, hi_x - fw), frng.uniform(lo_y, hi_y - fh)
+                mx, my = round(u * f), round(v * f)
+                # the pixels it touches (the box of sample_mask at s = 1), without sampling it
+                x0, y0 = mx // f, my // f
+                x1, y1 = x0 - (-(mx % f + master.shape[1]) // f), y0 - (-(my % f + master.shape[0]) // f)
+                if where == 'band' and x1 + g > m0 and x0 - g < m0 + w and y1 + g > m0 and y0 - g < m0 + h:
+                    continue
+                if occ[max(0, y0 - g):y1 + g, max(0, x0 - g):x1 + g].any():
+                    continue
+                occ[max(0, y0 - g):y1 + g, max(0, x0 - g):x1 + g] = True
+                o = physical_object(master, mx, my, f, kind='filler', classe=letter)
+                o.update(material(frng, phys))
+                out.append(o)
+                placed[where] += 1
+                break
+    return out, dict(target_window=want['window'], target_band=want['band'], placed_window=placed['window'],
+                     placed_band=placed['band'])
 
 
 def object_maps(scene, phys):

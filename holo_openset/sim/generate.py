@@ -249,6 +249,10 @@ def generate(out, phys=None, n_images=5000, per_session=100, seed=17, like=None,
         meta_rows.append(dict(image_id=i, filename=fn, label_filename=f'{i:06d}.txt', split=sp, session=s, z=ses['z'],
                               n_letters=len(sc['rows']), n_outside=sum(o['kind'] == 'outside' for o in sc['objects']),
                               n_dust=len(sc['dust']), classes=''.join(sorted({r['classe'] for r in sc['rows']}))))
+        if 'fill' in sc:   # a layout with fillers (FresnelLayout fill_mean): their counts, never annotated
+            meta_rows[-1].update(n_fill_window=sc['fill']['placed_window'], n_fill_band=sc['fill']['placed_band'],
+                                 n_fill_skipped=sc['fill']['target_window'] + sc['fill']['target_band']
+                                 - sc['fill']['placed_window'] - sc['fill']['placed_band'])
         if k % 250 == 0:
             log(f'{k}/{len(ids)}')
     holo.flush()
