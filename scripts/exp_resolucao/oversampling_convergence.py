@@ -110,7 +110,7 @@ def converge(a, dev):
         for z in a.z:
             p1 = physics(z, a.margin, a.reach, depth)
             cam = camera(CAMERA_SEED, p1, lay)
-            for i in IDS:
+            for i in IDS[::len(IDS) // a.n_scenes]:
                 sc = scene(i, p1, lay)
                 sc['sensor_dust'] = cam['dust']
                 ses = session(SEED * 1000 + i // 100, p1)
@@ -270,6 +270,8 @@ def main():
     ap.add_argument('--margin-reach', type=int, default=0, help='reach: margin of the field (default 2R + 256)')
     ap.add_argument('--layout', nargs='*', default=[], help='converge: parameters of FresnelLayout, key=value')
     ap.add_argument('--tag', default='', help='converge: suffix of the csv names')
+    ap.add_argument('--n-scenes', type=int, default=len(IDS), choices=[1, 2, 4, 8],
+                    help='converge: that many of the 8 scenes, evenly spaced (default all 8)')
     ap.add_argument('--reach', type=int, nargs='+', default=[233],
                     help='converge, margin: the reach of the set; reach: the candidates R')
     a = ap.parse_args()
