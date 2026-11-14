@@ -1183,3 +1183,46 @@ Relatório: `docs/exp_distancia/RELATORIO.md` (commit `d80b0b2`).
 
 - Cortado: a lista de resumo da Seção 0, a tabela de diferenças pareadas nos quadros inteiros (fica em `tab_dist_frames_paired.md`), as colunas "convencional mais barato" da tabela do critério e a tabela do checklist (fica acima); texto apertado para cerca de 2.300 palavras corridas, 7 tabelas e 3 figuras, sem mudar valores nem tirar ressalvas.
 - Corrigido: frases do paper (sem "no physical parameter"; n\* como limiar, "once a mounting yields more than"), a tolerância de 300 µm citada como Tabela 10 do paper transcrita na Seção 2.3 do protocolo, a sensibilidade de n\* dada exatamente (0,02 ms no denominador, 212 → 205), a maior |`rec_afc` − `rec_af`| nos seis conjuntos limpos (0,00048, `session_5`; `scripts/exp_distancia/paired_check.py`) e uma frase sobre rejeição e AUROC no base (`bank_wide`/`bank_w2` 0,826/0,838 de rejeição contra 0,913–0,924; AUROC 0,966–0,967 contra 0,978–0,983). Os scripts de conferência citados acima foram versionados em `scripts/exp_distancia/` (`nstar_attempts.py`, `range_check.py`, `paired_check.py`; mesma saída que as cópias do scratchpad).
+
+## 2026-11-14 — Depois da revisão do orientador: o que faltou e a integração no paper
+
+O orientador leu o relatório, colou uma revisão (de quem escreveu o protocolo) e pediu: "Atualiza o projeto de código
+e latex depois de fazer o que faltou". O plano e o estado ficam em `docs/exp_distancia/TODO.md`; aqui ficam os
+comandos, os resultados e as decisões. Esta entrada foi escrita e commitada **antes** de qualquer run novo.
+
+### Decisões registradas antes de rodar
+
+- **Leitura do critério:** a revisão recomenda a leitura A (convencionais com F1 a até 0,02 do melhor; mesma
+  tolerância dos dois lados) e o orientador a encaminhou; a leitura A passa a ser a principal no gerador, nas macros e
+  no relatório. A leitura B continua calculada e citada como alternativa.
+- **Sessão de tempo do paper:** as tabelas de tempo do paper passam a vir da sessão E5 deste estudo (GPU: tentativa 2;
+  CPU: `e5/timing_cpu.csv`), que mediu todos os estágios do paper e as buscas novas no mesmo run. Motivo: a busca
+  reduzida entra na tabela de estágios, e a regra é não misturar runs numa tabela. Consequência: todos os tempos do
+  paper mudam (CPU cerca de 2× mais rápida, load 59–89 em vez de ≈ 230; YOLO 167 em vez de 222 ms em GPU).
+- **Nomes no paper:** `rec_af` = "blind autofocus"; `rec_afc` = "narrow autofocus" (busca reduzida e estreita).
+
+### Runs novos, declarados antes de rodar (nenhuma escolha é feita com eles)
+
+O fluxo `rec_afc` foi congelado na validação (commits `058f8f9`, `03a2a21`, `68e81ea`) e a bateria é a lista fixa do
+paper (`sim/variants.py`, 32 variantes mais o base). Nada abaixo escolhe hiperparâmetro, fluxo ou conjunto.
+
+1. **Descritivo `frame_5` × `session_5`:** F1/acurácia de `rec_z0`, `prop` e `bank_jit` em `frame_5` por faixa de
+   |Δz|, e por sessão em `session_5`, para dizer quanto os 8 sorteios de z do teste pesam na coluna de 5 % do paper.
+2. **`rec_afc` na bateria inteira do paper** (as 28 variantes ainda não simuladas neste estudo, split de teste), cinco
+   repetições, modelo de `rec_af`: a coluna nova da tabela de robustez.
+3. **Os fluxos do paper que faltam em `frame_2`, `frame_5` e `walk_05`** (`raw`, `learned`, `complex`, `wiener`,
+   `rec_edf`, `rec_twin` e o oráculo), cinco repetições: as linhas novas da tabela de robustez.
+4. **Avaliação principal e fim a fim de `rec_afc`** no conjunto base (`eval/realistic`, `e2e`), para as tabelas
+   principal, de enrollment e fim a fim.
+5. **Quadros inteiros:** um único run com todos os fluxos do paper mais `rec_afc`, cinco repetições, para a tabela
+   de quadros inteiros (acurácia e tempo do mesmo run).
+
+Estes resultados vão para `results/` (os csv do paper), que até aqui estava intocado; `results_exp_distancia/`
+continua sendo o registro do estudo. As linhas que existem nos dois lugares têm de coincidir (vira teste).
+
+### O que continua sem rodar
+
+Escala fixa no lugar do percentil dos canais (a revisão a trata como detalhe de implementação; só a conta entra no
+relatório), "busca barata a cada M quadros", `full_frames` em CPU, e o reempacotamento do Zenodo (as variantes novas e
+os caches de `rec_afc` mudam o registro de dados; fica para o orientador decidir quando).
+
