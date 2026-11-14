@@ -217,10 +217,23 @@ base.
       (`scripts/exp_resolucao/controls_1mm.sh`), sem tocar em `pilot_1mm.sh`.
       Leituras fixadas no P2: critério do orientador nas cinco repetições; controles lidos pelos crops, "mais perto
       de R_ant ou de R_pil" nas duas métricas.
-      **Ao voltar: conferir os números nos arquivos (`results_exp_resolucao/eval/<conjunto>/*_r?.json`,
-      `robustness_bench_1mm.csv`), aplicar o critério, pytest e `reproduce check` (com `HOLO_RESULTS` e `HOLO_MODELS`
-      fora do ambiente), escrever o relatório do piloto completo e mandar ao orientador. A reescrita (parte B) só
-      depois, e só com o pedido dele.**
+      **18:58 — "repeticoes" terminou e eu conferi nos JSON** (`eval/bench_1mm/*_r?.json`, `eval/realistic/*_r1.json`,
+      `eval/bench_1mm_depth50/*_r1.json`):
+      - **A, critério do orientador: 0 de 5 repetições cumprem as duas condições** (F1 ≥ 0,10: 0 de 5; rejeição
+        ≥ 0,30: 1 de 5, só r1). Médias de 5: raw 0,938 / 0,730; prop 0,977 / 0,998; rec_z0 0,979 / 0,998; prop − raw
+        +0,039 F1 (0,031 a 0,049) e +0,268 rejeição (0,170 a 0,373). Tabelas: `pilot_five_reps{,_robustness,_alpha}.csv`.
+        Robustez média de 5: 0,7 mm como está prop/rec 0,015; recalibrado por razão prop 0,914, rec 0,964; 50 µm como
+        está prop 0,784, rec 0,823, raw 0,939.
+      - **Referência do controle B** (`realistic`, `--no-aux`, r1): raw 0,774 / 0,073 (R_ant); prop 0,959 / 0,869;
+        rec_z0 0,956 / 0,862. Tirar as cenas auxiliares quase não muda o base.
+      - **D** (treinado com 50 µm, r1): testado em 50 µm prop 0,977 / 0,998, rec_z0 0,975 / 0,994, raw 0,924 / 0,605;
+        testado em 2,6 µm prop 0,984, rec_z0 0,976. A perda de 0,2 de F1 era do treino com amostra plana.
+      **Falta: "controles" (C gravando, depois B).** Ao voltar dele: conferir `controls.csv` nos JSON, ler pela regra
+      do P2 (crops mais perto de R_ant = (0,774; 0,073) ou de R_pil = (0,928; 0,622)), pytest e `reproduce check`
+      (com `HOLO_RESULTS` e `HOLO_MODELS` fora do ambiente), conferir que nada de `models/`, `results/`, `expected/`,
+      `data/realistic` mudou, escrever o relatório do piloto completo (documento + PDF) e mandar ao orientador.
+      **O critério falhou: pelas palavras dele, "a tese muda e a gente reescreve". A reescrita (parte B) só com o
+      pedido dele, depois do relatório.**
 - [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
       afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
       reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
@@ -405,3 +418,7 @@ errado".
   depende do resultado das cinco repetições: se o critério falhar, "a tese muda e a gente reescreve" (palavras dele).
 - **2026-11-14, 17:40 — orientador aprovou as quatro repetições, os dois controles ("antes de reescrever") e o
   treino com 50 µm.** Pré-registro P2 escrito antes de rodar; dois subagentes em execução (ver P6).
+- **2026-11-14, 18:58 — cinco repetições, referência do B e treino com 50 µm prontos e conferidos; critério: 0 de 5.**
+  Os crops a 1 mm ficam em 0,938 / 0,730 (média de 5); a camada passa por +0,039 de F1 e +0,268 de rejeição. Falta o
+  subagente dos controles (C gravando até ≈ 19:20, depois treino; depois B). **Próximo passo ao voltar: esperar o
+  relatório dele, conferir, escrever o relatório do piloto completo e mandar. Nada de reescrita antes do pedido.**
