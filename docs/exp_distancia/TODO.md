@@ -265,4 +265,32 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   Ele devolve cada trecho antigo/novo para eu revisar. A aplicação no repositório real só depois da fase 2 de B2
   (assets finais). B1 ainda roda: 23 de 35 conjuntos simulados às 10:31 (≈ 3 min por conjunto), depois a coluna de
   `rec_afc`, o oráculo, o run de quadros inteiros e `focus_battery.csv`.
+- 2026-11-14, 10:55: **rascunho do LaTeX devolvido e revisado por mim.** Clone:
+  `scratchpad/latex_work`, branch `integration-draft`, commits `46e5fdd` (floats + `\input` de
+  `numbers_distancia`) e `301e4d4` (prosa); diffs trecho a trecho em `scratchpad/latex_work/../passages.md`
+  (na raiz do scratchpad da sessão: `passages.md`, `full_diff.patch`, `standins.tex`, `build.sh`, `out/main.pdf`).
+  Compila com assets provisórios, 31 páginas, sem referência indefinida; `tab:robustness` (13 colunas) precisou de
+  `\shrinkfit` (≈ 92 %).
+  Pontos em que ele seguiu os dados contra a minha especificação (aceitos): (1) estreitar a faixa na resolução do
+  sensor ainda falha (66,9 % / 21,9 % na validação); o que conserta é a média 4 × 4 (ruído) e média + faixa (feixe
+  estreito) — o texto diz "blind search at the resolution of the sensor", não "frágil só quando cega"; (2) a CPU do
+  run antigo era 1,95–3,34× mais lenta, não uniforme.
+  Mandei a rodada 1 de revisão (R1–R9) ao mesmo agente: rótulo "blind autofocus + twin removal"; parágrafo de
+  tempo com literais (carga entre 59 e 89; run antigo ≈ 230, duas a três vezes mais lento, desigual); "every flow
+  that does not repeat the reconstruction on the whole frame"; frase do que removeu as falhas (validação); legenda
+  de `tab:stages` sem "such as"; rótulos "distance per image"; RQ5 (iv) com o valor do narrow; nota `\todo` em
+  "generalises best to new classes".
+  **Para a fase 2 de B2 (além das decisões já listadas):** macro `\DistGrossPct` (= 1) em `distance.py`; rótulos de
+  exibição "distance per image (%)" e "distance drift per image (%)" em `tables.py`; célula do flat field em GPU na
+  janela imprime "0.0" (0,03 ms): dar 2 casas quando < 0,05; `rec_twin` = "blind autofocus + twin removal".
+  **Pendências para avisar o orientador (fora da lista de edições):** "within the depth of field" com erro mediano
+  de ≈ 50 µm contra profundidade de campo ≈ 30 µm (`03b-bench`); "its embedding generalises best to new classes"
+  contradito por `tab:enroll` para `prop`/stack; `tab:stack`/`fig:stack` chamam de "drift" a distância entre sessões
+  (8 sorteios); razões 2,6×/1,3×/2,3× da legenda de `tab:stages` vêm de medições antigas.
+  Itens CHECK-AFTER-RUNS do rascunho (resolver com os números finais): F1/tempo de `rec_afc` nos quadros inteiros;
+  "few tens of milliseconds" da leitura do blank frame (o run do estudo deu ≈ 15 ms); participação do detector
+  ≥ 95 % com `rec_afc`; "0.04" = twin − learned; `rec_afc` em `session_5`, `fullwell_500`, `beam_narrow` e no resto
+  da bateria (a 0,01 de `rec_z0`/`rec_af`, menos onde os dois falham).
+  Runs (B1) às 10:52: 35 conjuntos simulados; caches `rec_afc` em andamento (`tmux integ_afc`); faltam robustez 3a,
+  oráculo, quadros inteiros, `focus_battery.csv`.
 
