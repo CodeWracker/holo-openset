@@ -478,3 +478,221 @@ Fração do padrão dentro do crop (caixa + 25 %), fonte pontual monocromática,
   mudança vem da geometria (número de Fresnel), não da fonte.
 - Limite desta conta: a 0,7–1,5 mm o simulador não representa o conteúdo acima do Nyquist do sensor (Z6.3(a)). Pela
   conta numa grade mais fina, esse conteúdo é 0,1–0,9 % da energia do padrão e não muda a conclusão.
+
+## 2026-11-14, 14:00 — Z6.3: o simulador grava direito a ≈ 1 mm do jeito que está? (piloto)
+
+**(a) Grade e pixel.** O campo é propagado numa grade com o passo do próprio sensor:
+- `sim/physics.py`, linhas 201–202: `shape = phys.canvas` e `q = freq_sq(shape, dev)`, com `pixel=PIXEL`;
+- linhas 118–121: `fftfreq(..., d=pixel)`;
+- as máscaras das letras são desenhadas em pixels do sensor (`sim/letters.py`, linhas 23–24).
+
+O pixel entra como um **filtro** na mesma grade: linha 149, `torch.sinc(fx * PIXEL) * torch.sinc(fy * PIXEL)`, dentro
+de `coherence_mtf`, aplicado à intensidade nas linhas 222–224. Não há integração sobre uma grade mais fina. Então:
+- nada acima de 299 ciclos/mm existe no campo simulado;
+- o que o sensor de verdade faria com esse conteúdo (somar sobre o pixel e dobrar por aliasing para baixo do Nyquist)
+  não acontece;
+- a única dobra é a do termo |s|² da intensidade, que tem banda dupla e dá a volta na grade.
+
+A 19,25 mm isso não importa (o envelope zera tudo acima de ≈ 80 ciclos/mm). A 1 mm o envelope deixa contraste até 362
+ciclos/mm (397 sem o pixel): **o simulador atual descarta em silêncio a faixa de 299–362 ciclos/mm**, em vez de
+dobrá-la, como faria o sensor.
+
+Medida (`python scripts/exp_resolucao/sim_sampling.py --device cuda:5`, GPU 5, 78 s; saída
+`results_exp_resolucao/sim_sampling.csv`). A gravação honesta usa a mesma letra (o mesmo raster, cada pixel virando um
+bloco s × s), uma grade s vezes mais fina, as 7 λ da banda e a imagem do pinhole, e o pixel como média de s × s.
+Comparo com `sensor_intensity` nativo. Letra 'F', caixa de 77 px (base p50) e de 28 px (pequenas p50):
+
+| z | letra | energia do padrão acima do Nyquist, grade fina (s = 2 / 3 / 4) | rms(nativo − honesto) / rms(padrão) (s = 2 / 3 / 4) |
+|---|---|---|---|
+| 19,25 mm | 77 px | 0 / 0 / 0 | 0,12 % / 0,19 % / 0,22 % |
+| 2 mm | 77 px | 0,14 % / 0,13 % / 0,11 % | 1,8 % / 1,7 % / 1,8 % |
+| 1 mm | 77 px | 0,12 % / 0,26 % / 0,25 % | 1,9 % / 2,4 % / 2,5 % |
+| 0,7 mm | 77 px | 0,17 % / 0,33 % / 0,34 % | 3,0 % / 3,3 % / 3,4 % |
+| 19,25 mm | 28 px | 0 / 0 / 0 | 0,22 % / 0,35 % / 0,39 % |
+| 2 mm | 28 px | 0,29 % / 0,25 % / 0,23 % | 2,4 % / 2,5 % / 2,7 % |
+| 1 mm | 28 px | 0,29 % / 0,66 % / 0,67 % | 3,7 % / 4,3 % / 4,4 % |
+| 0,7 mm | 28 px | 0,52 % / 0,90 % / 0,95 % | 5,1 % / 5,5 % / 5,5 % |
+
+- Leitura: a 1 mm, o holograma nativo difere do honesto em 2–4 % do rms do padrão (contra 0,1–0,4 % a 19,25 mm). A
+  diferença converge com s = 3 (s = 3 e 4 dão o mesmo), então um fator de sobreamostragem de 2 a 3 basta.
+- Custo de uma janela honesta, medido para uma letra na GPU 5 (compartilhada, então só indicativo; dominado pelas
+  transformadas). A 1 mm a margem pode cair de 1728 para 256 px: as franjas registráveis chegam a λ z f, que é
+  0,23 mm (138 px) até 600 ciclos/mm. Grade 2304² com s = 2: 0,10 s e 0,8 GiB; 3456² com s = 3: 0,22 s e 1,2 GiB;
+  4608² com s = 4: 0,4 s e 2,1 GiB. A grade atual (4096², s = 1, margem 1728) tem 1,6 vez os pixels da de s = 2,
+  então a gravação honesta a 1 mm custaria o mesmo ou menos que hoje (estimativa por pixels de grade, não medida numa
+  cena completa).
+- Quadro inteiro (estimativa por pixels de grade). Com s = 2 e margem 256: (2748 + 512) × 2 por (3840 + 512) × 2 =
+  6520 × 8704, 57 M pontos. Hoje: (2748 + 3456) por (3840 + 3456) = 6204 × 7296, 45 M pontos. ≈ 1,3 vez, cerca de 9
+  GiB de pico por extrapolação linear do caso de 2304².
+- Precisaria de código novo: pitch de grade ≠ pixel em `freq_sq`/`coherence_mtf`, letras e poeira desenhadas s vezes
+  maiores, a média s × s no lugar do sinc.
+
+**(b) Amostragem do chirp e o enrolamento.** A função de transferência exp(−iπλz f²) numa grade de N pontos de passo p
+fica bem amostrada até z ≤ N p²/λ (o `criti` de `CV_FR_focus.m`, Z1). Valores: grade atual de 4096 a 1,67 µm, 29,7 mm;
+janela periódica de 640 (conjunto idealizado), 4,6 mm; grade de s = 2 (2304 a 0,835 µm), 4,2 mm; s = 3 (3456 a
+0,557 µm), 2,8 mm. **Com z pequeno o chirp fica mais fácil, não mais difícil:** a 1 mm todas as grades servem. O
+enrolamento (franjas que saem de um lado e voltam do outro) também fica menor: o alcance λ z f_Nyquist é 115 µm (69 px)
+a 1 mm, contra 2,2 mm (1329 px) a 19,25 mm. A margem de 1728 px e o `reach` de 1024 px (linhas 55–56) foram
+dimensionados para 19,25 mm e ficariam folgados (custo à toa, sem erro). Um detalhe: a minha grade de s = 2 a 19,25 mm
+(8192 a 0,835 µm, `criti` 14,8 mm) estava subamostrada no chirp e mesmo assim bateu com o nativo a 0,1 %, porque o
+envelope zera essas frequências.
+
+**(c) O que é relativo a z0 ou foi ajustado para 19,25 mm, e o que vira a 1 mm.**
+
+| grandeza (onde) | definição | a 19,25 mm | a 1 mm |
+|---|---|---|---|
+| espalhamento de profundidade por objeto (`physics.py` 66–67) | absoluto, σ 50 µm, máx 150 µm | 0,26 % de z (máx 0,8 %) | **5 % de z (máx 15 %)** |
+| robustez `depth_150` / `depth_300` (`variants.py` 44–45) | σ 150 / 300 µm, máx 450 / 900 µm | 0,8 / 1,6 % (máx 2,3 / 4,7 %) | **15 / 30 % (máx 45 / 90 %: objetos quase no sensor)** |
+| distância entre sessões (`physics.py` 68; `session_2`, `session_5`) | relativa, 0,5 % / 2 % / 5 % | 96 / 385 / 962 µm | 5 / 20 / 50 µm |
+| por imagem `frame_2`, `frame_5`; passeio `walk_05` (`physics.py` 70–71) | relativo, 2 %, 5 %, 0,5 %/imagem | 385, 962 µm; 96 µm/imagem | 20, 50 µm; 5 µm/imagem (≈ 50 µm em 100 imagens) |
+| inclinação (`physics.py` 72) | absoluta, tan θ × r | 1° → 13 µm no canto da janela | o mesmo em µm, mas 1,3 % de z; 15° → 20 % de z |
+| poeira do vidro (`physics.py` 75) | absoluta, +1,0 mm e −0,2 mm da amostra | 20,25 e 19,05 mm | 2,0 e **0,8 mm** |
+| poeira do sensor (`physics.py` 77) | absoluta, 0,5 mm | 38× mais perto que a amostra | **metade de z**; com z < 0,5 mm (o `bench_A_min` do levantamento tem 0,49 mm) a amostra ficaria abaixo da poeira (linha 219 propaga z − 0,5 mm < 0) |
+| profundidade de campo, δz ≈ λ/NA², NA ≈ λ min(f_c, f_Nyq) | — | NA 0,028 → ≈ 0,50 mm | NA 0,115 → ≈ 29 µm |
+| autofoco cego (`reconstruct.py` 43) | relativo, 0,21–2,08 z0, 73 + 41 | passo grosso 500 µm | passo grosso 26 µm; a faixa 0,2–2,1 mm inclui os planos da poeira do sensor (0,5 mm) e do vidro (0,8 e 2,0 mm) |
+| autofoco estreito `afc` (`reconstruct.py` 256) | relativo ±10 %, 7 + 11, **média 4 × 4** | passo 642 µm; a média 4 × 4 vinha de b_max = 4 | passo 33 µm; **a média 4 × 4 corta em 75 ciclos/mm um holograma que tem contraste até 362: a justificativa (envelope) não vale a 1 mm** |
+| `afr` (`reconstruct.py` 257) | ±15 %, média 2 × 2, σ = 2 px | — | a média 2 × 2 também corta conteúdo útil |
+| falha grosseira (`experiments/focus.py` 65) | relativa, 1 % de z0 | 192,5 µm | 10 µm (≈ 1/3 da profundidade de campo) |
+| foco por objeto `edf` / `edfw` (`reconstruct.py` 45; `EDF`) | relativo ±1,2 % / ±6 % | ±231 / ±1155 µm | **±12 / ±60 µm: o `edf` não cobre o σ de 50 µm das profundidades** |
+| `calibrate_alpha` (`train.py` 57) | α em [0,001; 0,08], α = 1,0588e-3 × z[mm] | α = 0,0204 | **α = 0,00106, a 6 % do limite inferior (z_lo = 0,944 mm); a 0,7 mm (α = 0,00074) fica fora da faixa** (o docstring diz que cobre 2 a 75 mm; na verdade 0,94 a 75,6 mm) |
+| `lr_alpha` = 1e-5 (`train.py` 73) | absoluto, em unidades de α | 0,05 % de α por passo de Adam | **≈ 1 % de α por passo: 20× mais solto em relação ao α** |
+| pilha focal `bank_jit` (`flows.py` 31; `alpha_spread` 0,05) | relativo ±5 %, jitter ±5 % | ±962 µm | ±50 µm |
+
+**(d) O que mais quebra ou muda de sentido.**
+- **Robustez da fonte:** a 1 mm a imagem do pinhole quase não pesa; quem manda é a banda. Os cortes (E < 0,1) passam
+  de 19,25 para 1 mm assim:
+
+  | conjunto | 19,25 mm | 1 mm |
+  |---|---|---|
+  | base | 72 | 362 |
+  | `pinhole_20` | 90 | 366 |
+  | `pinhole_200` | 42 | 352 |
+  | `source_5cm` | 28 | 334 |
+  | `band_0` | 85 | 535 |
+  | `band_20` | 58 | 270 |
+  | `band_40` | 44 | 196 |
+  | `laser` | 544 | 544 |
+
+  (ciclos/mm; o `laser` é cortado só pelo pixel). As variantes de pinhole e de distância da fonte deixam de ser um teste
+  de coerência espacial; as de banda passam a ser o teste da fonte.
+- **Twin image:** o gêmeo fica desfocado de 2z = 2 mm. O seu halo encolhe de ≈ 2 mm para ≈ 0,2 mm de alcance e cai
+  dentro do crop, sobre o objeto. O efeito da remoção do gêmeo (`rec_twin`) muda de natureza; não sei o sinal.
+- **Conjuntos pequenos:** `small_z0` (letras pequenas a z0) iria para 1 mm junto com o base. O `small_near`, a 2 mm,
+  passaria a ser o caso **mais longe**, não o mais perto: a análise de tamanho de objeto inverte de sentido.
+- **Idealizado:** usa o `Z0` padrão numa janela periódica de 640 (`criti` 4,6 mm): a 1 mm amostra bem, mas teria de
+  ser regravado.
+- **Quadros inteiros e YOLO:** os padrões ficam compactos (≈ letra + 100 µm). A detecção no bruto provavelmente fica
+  mais fácil; a proporção detector/reconstrução do argumento de tempo não muda (os custos por estágio não dependem
+  de z).
+- **Super-resolução de pixel:** a 1 mm o holograma tem conteúdo acima do Nyquist (Z2), que é o que a bancada recupera
+  com 49 quadros. Um conjunto de quadro único simulado honestamente tem esse conteúdo dobrado (aliasing), não ausente.
+- **Achado lateral sobre a "profundidade de campo ≈ 30 µm"** de `docs/exp_distancia/PROTOCOLO.md` (linha 39) e do
+  comentário de `GROSS` ("190 µm, seis profundidades de campo"). Esse número é λ/NA² com NA = λ/(2Δ), limitado pelo
+  pixel, e ignora o envelope. Com o envelope de 19,25 mm a NA efetiva é 0,028 e δz ≈ 0,5 mm. A 1 mm os dois coincidem
+  (≈ 29 µm). A frase do paper "within the depth of field" (`06-results.tex`, linha 298) depende disso; já estava
+  sinalizada em `docs/exp_distancia/TODO.md` (287–288).
+
+## 2026-11-14, 14:15 — Z6.4: inventário e custo de regravar e retreinar (piloto)
+
+Fontes dos números: a fila (`holo_openset/pipeline.py::jobs()`, 583 tarefas), os logs de `logs/exp_distancia/` e
+`logs/integracao/` (13–14/11) e `docs/exp_distancia/CADERNO_INTEGRACAO.md`. **M** = medido (com a fonte); **E** =
+estimativa minha. As datas de 18/10 dos dados e dos modelos parecem ser de cópia (160 modelos entre 18:17 e 19:38),
+não de cômputo; não as uso para medir o ritmo.
+
+Contagem da fila: 15 simulações, 54 caches, 240 treinos (110 do base, 100 dos pequenos, 30 do idealizado), 5 YOLO,
+260 avaliações e 9 experimentos.
+
+| o quê | quantidade | tempo unitário | GPU-h | disco |
+|---|---|---|---|---|
+| simular, física realista (janelas 640²) | base 5000; auxiliares 5 rep × (r + r_cal) × 2000 = 20 000; 35 variantes × 800 = 28 000; `variants_val` 5 × 700 = 3500; pequenos 2 × 5000 = 10 000; total 66 500 | **M**: 0,054 s/janela com a GPU livre (`pinhole_200`, 43 s/800); 0,23 s típico (2–4 min/800 no passo 1 da integração); 0,85–1,1 s disputada (auxiliares de r1: 4000 em 57 min; variantes de 13/11: ≈ 15 min/800) | 1,0 / 4,2 / 16–20 | holograms + backgrounds ≈ 0,4 MB/janela → ≈ 30 GB |
+| simular o idealizado (5000 + auxiliares 10 000) | 15 000 | **E**: janela periódica sem margem, ≈ 40× mais barata | < 0,3 | 2 GB + aux |
+| simular os quadros inteiros (8 conjuntos × 40) | 320 quadros | **M**: ≈ 6 min por conjunto (13/11, 22:38–23:13) | 0,8 | 5 GB |
+| caches de reconstrução (z0, af, edf, twin, afc no base, aux e 35 variantes; z0/af/twin nos pequenos; z0 no idealizado; as buscas do estudo de distância) | ≈ 60 caches | **M** parcial: edf + twin do base em ≈ 3 min; 5 buscas do base em 3,3 min; `afc` 15–35 s por variante; **E** para o resto | ≈ 3 (E) | 1,23 MB/imagem/método: base com 10 caches ≈ 61 GB, variantes ≈ 90 GB |
+| treinos de embedding | 240 (+1 do estudo de distância) | **M**: mediana 1,32 min (`results/run_summary.json`, macro `TrainMinutes`); 56 s no `own_train_rec_afc` | 5,3 | ≈ 11 GB |
+| YOLO | 5 | **E**: 15–30 min cada (sem log que meça) | 1,3–2,5 | 0,1 GB |
+| avaliações | 260 | **M**: 5 repetições de `rec_afc` em 26 s | 0,4–0,7 | — |
+| robustez (35 conjuntos × 12 fluxos × 5) | 1 | **M**: 4 min 21 s para 3 conjuntos × 11 fluxos; 3 min 41 s para 33 × 1 | ≈ 1 | — |
+| e2e (YOLO + 12 fluxos) | 1 | **M**: 6 min para um fluxo com detecção; 41 s para dois com detecções gravadas | 0,5–1 (E) | — |
+| quadros inteiros (experimento) | 8 conjuntos | **M**: ≈ 22 min no `ff_e1` | ≈ 3 (E) | — |
+| oráculo (CPU), discovery, fidelity, gaps | 4 | **E** | < 1 | — |
+| estudo de distância: varredura de validação (256 candidatos) + políticas + matriz de teste | 6 conjuntos × 700 | **M**: 1,41 s por imagem com os 256 candidatos | ≈ 1,6 + 1 (E) | — |
+| sessões de tempo (GPU e um núcleo de CPU) | 2 | não dependem de z: mesmos tamanhos de imagem e mesmo número de transformadas por estágio. Só mudam se a receita mudar (por exemplo, `afc` sem a média 4 × 4) | 0 | — |
+| `expected/`, tabelas, figuras, macros | — | **E**: `paper` + `reproduce check` + revisão do texto | — | — |
+
+- **Total: ≈ 20 GPU-h com as GPUs livres, ≈ 25 no ritmo típico, 35–40 com a GPU disputada (estimativas).** A
+  simulação domina no caso disputado.
+- Ritmo de parede: com o limite de 3 jobs por vez, o cômputo cabe em ≈ 7–14 h. As dependências (simular → caches →
+  treinar → experimentos) e a disputa pelas GPUs levam a 1,5–3 dias de parede (E), mais ≈ 1 dia para conferir,
+  regenerar `expected/` e revisar o texto (E). Referência de ritmo real: a integração de 14/11 (simular 28 variantes,
+  caches, robustez, e2e, quadros inteiros e figuras) levou 09:12 → 11:49, 2,6 h de parede com 1–2 GPUs.
+- Se a gravação honesta a 1 mm usar s = 2 e margem de 256 px (Z6.3(a)), a grade por janela fica menor que a de hoje,
+  e a simulação não deve encarecer (E). Isso exige o código novo listado em Z6.3(a), e eu não o escrevi.
+- **Disco:** regravar como conjuntos novos, sem apagar os atuais, pede ≈ 165 GB de dados e ≈ 11 GB de modelos; há
+  2,2 TB livres.
+- **O que pode ser reaproveitado sem mudança:**
+  - o código (com as correções de Z6.3(c): faixa do `calibrate_alpha`, `lr_alpha`, `edf`, média do `afc`, margem);
+  - as partições de classes;
+  - as sementes das cenas: com `margin` e `reach` iguais, as mesmas cenas são regravadas a 1 mm e a comparação fica
+    pareada, cena a cena. Se a margem cair, o sorteio da posição das letras de fora muda;
+  - as sessões de tempo;
+  - as ferramentas de análise.
+- Nenhum número de reconhecimento pode ser reaproveitado: todos dependem do z do conjunto.
+
+## 2026-11-14, 14:15 — Z6.5: configurações candidatas na ferramenta do envelope (piloto)
+
+- Onde: container, CPU. `python scripts/exp_resolucao/envelope_table.py --configs
+  scripts/exp_resolucao/envelope_configs_z_near.csv --out results_exp_resolucao/envelope_z_near.csv` e
+  `... --configs results_exp_resolucao/envelope_candidates.csv --out
+  results_exp_resolucao/envelope_candidates_table.csv` (≈ 10 s cada). O arquivo de candidatas é do agente do
+  levantamento (commit `7a5dcf6`); não o alterei.
+- A ferramenta ganhou duas colunas: `f_c_over_nyquist` (> 1: o sensor subamostra) e `half_pitch_over_pixel` (< 1: o
+  envelope deixaria ver detalhe menor que o pixel, que um quadro único não registra).
+
+Bancada a 0,7–2 mm, as duas convenções de L:
+
+| nome | z (mm) | L (mm) | pixel (µm) | borrão (µm) | f_c E<0,1 | sem pixel | f_c/Nyquist | b_max | termo | meia-pitch (µm) | num quadro (µm) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench z=0.7 mm L to sample | 0,7 | 150 | 1,67 | 0,47 | 414,4 | 476,1 | 1,38 | 1 | bandwidth | 1,21 | 1,67 |
+| bench z=0.7 mm L to sensor | 0,7 | 149,3 | 1,67 | 0,47 | 414,3 | 476,1 | 1,38 | 1 | bandwidth | 1,21 | 1,67 |
+| bench z=1.0 mm L to sample | 1 | 150 | 1,67 | 0,67 | 362,2 | 397,2 | 1,21 | 1 | bandwidth | 1,38 | 1,67 |
+| bench z=1.0 mm L to sensor | 1 | 149 | 1,67 | 0,67 | 362,2 | 397,1 | 1,21 | 1 | bandwidth | 1,38 | 1,67 |
+| bench z=1.3 mm L to sample | 1,3 | 150 | 1,67 | 0,87 | 324,3 | 347,3 | 1,08 | 1 | bandwidth | 1,54 | 1,67 |
+| bench z=1.3 mm L to sensor | 1,3 | 148,7 | 1,67 | 0,87 | 324,2 | 347,2 | 1,08 | 1 | bandwidth | 1,54 | 1,67 |
+| bench z=1.5 mm L to sample | 1,5 | 150 | 1,67 | 1,00 | 304,3 | 322,7 | 1,02 | 1 | bandwidth | 1,64 | 1,67 |
+| bench z=1.5 mm L to sensor | 1,5 | 148,5 | 1,67 | 1,01 | 304,2 | 322,6 | 1,02 | 1 | bandwidth | 1,64 | 1,67 |
+| bench z=2.0 mm L to sample | 2 | 150 | 1,67 | 1,33 | 266,4 | 278,1 | 0,89 | 1 | bandwidth | 1,88 | 1,88 |
+| bench z=2.0 mm L to sensor | 2 | 148 | 1,67 | 1,35 | 266,3 | 277,9 | 0,89 | 1 | bandwidth | 1,88 | 1,88 |
+
+Configurações candidatas do levantamento (`envelope_candidates.csv`):
+
+| nome | z (mm) | L (mm) | pixel (µm) | borrão (µm) | f_c E<0,1 | sem pixel | f_c/Nyquist | b_max | termo | meia-pitch (µm) | num quadro (µm) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench_A_typ | 0,7 | 149,1 | 1,67 | 0,47 | 414,3 | 476,1 | 1,38 | 1 | bandwidth | 1,21 | 1,67 |
+| bench_A_min | 0,49 | 149,3 | 1,67 | 0,33 | 461,8 | 570,2 | 1,54 | 1 | pixel | 1,08 | 1,67 |
+| bench_A_max | 1,06 | 148,7 | 1,67 | 0,71 | 353,6 | 385,5 | 1,18 | 1 | bandwidth | 1,41 | 1,67 |
+| bench_A_typ_bw12 | 0,7 | 149,1 | 1,67 | 0,47 | 388,8 | 435,1 | 1,30 | 1 | bandwidth | 1,29 | 1,67 |
+| bench_round_1mm | 1 | 148,8 | 1,67 | 0,67 | 362,2 | 397,1 | 1,21 | 1 | bandwidth | 1,38 | 1,67 |
+| bench_B_typ | 1,25 | 148,3 | 1,67 | 0,84 | 329,8 | 354,3 | 1,10 | 1 | bandwidth | 1,52 | 1,67 |
+| bench_small_near_2mm | 2 | 148 | 1,67 | 1,35 | 266,3 | 277,9 | 0,89 | 1 | bandwidth | 1,88 | 1,88 |
+| bench_current_19p25_L130 | 19,25 | 130,75 | 1,67 | 14,72 | 66,8 | 67,0 | 0,22 | 4 | pinhole | 7,48 | 7,48 |
+| bench_current_19p25_L150 | 19,25 | 150 | 1,67 | 12,83 | 72,4 | 72,6 | 0,24 | 4 | pinhole | 6,91 | 6,91 |
+| zhang2020_led_dl20 | 1,499 | 200 | 1,67 | 0,00 | 225,2 | 231,6 | 0,75 | 1 | bandwidth | 2,22 | 2,22 |
+| zhang2020_led_dl30 | 1,499 | 200 | 1,67 | 0,00 | 185,7 | 189,1 | 0,62 | 1 | bandwidth | 2,69 | 2,69 |
+| amann2019_led | 5,91 | 24,09 | 1,12 | 3,68 | 129,6 | 130,1 | 0,29 | 3 | bandwidth | 3,86 | 3,86 |
+| bishara2011_led_fibre | 0,7 | 45 | 2,2 | 1,63 | 345,9 | 437,0 | 1,52 | 1 | pixel | 1,45 | 2,20 |
+| bishara2010_lamp_fibre | 0,75 | 100 | 2,2 | 0,38 | 397,3 | 649,6 | 1,75 | 1 | pixel | 1,26 | 2,20 |
+| greenbaum2012oe_lamp_fibre | 0,7 | 100 | 2,2 | 0,70 | 396,0 | 656,8 | 1,74 | 1 | pixel | 1,26 | 2,20 |
+| tseng2010_led_cellphone | 2 | 40 | 2,2 | 5,00 | 165,3 | 170,6 | 0,73 | 1 | bandwidth | 3,03 | 3,03 |
+| mudanyali2010_led | 1 | 35 | 2,2 | 2,86 | 246,7 | 267,1 | 1,09 | 1 | bandwidth | 2,03 | 2,20 |
+
+- A convenção de L (15 cm do pinhole até a amostra ou até o sensor) não muda nada abaixo de 2 mm (≤ 0,15 ciclo/mm).
+- Abaixo de ≈ 1,5 mm a bancada subamostra o holograma (f_c/Nyquist > 1). A 0,7 mm, a proposta do levantamento, o
+  contraste passa de 0,1 até 414 ciclos/mm (1,38 × Nyquist), e b_max = 1.
+- Conferência da ferramenta com trabalhos que mediram a resolução (meia-pitch, convenção da carta USAF):
+  - Amann 2019: 3,86 µm contra 3,91 µm medidos;
+  - Zhang 2020, banda de 20 nm: 2,22 contra 1,95 µm medidos (1,94 pela teoria deles);
+  - Zhang 2020, banda de 30 nm: 2,69 contra 2,46 µm medidos.
+
+  O limiar E < 0,1 fica do lado conservador (10–14 % acima nos dois casos de Zhang).
+- Nos trabalhos do grupo Ozcan (pixel de 2,2 µm, z ≈ 0,7 mm) o termo que manda é o pixel. Esses trabalhos usam
+  super-resolução de pixel.
