@@ -155,3 +155,37 @@ def test_the_extended_calibration_grid_keeps_its_points_and_reaches_0_7_mm():
     assert 0.48e-3 < z < 0.49e-3   # 0.7 mm and 1.0 mm well inside
     x = torch.randint(0, 255, (2, 64, 64), dtype=torch.uint8)
     assert calibrate_alpha(x, DEV, n_fine=3) == calibrate_alpha(x, DEV, n_fine=3, extend=0)
+
+
+def test_a_dust_plane_travels_its_own_distance_at_every_wavelength():
+    """Without the pinhole (whose blur is computed for the distance of the sample), one particle at depth d recorded
+    at z is the same particle at depth 0 recorded at z + d, with the whole band of the LED and the sensor dust on:
+    each dust plane is propagated by z + d at every wavelength, not pre-propagated at the central one."""
+    sc, ses, p = _tiny()
+    p = p.replace(pinhole=0.0, oversample=4)
+    d = 1.0e-3
+    o = dict(sc['dust'][0], depth=d)
+    a = sensor_intensity(dict(objects=[], dust=[o], sensor_dust=sc['sensor_dust']), dict(ses, z=1.0e-3), p, DEV)
+    b = sensor_intensity(dict(objects=[], dust=[dict(o, depth=0.0)], sensor_dust=sc['sensor_dust']),
+                         dict(ses, z=1.0e-3 + d), p, DEV)
+    assert float((a - b).abs().max()) < 1e-5 and float((a - 1).std()) > 1e-3
+    # the route of the letters (pre-propagated by d at the central wavelength) misses it: 5.1 % of the pattern
+    c = sensor_intensity(dict(objects=[dict(o, kind='letter')], dust=[], sensor_dust=sc['sensor_dust']),
+                         dict(ses, z=1.0e-3), p, DEV)
+    assert rel(c, b, b - 1) > 0.02
+
+
+def test_the_depth_spread_moves_only_the_depths():
+    """The depth robustness set (50 / 150 um) is the main set (2.6 / 7.8 um) with other depths: the same letters,
+    rasters, positions, materials and dust (one draw of the depth per object, whatever its spread)."""
+    for seed in (17_000_000, 17_000_625):
+        a, b = (make_scene(seed, Physics().replace(z0=1.0e-3, margin=394, reach=233, depth_std=d, depth_max=3 * d),
+                           lay=FresnelLayout()) for d in (2.6e-6, 50e-6))
+        assert len(a['objects']) == len(b['objects']) and len(a['dust']) == len(b['dust'])
+        for o, p in zip(a['objects'] + a['dust'], b['objects'] + b['dust']):
+            assert np.array_equal(o['master'], p['master']) and (o['mx'], o['my']) == (p['mx'], p['my'])
+            assert {k: o[k] for k in ('absorption', 'phase', 'kind')} == {k: p[k] for k in ('absorption', 'phase', 'kind')}
+        da, db = [o['depth'] for o in a['objects']], [o['depth'] for o in b['objects']]
+        assert np.allclose(np.array(db) * 2.6 / 50, da, rtol=1e-9, atol=0) and np.std(db) > 10 * np.std(da)
+        assert [{k: v for k, v in r.items() if k != 'depth'} for r in a['rows']] == \
+            [{k: v for k, v in r.items() if k != 'depth'} for r in b['rows']]

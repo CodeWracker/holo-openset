@@ -288,12 +288,13 @@ def _paste(dst, src, x, y, multiply=False):
             dst[y0:y1, x0:x1] += src[y0 - y:y1 - y, x0 - x:x1 - x]
 
 
-def fine_scattered_field(objects, shape, s, dev):
+def fine_scattered_field(objects, shape, s, dev, dust_planes=None):
     """`scattered_field` on the grid s times finer (pitch PIXEL / s): each object sampled on that grid
-    (`sample_mask`) and pre-propagated by its own depth offset there, in a patch padded by the reach of the finest
-    fringe of that grid (as the native path does with the pixel). A group of objects at one depth whose patch would
-    exceed half the canvas (the dust 1 mm behind the sample on a fine grid) is propagated on the canvas instead: one
-    transform pair per plane."""
+    (`sample_mask`) and pre-propagated by its own depth offset there (at the central wavelength), in a patch padded by
+    the reach of the finest fringe of that grid (as the native path does with the pixel). A group of objects at one
+    depth whose patch would exceed half the canvas is propagated on the canvas instead: one transform pair per plane.
+    dust_planes: a dict that receives instead, NOT propagated, the field of the dust (kind 'dust') of each depth on the
+    canvas, {depth: field}, for `fine_intensity` to propagate it by z + depth at every wavelength."""
     pitch = PIXEL / s
     out = torch.zeros(shape, dtype=torch.complex64, device=dev)
     patches, planes = {}, {}
@@ -302,6 +303,11 @@ def fine_scattered_field(objects, shape, s, dev):
         t = (1 - o['absorption']) * np.exp(1j * o['phase'])
         it = dict(m=m, x=x, y=y, t=complex(t - 1), depth=o['depth'])
         h, w = m.shape
+        if dust_planes is not None and o.get('kind') == 'dust':
+            if o['depth'] not in dust_planes:
+                dust_planes[o['depth']] = torch.zeros(shape, dtype=torch.complex64, device=dev)
+            _paste(dust_planes[o['depth']], torch.as_tensor(m, device=dev).to(torch.complex64) * it['t'], x, y)
+            continue
         if o['depth'] == 0:
             patches.setdefault((h, w, False), []).append(it)
             continue
@@ -352,9 +358,12 @@ def pinhole_mtf(shape, z, phys, dev, pitch=PIXEL):
 def fine_intensity(scene, session, phys, dev, sample=True):
     """Noise-free intensity on the window of the grid s = phys.oversample times finer than the pixel, BEFORE the pixel
     (float64 [h s, w s]); `sensor_intensity` averages it over each pixel. The structure of the native path on that
-    grid: the scattered field of the letters and of the dust around the sample (each at its depth), every wavelength
-    of the source propagated to the sensor, the sensor dust multiplying the field in its plane, the image of the
-    pinhole blurring the intensity. The box filter of the native path is not applied: the mean over the s x s cells of
+    grid: the scattered field of the letters (pre-propagated by their small depth at the central wavelength) and of
+    the dust on the glass around the sample (each plane propagated by z + its depth at every wavelength, so the dust
+    1 mm behind the sample gets the temporal coherence of its own distance), every wavelength of the source
+    propagated to the sensor, the sensor dust multiplying the field in its plane, the image of the pinhole blurring
+    the intensity (computed for the distance of the sample for every plane: an approximation, the smaller term at
+    these distances). The box filter of the native path is not applied: the mean over the s x s cells of
     each pixel is the pixel aperture (it also aliases what lies above the Nyquist frequency of the sensor, as a real
     sensor does). pixel_mtf is not read here: this is the intensity before any pixel."""
     s = phys.oversample
@@ -363,9 +372,11 @@ def fine_intensity(scene, session, phys, dev, sample=True):
     shape = (H * s, W * s)
     q = freq_sq(shape, dev, pitch)
     z = session['z']
-    field = fine_scattered_field(scene['objects'] + scene['dust'], shape, s, dev) if sample else None
+    planes = {}
+    field = fine_scattered_field(scene['objects'] + scene['dust'], shape, s, dev, planes) if sample else None
     S = torch.fft.fft2(field) if field is not None else None
     del field
+    planes = {d: torch.fft.fft2(f) for d, f in planes.items()}   # the spectrum of each dust plane
     td = None
     if scene['sensor_dust']:
         td = torch.ones(shape, dtype=torch.complex64, device=dev)
@@ -377,8 +388,14 @@ def fine_intensity(scene, session, phys, dev, sample=True):
     dz = phys.sensor_dust_z
     for lam, wgt in wavelengths(phys):
         zz = z if td is None else z - dz
-        u = 1 + (torch.fft.ifft2(S * torch.exp(-1j * (math.pi * lam * zz) * q).to(torch.complex64)) if S is not None
-                 else torch.zeros(shape, dtype=torch.complex64, device=dev))
+        if S is None:
+            u = torch.ones(shape, dtype=torch.complex64, device=dev)
+        else:
+            spec = S * torch.exp(-1j * (math.pi * lam * zz) * q).to(torch.complex64)
+            for d, P in planes.items():   # a dust plane at depth d travels z + d at this wavelength
+                spec += P * torch.exp(-1j * (math.pi * lam * (zz + d)) * q).to(torch.complex64)
+            u = 1 + torch.fft.ifft2(spec)
+            del spec
         if td is not None:
             u = torch.fft.ifft2(torch.fft.fft2(u * td) * torch.exp(-1j * (math.pi * lam * dz) * q).to(torch.complex64))
         inten += wgt * ((u.abs() ** 2).double() if phys.intensity else (2 * u.real.double() - 1))

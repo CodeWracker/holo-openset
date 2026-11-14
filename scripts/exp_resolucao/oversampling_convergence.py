@@ -26,6 +26,9 @@ recording, in grey levels of 8 bits (the background at the centre of the beam is
              pattern, per scene. -> oversampling_reach.csv
   margin     the same scene recorded with margin m and 2m (the periodic field wraps around less): rel_change =
              rms(I_m - I_2m) / rms of the pattern of I_2m. -> oversampling_margin.csv
+  dump       the noise-free recordings (and blank frames) of the 8 scenes at the first factor of --s, to --out (npz):
+             run it with two versions of the package (PYTHONPATH) to compare two recorders
+  compare    two dumps A B: rms(A - B) / rms of the pattern of B, per scene -> --out (csv)
 
     python scripts/exp_resolucao/oversampling_convergence.py reach --device cuda:N --s 4 --reach 117 233 350
     python scripts/exp_resolucao/oversampling_convergence.py margin --device cuda:N --s 4 --reach R --margin 197 394
@@ -217,9 +220,46 @@ def margin(a, dev):
     print(t.groupby(['depth', 'z_mm', 'margin']).rel_change.agg(['max', 'mean']).to_string())
 
 
+def dump(a, dev):
+    lay = FresnelLayout(**a.layout)
+    out = {}
+    for depth in a.depths:
+        for z in a.z:
+            p = physics(z, a.margin, a.reach[0], depth, a.s[0])
+            cam = camera(CAMERA_SEED, p, lay)
+            for i in IDS:
+                sc = scene(i, p, lay)
+                sc['sensor_dust'] = cam['dust']
+                ses = session(SEED * 1000 + i // 100, p)
+                out[f'{depth}|{z}|{i}|img'] = recording(sc, ses, p, cam, dev)[0].numpy()
+                out[f'{depth}|{z}|{i}|blank'] = recording(sc, ses, p, cam, dev, sample=False)[0].numpy()
+    np.savez(a.out, **out)
+
+
+def compare(a):
+    A, B = np.load(a.dumps[0]), np.load(a.dumps[1])
+    rows = []
+    for k in sorted(B.files):
+        if not k.endswith('|img'):
+            continue
+        depth, z, i, _ = k.split('|')
+        d, pat = A[k] - B[k], B[k] - B[k.replace('|img', '|blank')]
+        rows.append(dict(depth=depth, z_mm=float(z), image_id=int(i), rel_rms=float(d.std() / pat.std()),
+                         max_abs_dn=float(np.abs(d).max()),
+                         blank_rel=float((A[k.replace('|img', '|blank')] - B[k.replace('|img', '|blank')]).std()
+                                         / pat.std())))
+    t = pd.DataFrame(rows)
+    t.to_csv(a.out, index=False, float_format='%.6g')
+    print(t.to_string())
+    print(t.groupby(['depth', 'z_mm']).agg(rel_min=('rel_rms', 'min'), rel_med=('rel_rms', 'median'),
+                                           rel_max=('rel_rms', 'max'), dn_max=('max_abs_dn', 'max')).to_string())
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('what', choices=['converge', 'reach', 'margin'])
+    ap.add_argument('what', choices=['converge', 'reach', 'margin', 'dump', 'compare'])
+    ap.add_argument('dumps', nargs='*', help='compare: two npz written by dump (A B)')
+    ap.add_argument('--out', help='dump: npz; compare: csv')
     ap.add_argument('--device', default='cpu')
     ap.add_argument('--z', type=float, nargs='+', default=[1.0, 0.7], help='mm')
     ap.add_argument('--depths', nargs='+', default=list(DEPTHS), choices=list(DEPTHS))
@@ -235,7 +275,11 @@ def main():
     a = ap.parse_args()
     a.layout = {k: float(v) for k, v in (x.split('=', 1) for x in a.layout)}
     torch.set_num_threads(4)
+    if a.what == 'compare':
+        return compare(a)
     dev = pick_device(a.device)
+    if a.what == 'dump':
+        return dump(a, dev)
     if a.what == 'converge':
         a.reach = a.reach[0]
         converge(a, dev)
