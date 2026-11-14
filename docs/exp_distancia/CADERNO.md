@@ -1455,3 +1455,112 @@ verdict". Teste novo `test_distance_report_gives_reading_a_and_keeps_reading_b` 
 passando pelos csv: sem sufixo = A = "not cheaper", B = "met"); o teste antigo das duas leituras ficou como estava.
 Resultado nos dados: o mesmo de antes, `\DistCritMetCount` = 1 de 24 (`bank_jit` em `walk_05`); na B, 2. A escolha não
 muda a conclusão.
+
+## 2026-11-14 — A2: checagens empíricas do pareamento das cenas
+
+A leitura do diff (`sim/generate.py`, `reconstruct.py`) é do responsável (ver `TODO.md`, A2). Aqui fica o lado
+empírico: só leitura de `data/` (CPU), mais a invariância e uma regravação de quadros com o código do paper (GPU 5),
+ambas fora de `data/`.
+
+### (a), (b) e (d): anotações, z por imagem e pixels
+
+```bash
+python scripts/exp_distancia/pairing_check.py     # 3 s; saída em logs/exp_distancia/pairing_check.log
+```
+
+**(a) Quadros inteiros.** Os sete conjuntos `full_frames_{frame5,tilt0,tilt1,tilt2,tilt5,tilt10,tilt15}` têm as
+anotações de `full_frames` (8268 letras em 40 quadros) idênticas em tudo menos `depth` e `z` (ids, `det_idx`, classe,
+caixa, fonte, tamanho, rotação, absorção, fase, nome, split, ordem), e os metadados idênticos menos `z`. `tilt0` e
+`frame5` têm as profundidades do paper idênticas; os de inclinação, não (como devem). Em todos, `z` da anotação =
+z do quadro + profundidade (erro máximo 10⁻¹⁶ m). z por quadro: `full_frames` e os seis de inclinação têm o z da sessão
+do base; em `frame5` o z de cada quadro é exatamente z_sessão (1 + 0,05 h), com h recalculado de
+`random.Random(semente do quadro + 800_000_000)` (erro máximo 8 × 10⁻¹⁷ m); desvio padrão medido do jitter 4,84 % em 40
+quadros. Inclinação: (profundidade_θ − profundidade_paper) / tan θ é o mesmo braço r para 1°, 2°, 5°, 10° e 15° em todas
+as 8268 letras (diferença máxima 4 × 10⁻¹⁵ m), e r é linear no centro da caixa dentro de cada sessão (resíduo máximo
+2 × 10⁻¹⁵ m), com o azimute ajustado igual ao de `random.Random(seed · 1000 + s + 650_000)` nas 8 sessões (diferença
+0,000°).
+
+**(b) Janelas (teste).** `frame_2`, `frame_5`, `walk_05` (e `session_5`) contra `data/realistic`: 6371 letras e 800
+imagens, anotações idênticas menos `z`, profundidades idênticas, metadados idênticos menos `z`. O z de cada imagem segue
+o desenho exatamente (erro máximo 8,3 × 10⁻¹⁷ m): `frame_2`/`frame_5` com h de `random.Random(seed · 10⁶ + id +
+800_000_000)`; `walk_05` com `session_walk(seed · 1000 + s, 100, 0,005)`, primeira imagem de cada sessão no z da
+sessão. Medidos: σ do jitter 1,89 % (`frame_2`, desenho 2 %) e 4,72 % (`frame_5`, desenho 5 %; Shapiro p = 0,32, KS
+contra N(0, 5 %) p = 0,39); passo do drift 0,516 % (792 passos, desenho 0,5 %); |drift| depois de 99 passos 2,74 % em
+média nas 8 sessões (esperado ≈ 0,5 % · √99 · √(2/π) ≈ 4,0 %; são 8 passeios).
+
+**(d) Pixels.** Imagens de `frame_5` contra a mesma imagem do base (uint8), pelas menores |z / z_sessão − 1|:
+
+| imagem | \|jitter\| | pixels diferentes | média \|dif\| | máx. | correlação |
+|---|---|---|---|---|---|
+| 4577 | 0,0001 % | 0,069 % | 0,0015 | 8 | 0,999992 |
+| 4594 | 0,0197 % | 3,9 % | 0,042 | 11 | 0,99990 |
+| 1385 | 0,0216 % | 4,3 % | 0,046 | 11 | 0,99992 |
+| 4558 | 0,0229 % | 4,3 % | 0,046 | 13 | 0,99990 |
+| 4427 | 0,0273 % | 5,8 % | 0,061 | 12 | 0,99986 |
+| 1410 (mediana) | 3,37 % | 93,8 % | 5,37 | 37 | 0,918 |
+| 1352 (maior) | 14,1 % | 96,9 % | 12,9 | 118 | 0,541 |
+| escala: 4577 contra 4594, duas cenas diferentes do base | | 97,1 % | 14,3 | | |
+
+Com o z movido de 19 nm (0,0001 %) só 0,07 % dos pixels mudam, em no máximo 8 níveis: a cena e o ruído da câmera são
+os mesmos, e a diferença cresce com o deslocamento. Cenas pareadas, como o desenho diz.
+
+**`full_frames_tilt0` contra `full_frames`:** 120542 de 422092800 pixels diferentes (0,0286 %), máximo 17 níveis,
+diferença nos 40 quadros: o número da Etapa 3 se mantém. Como ele tinha sido estabelecido: só por comparação direta
+(`check_tilt0.log`) e por analogia com o base (o base regravado difere do Zenodo em 0,0191 %, e `session_5` regravado
+com o código novo é idêntico ao do código do paper no mesmo build); ninguém tinha regravado quadros inteiros com o
+código do paper neste build. E o `physics.json` de `data/full_frames` (o publicado: sha256 dos hologramas igual ao de `checksums/data.sha256`)
+diz que ele foi gerado a partir de `projeto-e-testes/data/holo_openset/realistic`, em 18/10, outra cópia do repositório
+e outro build. A regravação abaixo separa código de build.
+
+### (c) Invariância e testes, de novo
+
+`invariance.py` compara com o que já existe em `data/_check` se a regravação estiver lá; para conferir o código atual
+de verdade, rodei-o com `HOLO_DATA` apontando para um diretório do scratchpad com links para `data/realistic` e
+`data/variants` e um `_check` vazio (nada escrito em `data/`):
+
+```bash
+# tmux inv_a2, GPU 5 (100 % de outro usuário, 29 GB), 09:53:22 -> 10:04:01; log logs/exp_distancia/invariance_a2.log
+HOLO_DATA=<scratchpad>/analise/data CUDA_VISIBLE_DEVICES=5 python scripts/exp_distancia/invariance.py --device cuda:0 --workers 1
+```
+
+```
+identical  session_5/holograms.npy  (800, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/backgrounds.npy  (50, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/annotations.csv / metadata.csv / dust.csv / sessions.csv
+identical  session_5/physics.json  (without the new fields, all of them off)
+identical  session_5/rec_z0.npy  (800, 3, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/rec_af.npy  (800, 3, 640, 640) 0.0000% of the values differ, rms 0.0000
+identical  session_5/autofocus.csv
+ALL IDENTICAL
+```
+
+O código do branch, no estado de hoje, com os efeitos novos desligados, regrava `session_5` e suas reconstruções bit a
+bit iguais às que o código do paper escreveu na Etapa 0. Os testes: ver A7 (`pytest` no fim).
+
+### Os quadros inteiros com o código do paper, neste build
+
+```bash
+git archive 9488fce holo_openset | tar -x -C <scratchpad>/analise/paper_code     # o pacote do commit do paper
+# tmux ff_build, GPU 5, 10:04:14 -> 10:05:52; log logs/exp_distancia/frames_build_check.log
+CUDA_VISIBLE_DEVICES=5 python scripts/exp_distancia/frames_build_check.py --paper-code <scratchpad>/analise/paper_code     --out <scratchpad>/analise/ff_paper --n 8 --device cuda:0
+```
+
+Os 8 primeiros quadros (o quadro k só depende das próprias sementes) e os blank frames das 8 sessões de teste:
+
+```
+paper code, this build, against full_frames_tilt0: holograms: (8, 2748, 3840), differing 0.0000 %, max |diff| 0, identical: True
+paper code, this build, against full_frames_tilt0: blank frames of the test sessions: differing 0.0000 %, identical: True
+paper code, this build, against full_frames: holograms: differing 0.0282 %, max |diff| 12, identical: False
+paper code, this build, against full_frames: blank frames of the test sessions: differing 0.2586 %, max |diff| 1.875
+  annotations.csv and metadata.csv of the first 8 frames equal to both: True
+```
+
+Agora está estabelecido: o código do paper, rodado neste build, grava exatamente `full_frames_tilt0`; a diferença de
+0,028 % para os quadros publicados é do build (ou da cópia `projeto-e-testes` que os gerou), não do código do estudo.
+(Os 0,2586 % dos blank frames são os 0,0414 % da Etapa 3 contados só nas 8 sessões preenchidas: 0,0414 × 50 / 8 =
+0,259.) Os arquivos regravados no scratchpad foram apagados depois da comparação.
+
+**Conclusão de A2.** Nenhum problema de pareamento: as cenas, as caixas, as classes e a ordem são as mesmas em todos os
+conjuntos do estudo; só z (e a profundidade, na inclinação) muda, exatamente como o desenho manda; o ruído da câmera é
+o mesmo (uma imagem com z movido 0,0001 % muda 0,07 % dos pixels); e o código novo com os efeitos desligados é o
+código do paper, bit a bit, nas janelas e nos quadros inteiros.
