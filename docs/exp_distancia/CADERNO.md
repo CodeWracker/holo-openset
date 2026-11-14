@@ -304,3 +304,70 @@ usuários), **não rodei**; fica pendente para quando houver uma GPU ociosa (o m
 8. A deriva `frame_z_walk` começa em 0: a primeira imagem de uma sessão está na distância da sessão.
 9. O `docs/REPRODUCIBILITY.md` diz que a fila tem 555 jobs; o código do paper tem 575 (documento desatualizado); o
    teste novo fixa 575.
+
+---
+
+## 2026-11-13 — Pré-registro da Etapa 2: varredura do autofocus e políticas de foco
+
+Escrito e commitado **antes** de rodar qualquer varredura. Nada aqui usa o split de teste; o subcomando
+`experiment focus sweep` só lê imagens de validação e recusa um conjunto que não as tenha.
+
+### Candidatos (E3, parte 1)
+
+256 buscas, o produto de três eixos (`holo_openset/experiments/focus.py`: `SEARCH`, `BINS`, `CRITERIA`):
+
+| eixo | valores |
+|---|---|
+| faixa e candidatos (grosso + fino) | cega 0,2–2,1 z₀ (73+41, a do paper); ±30 % (31+21); ±20 % (21+21); ±15 % (15+11, o exemplo do protocolo; 15+21; 9+15); ±10 % (11+11; 7+11) |
+| redução da amplitude por média | 1, 2, 4 e 8 (8 está além da lista do protocolo; só entra se a validação o sustentar) |
+| critério | ToG do paper; ToG do campo suavizado (σ = 1 e 2 px); máscara onde o blank frame > 20 % do máximo, com e sem preencher a amplitude fora dela com 1 (`fill`), com e sem suavização (σ = 1,5 e 2 px) |
+
+Conjuntos de validação (700 imagens cada, as mesmas cenas): `realistic` (val), `variants_val/frame_5`,
+`variants_val/fullwell_500`, `variants_val/beam_narrow`. Por candidato e conjunto: erro |z − z verdadeiro| mediano e
+percentil 90, taxa de **falha grosseira** (erro > 1 % de z₀ = 192,5 µm, cerca de seis profundidades de campo),
+número de reconstruções, **custo** = reconstruções / bin² (reconstruções equivalentes da imagem inteira) e o tempo
+medido na varredura (só indicativo: GPU compartilhada; o tempo que vale é o de E5).
+
+### Regras de escolha (mecânicas: `experiment focus select`)
+
+Condição "acha a distância": erro mediano ≤ 50 µm **e** falha grosseira ≤ a do autofocus cego do paper + 1 ponto
+percentual, em `realistic` (val) **e** em `variants_val/frame_5`.
+
+1. **`afc` (barato):** o de menor custo entre os que satisfazem a condição; empate: menor percentil 90 (o pior dos
+   dois conjuntos).
+2. **`afr` (robusto):** entre os que satisfazem a condição e não custam mais que o cego (114), o de menor falha
+   grosseira no pior dos dois conjuntos ruidosos (`fullwell_500`, `beam_narrow`); empates dentro de 0,5 ponto: menor
+   percentil 90 nos ruidosos, depois menor custo.
+3. **`afx` (os dois):** o mais barato que satisfaz a condição e cuja falha grosseira em cada conjunto ruidoso é no
+   máximo a do `afr` + 1 ponto. Se coincidir com `afc` ou `afr`, vão ao teste só dois.
+
+No máximo esses três vão ao teste, com o modelo de `rec_af`. O custo usado na escolha é o proxy acima, não o tempo
+medido, porque a GPU compartilhada não dá tempos confiáveis para 256 candidatos; a ordem de custo será conferida em E5.
+
+### Políticas de foco (`experiment focus policy`)
+
+- **`afs`, k ∈ {1, 3}:** com as distâncias que o autofocus cego achou em cada imagem de validação de `realistic`,
+  `variants_val/session_5`, `variants_val/fullwell_500` e `variants_val/beam_narrow` (7 sessões cada), a distância da
+  sessão é a mediana das k primeiras imagens. k = 3 só se reduzir o número de sessões com falha grosseira, somado
+  sobre os quatro conjuntos; senão k = 1 (mais barato).
+- **`afM`, M ∈ {2, 5, 10, 20, 50}:** em `variants_val/walk_05`, o maior M cuja acurácia nas classes vistas da
+  validação (modelos `rec_af` e limiares do conjunto base, média das 5 repetições; galeria = imagens pares da
+  validação do base, consultas = imagens ímpares da variante reconstruídas na distância da política) fica a até 0,01
+  da de M = 1. Se nenhum, M = 2.
+- **`afsx` (derivado, sem parâmetro novo):** a busca `afx` (ou `afr`, se `afx` não existir) feita uma vez por
+  sessão com o mesmo k de `afs`. É o "melhor autofocus razoável" de Q1 quando a distância é fixa na sessão.
+
+### O que será rodado no teste depois de congelar (declarado agora)
+
+Uma única matriz, com todos os fluxos em todos os conjuntos de janelas, cinco repetições, `--by-session`:
+conjuntos `base`, `session_2`, `session_5`, `fullwell_500`, `beam_narrow`, `frame_2`, `frame_5`, `walk_05`;
+fluxos `rec_z0`, `rec_af`, `rec_afs`, `rec_afsx`, `rec_afM`, `rec_afc`, `rec_afr`, `rec_afx`, `prop`, `bank_jit`,
+`bank_wide`, `bank_w2`. Nenhum fluxo ou conjunto é acrescentado ou retirado depois de ver resultados de teste; se
+algo precisar mudar, a mudança e o motivo vão para o caderno antes.
+
+Checagem do modelo próprio (protocolo 6.4): `rec_afx` (ou `rec_afc`, se `afx` não existir) treinado na r1 com as
+cenas auxiliares reconstruídas pelo mesmo método, comparado com o modelo emprestado de `rec_af` nos oito conjuntos;
+critério: diferença de F1 ≤ 0,01 em todos.
+
+O primeiro run de qualquer método novo no teste só acontece depois do commit que registra as escolhas em
+`reconstruct.FOCUS`, com data neste caderno.
