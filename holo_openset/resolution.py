@@ -117,7 +117,7 @@ def reduce_set(src, dst, b, aux=(), log=print):
         _boxes(src / 'dust.csv', dst / 'dust.csv', b)
     for f in ['metadata.csv', 'sessions.csv']:
         shutil.copyfile(src / f, dst / f)
-    if (src / 'labels').is_dir():
+    if (src / 'labels').is_dir() and not (dst / 'labels').exists():
         os.symlink(os.path.relpath((src / 'labels').resolve(), dst), dst / 'labels')
     for name in aux:
         (dst / 'aux').mkdir(exist_ok=True)
