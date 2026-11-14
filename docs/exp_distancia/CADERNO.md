@@ -652,3 +652,136 @@ protocolo: convencional = flat field + busca / n + uma back-propagation + canais
 simplificada da Seção 3 do protocolo, T_af / (T_stack − T_backprop), que não cobra do fluxo convencional o flat
 field e os canais, é reportada ao lado.
 
+---
+
+## 2026-11-13, 22:18 — Etapa 3: o teste (E1–E5) com as escolhas congeladas
+
+Tudo nesta etapa roda o que o congelamento das 22:16 (`68e81ea`) fixou; nenhum parâmetro, fluxo ou conjunto foi
+mudado. Ambiente: `source scripts/exp_distancia/env.sh` (4 threads por processo). O driver dos dados de teste (tmux
+`ed_dados`, `cuda:3`, `scripts/exp_distancia/dados_teste.sh`) estava simulando `fullwell_500` quando a etapa começou.
+
+### E5, sessão de tempo: CPU (um core)
+
+```bash
+# tmux e5_cpu, 22:18:26 -> 22:24:56 (log logs/exp_distancia/e5_cpu.log)
+HOLO_RESULTS=$PWD/results_exp_distancia/e5 python -m holo_openset experiment timing --device cpu --rep 1
+```
+
+Load 89,2 / 74,8 / 59,2 no começo e 70,4 / 75,4 / 64,4 no fim. Terminou em 6,5 min (não horas): todos os 21 estágios
+nos quatro tamanhos (640², 1280², 2048², 2748 × 3840), 5 repetições por estágio (2 para os iterativos no quadro
+inteiro), `--threads 1`. Saída `results_exp_distancia/e5/timing_cpu.csv`. Mediana (`median_s`, ms):
+
+| estágio | 640² | 1280² | 2048² | quadro inteiro |
+|---|---|---|---|---|
+| flat_field | 0,620 | 0,302 | 7,80 | 112,3 |
+| backprop | 6,91 | 40,0 | 456,1 | 1008 |
+| channels | 18,0 | 157,1 | 332,4 | 1192 |
+| autofocus | 3583 | 18260 | 45600 | 116400 |
+| autofocus_afc | 13,1 | 119,8 | 191,9 | 1045 |
+| autofocus_afr | 148,4 | 1685 | 4194 | 9482 |
+| per_object | 704,8 | 3986 | 9539 | 24980 |
+| per_object_wide | 1472 | 7384 | 19050 | 48350 |
+| layer_prop | 4,15 | 23,9 | 194,9 | 779 |
+| layer_bank_jit | 25,2 | 461,2 | 1055 | 2419 |
+| layer_bank_wide | 46,5 | 488,2 | 1267 | 3136 |
+| layer_bank_w2 | 62,9 | 660,3 | 1790 | 4097 |
+| yolo_tiled | 320,6 | 4456 | 7199 | 21370 |
+| embed | 60,5 | 171,6 | 304,8 | 685,4 |
+| decide | 0,179 | 0,095 | 0,151 | 0,294 |
+
+Anotado sem interpretar: `flat_field` a 1280² (0,30 ms) sai abaixo do de 640² (0,62 ms).
+
+### E5, sessão de tempo: GPU, tentativa 1 (`e5_a1`)
+
+Script novo `scripts/exp_distancia/e5_gpu.sh <cuda:N> <pasta>`: `uptime` e `nvidia-smi` de todas as GPUs; 20 amostras
+de 1 s da utilização da GPU do run; `timing --rep 1`; `full_frames --rep 1 2 3 4 5` com os onze fluxos (`rec_z0`,
+`rec_af`, `rec_afs`, `rec_afsc`, `rec_afc`, `rec_afr`, `rec_edfw`, `prop`, `bank_jit`, `bank_wide`, `bank_w2`); de
+novo 20 amostras e `uptime`/`nvidia-smi`.
+
+Às 22:19–22:20 nenhuma GPU estava a 0 % o tempo todo (amostras de 30 s: GPU 0 média 21 %, 1 18 %, 2 13 % com 20 zeros
+em 30, 3 a nossa simulação, 4 34 % com rajadas, 5 95 %). Às 22:20:41 a GPU 2 deu 0 % em 20 de 20 amostras (15,6 GB
+ocupados por outro usuário, sem uso de computação); nenhum job nosso nela.
+
+```bash
+# tmux e5_a1, 22:20:46 (log logs/exp_distancia/e5_a1.log)
+bash scripts/exp_distancia/e5_gpu.sh cuda:2 results_exp_distancia/e5_a1
+```
+
+Antes: load 62,7 / 68,7 / 59,1; GPUs 0 21 %, 1 18 %, 2 0 %, 3 99 % (nossa simulação), 4 0 %, 5 100 %; GPU 2 a 0 % nas
+20 amostras. `timing`: 22:21:09 → 22:21:36 (load 65,9 no fim). **Validade (regra 8.1, `min_s` de `timing_gpu.csv`):
+backprop no quadro inteiro 0,965 ms (paper 0,976; 0,99×), autofocus 123,3 ms (paper 123,7; 1,00×), `flat_field` a
+640² 0,030 ms (< 0,2): válida.**
+
+O `full_frames` caiu logo no início (`FileNotFoundError: data/realistic/rec_afs.npy`): a galeria de cada fluxo são as
+janelas de validação do base reconstruídas por aquele fluxo, e os caches do estudo no base ainda não existiam (a Etapa 2
+os constrói). Com `set -e` o script parou ali, sem as amostras e o `nvidia-smi` do fim. Além disso, o fluxo `rec_edfw`
+também não teria galeria: `data/realistic/rec_edfw.npy` não existia e o pacote não tinha como construí-lo
+(`reconstruct --methods edfw` recusava o método). Correção abaixo. A tentativa 1 fica como está (timing válido,
+`full_frames` não rodou); a sessão completa, num só run, vai para uma tentativa 2.
+
+### Correção no pacote: cache `rec_edfw` (commit `740a667`)
+
+`build_caches` aceita agora os métodos de `EDF` que não são do paper (`edfw`): por imagem, o autofocus cego e depois
+`per_object` com a faixa de `EDF['edfw']` (±6 %, 49 passos) nas caixas anotadas, exatamente como o `front_end` do
+`full_frames` faz com `rec_edfw` e como o `edf` do paper é construído; escreve `rec_edfw.npy` e `autofocus_edfw.csv` e
+não toca no `autofocus.csv`. Não muda número nenhum já produzido (só um ramo novo). `pytest`: 20 passed. Conferência:
+o `z_af` do `autofocus_edfw.csv` do base é igual ao do `autofocus.csv` nas 5000 imagens (diferença máxima 0).
+
+### Caches dos métodos do estudo (Etapa 2 do pedido)
+
+```bash
+python -m holo_openset reconstruct --set <conjunto> --methods afs afM afc afr afsc --device cuda:N
+python -m holo_openset reconstruct --set realistic --methods edfw --device cuda:4      # galeria de rec_edfw
+```
+
+| conjunto | GPU | início | fim | log |
+|---|---|---|---|---|
+| realistic | cuda:2 | 22:23:19 | 22:26:40 | `cache_realistic.log` |
+| realistic (edfw) | cuda:4 | 22:24:29 | 22:26:03 | `cache_realistic_edfw.log` |
+| variants/session_5 | cuda:2 | 22:30:16 | 22:32:20 | `cache_session_5.log` |
+| session_2, fullwell_500, beam_narrow (em série) | cuda:1 | 22:32:37 | 22:38:11 | `cache_<conjunto>.log` |
+| frame_2, frame_5, walk_05 (em série) | cuda:2 | 22:33:37 | 22:39:55 | `cache_<conjunto>.log` |
+
+Todos com saída 0. O driver terminou as seis variantes e os seus caches z0/af às 22:32:10 (passou para os quadros
+inteiros) antes de eu começar os caches delas. Load 44–100 nesse intervalo; às 22:28 todas as GPUs, menos a 0, foram a
+100 % com outros usuários. Os logs de autofocus dos oito conjuntos de teste (`autofocus.csv`, `autofocus_<método>.csv`)
+estão copiados em `results_exp_distancia/autofocus_logs/<conjunto>/`.
+
+### Erro de distância no split de teste
+
+```bash
+python -m holo_openset experiment focus error --split test --sets realistic variants/session_2 variants/session_5 \
+  variants/fullwell_500 variants/beam_narrow variants/frame_2 variants/frame_5 variants/walk_05 --methods af afs afM afc afr afsc
+# 22:40:29, log logs/exp_distancia/focus_error_test.log -> results_exp_distancia/focus_error.csv, focus_error_sessions.csv
+```
+
+800 imagens de teste por conjunto. Mediana / p90 do erro (µm) e falha grosseira (erro > 1 % de z₀):
+
+| conjunto | af | afs | afM | afc | afr | afsc |
+|---|---|---|---|---|---|---|
+| realistic | 50,3 / 106,5 / 1,38 % | 40,4 / 74,7 / 0 % | 49,2 / 101,2 / 1,25 % | 50,1 / 103,0 / 0,25 % | 35,8 / 88,0 / 0,38 % | 71,0 / 115,7 / 0 % |
+| session_2 | 49,5 / 123,8 / 2,25 % | 66,1 / 120,6 / 0 % | 45,7 / 104,9 / 0 % | 56,1 / 101,2 / 0,75 % | 32,0 / 81,9 / 0,13 % | 60,5 / 95,2 / 0 % |
+| session_5 | 50,0 / 121,9 / 2,00 % | 40,4 / 98,7 / 0 % | 41,8 / 108,0 / 2,50 % | 28,2 / 116,4 / 0,13 % | 34,8 / 79,7 / 0,25 % | 20,3 / 91,0 / 0 % |
+| fullwell_500 | 446,8 / 12951 / 70,3 % | 201,3 / 13299 / 50,0 % | 441,2 / 12779 / 67,5 % | 50,1 / 103,0 / 1,75 % | 31,1 / 88,0 / 0,38 % | 67,0 / 103,0 / 0 % |
+| beam_narrow | 13049 / 13375 / 74,0 % | 13121 / 13744 / 87,5 % | 13049 / 13391 / 72,5 % | 50,1 / 103,0 / 0,25 % | 31,1 / 88,0 / 0,38 % | 73,5 / 115,7 / 0 % |
+| frame_2 | 49,4 / 120,9 / 1,63 % | 392,9 / 1029 / 73,5 % | 318,6 / 793,5 / 65,0 % | 41,0 / 100,4 / 0,63 % | 33,7 / 84,5 / 0,25 % | 433,0 / 1027 / 75,5 % |
+| frame_5 | 46,6 / 125,4 / 2,38 % | 1032,9 / 2468 / 87,9 % | 806,1 / 1984 / 80,1 % | 45,0 / 102,5 / 0,25 % | 32,6 / 84,5 / 0,38 % | 1053,3 / 2484 / 88,3 % |
+| walk_05 | 46,8 / 124,6 / 1,50 % | 416,3 / 1050 / 73,8 % | 135,4 / 370,8 / 35,9 % | 42,6 / 103,1 / 0 % | 33,6 / 83,5 / 0,13 % | 387,6 / 1067 / 68,5 % |
+
+### E1–E3: piloto da matriz de janelas na r1
+
+```bash
+# tmux rob_r1, cuda:1, 22:40:0x -> 22:43:37 (log logs/exp_distancia/robustness_r1.log)
+python -m holo_openset experiment robustness --device cuda:1 --by-session --rep 1 \
+  --variants base session_2 session_5 fullwell_500 beam_narrow frame_2 frame_5 walk_05 \
+  --flows rec_z0 rec_af rec_afs rec_afsc rec_afM rec_afc rec_afr prop bank_jit bank_wide bank_w2
+```
+
+Checagem do piloto: 88 linhas da r1 (11 fluxos × 8 conjuntos), nenhum NaN nas colunas `novel_*`; as 8 linhas de
+`rec_z0`, `rec_af`, `prop`, `bank_jit` em `base` e `session_5` comparadas com `results_exp_distancia/etapa0/robustness.csv`:
+maior diferença absoluta em todas as colunas de métrica 1,1 × 10⁻¹⁶ (idênticas a menos do arredondamento do csv).
+`robustness_sessions.csv`: 704 linhas (8 sessões de teste por conjunto). Piloto aceito; r2–r5 lançadas às 22:44 no
+mesmo `cuda:1` (tmux `rob_r25`, log `robustness_r2-5.log`). O `robustness.csv` do topo de `results_exp_distancia/`
+continha as 40 linhas da Etapa 0 (r1–r5); as da r1 foram reescritas com valores idênticos e as das r2–r5 serão
+reescritas pelo run das r2–r5.
+
