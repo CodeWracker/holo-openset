@@ -437,3 +437,93 @@ busca estreita mais erra a distância — `depth_300` (23,4 % de falhas grosseir
 `source_5cm` (7,3 %), `pinhole_200` (5,3 %), `depth_150` (3,9 %) — o F1 não cai (−0,000 a +0,005 contra `rec_z0`):
 nesses conjuntos o "foco" do campo inteiro é mal definido (objetos em profundidades diferentes, fonte larga), e o erro
 contra o z da sessão não mede o que o classificador vê. Fica como descrição para o líder.
+
+## 2026-11-14, 11:01 — `pytest` antes do passo 6
+
+`env -u HOLO_RESULTS python -m pytest -q` (11:01:07 → 11:01:24): 33 passed, 1 skipped, **1 failed**:
+`test_tables_of_the_paper_match_the_results` (`reproduce check`: 4/13 arquivos idênticos a `expected/`; diferem
+`numbers.tex`, `numbers_distancia.tex` (não está em `expected/`), `tab_e2e`, `tab_enroll`, `tab_full`, `tab_main`,
+`tab_robustness`, `tab_scale`, `tab_stages`). Esperado: `results/` mudou (passos 3, 5, 7) e os geradores estão sendo
+mudados em paralelo por outro agente (commits `08031fa`, `fd90020`…); `expected/` é refeito depois. O skip é
+`test_full_frames_shared_with_the_study_agree` (espera o run do passo 6).
+
+## 2026-11-14, 11:14 — Passo 6: escolha da GPU
+
+Às 11:13:54 a GPU 2 deu 0 % em 20 de 20 amostras, mas o load do servidor estava em 323 / 379 / 226 (pico de outros
+usuários; nossos processos: nenhum) e, nos 2 minutos seguintes, a GPU 2 foi ocupada por outro usuário (77–100 %,
+11,9 GB). Como este run dá os tempos da tabela de quadros inteiros, esperei também o load baixar: o lançador
+(`logs/integracao/ff_launch.sh`, tmux `integ_ff`, desde 11:16:25, log `logs/integracao/full_frames.log`) espera uma
+GPU de 0–4 com 0 % em 20 amostras de 1 s **e** load de 1 min < 120 (até 2,5 h; depois, só a GPU ociosa) e dispara
+`scripts/exp_distancia/integ_ff.sh` nela, que amostra a GPU de novo antes e depois. Nenhum outro job meu roda até o fim.
+
+## 2026-11-14, 11:33–11:41 — Passo 6: quadros inteiros, um run, 11 fluxos, 5 repetições (em `results/`)
+
+```bash
+cp -p results/full_frames.csv results/full_frames_time.csv $S/before_ff/
+# tmux integ_ff (logs/integracao/ff_launch.sh -> scripts/exp_distancia/integ_ff.sh cuda:3), log logs/integracao/full_frames.log
+python -m holo_openset experiment full_frames --device cuda:3 --rep 1 2 3 4 5 \
+  --flows raw learned complex wiener prop bank_jit rec_z0 rec_af rec_afc rec_edf rec_twin
+```
+
+- **GPU e servidor.** Escolhida pelo lançador às 11:33:50 (GPU 3 a 0 % nas 20 amostras do lançador; load1 71,2).
+  Antes (11:33:50): load 71,23 / 137,01 / 193,52, 1 thread pronta; GPU 3 com 1683 MiB ocupados por outros e **0 % nas
+  20 amostras de 1 s**; as outras: 0 95 % (12,8 GB), 1 25 %, 2 7 %, 4 100 %, 5 78 %. `full_frames`: 11:34:13 → 11:40:35
+  (6 min 22 s), saída 0, nenhum outro job meu rodando. Depois (11:40:57): load 76,49 / 84,68 / 146,23, 3 threads
+  prontas; GPU 3 de novo **0 % nas 20 amostras**, 1683 MiB de outros.
+- **Integridade.** `full_frames.csv`: 160 → 170 linhas (+10 = `rec_afc` × 5 × gt/det); as 100 linhas dos 10 fluxos do
+  paper foram recalculadas (abaixo); as 60 dos fluxos fora do run (`bank`, `bank_w1`, `bank_wide`, `bank_w3`,
+  `bank_w2`, `prop_jit`) ficaram (56 idênticas, 4 com 1 ULP). `full_frames_time.csv`: 12 000 → 13 400 (+1400 de
+  `rec_afc`); 10 400 linhas recalculadas (10 fluxos + a detecção `flow = all`); as 1600 de `bank` e `bank_w3`
+  **idênticas** (mas agora convivem com a detecção deste run, não com a do run em que foram medidas).
+  `results/full_frames_focus.csv` é novo (o run tem um fluxo fora de `PAPER_FLOWS`): 1000 linhas, a distância usada em
+  cada quadro por `rec_z0`, `rec_af`, `rec_afc`, `rec_edf`, `rec_twin` (erro mediano 67,4 / 9,1 / 36,5 / 9,1 / 9,1 µm).
+- **Acurácia, antigo → novo** (F1 aberto macro, média de 5; recall do detector 0,9967 e rejeição das falsas
+  detecções iguais em todos):
+
+| fluxo | gt | det |
+|---|---|---|
+| raw | 0,7870 → 0,7870 | 0,7866 → 0,7866 |
+| learned | 0,9389 → 0,9389 | 0,9365 → 0,9365 |
+| complex | 0,9399 → 0,9399 | 0,9350 → 0,9350 |
+| wiener | 0,9302 → 0,9302 | 0,9273 → 0,9273 |
+| prop | 0,9774 → 0,9774 | 0,9732 → 0,9732 |
+| bank_jit | 0,9761 → 0,9761 | 0,9737 → 0,9737 |
+| rec_z0 | 0,9786 → 0,9787 | 0,9750 → 0,9750 |
+| rec_af | 0,9793 → 0,9793 | 0,9752 → 0,9752 |
+| rec_afc (novo) | — → 0,9795 | — → 0,9752 |
+| rec_edf | 0,9785 → 0,9785 | 0,9749 → 0,9749 |
+| rec_twin | 0,9820 → 0,9820 | 0,9785 → 0,9784 |
+
+  Maior diferença numa linha (rep × fluxo × caixas): F1 9,0e-5, rejeição dos desconhecidos 6,5e-4, acerto dos vistos
+  1,5e-4, limiar 3,3e-5, AUROC 2,5e-6; recall, falsos positivos e sua rejeição idênticos. Ou seja, a acurácia se
+  reproduz (arredondamento). As 70 linhas em comum com `results_exp_distancia/full_frames.csv` (`rec_z0`, `rec_af`,
+  `rec_afc`, `prop`, `bank_jit` deste run; `bank_w2`, `bank_wide` antigos) são **idênticas** (diferença 0).
+- **Tempo por estágio (mediana por quadro, ms), antigo → novo**; detecção (mediana, compartilhada) 269,4 → 171,3;
+  fim a fim = detecção + estágios do fluxo:
+
+| fluxo | carga/normalização | autofocus | reconstrução | por objeto / twin | canais | camada | embed | decisão | fim a fim |
+|---|---|---|---|---|---|---|---|---|---|
+| raw | 4,40 → 3,16 | — | — | — | — | 0,33 → 0,23 | 4,66 → 2,98 | 1,44 → 1,23 | 280,5 → 179,0 |
+| learned | 4,35 → 3,05 | — | — | — | — | 0,94 → 0,78 | 4,39 → 2,71 | 1,42 → 1,13 | 280,4 → 179,0 |
+| complex | 4,39 → 3,04 | — | — | — | — | 1,43 → 1,27 | 4,41 → 2,73 | 1,45 → 1,11 | 280,9 → 179,4 |
+| wiener | 4,31 → 3,02 | — | — | — | — | 0,94 → 0,78 | 4,42 → 2,74 | 1,44 → 1,08 | 280,5 → 179,0 |
+| prop | 4,31 → 3,01 | — | — | — | — | 1,53 → 1,27 | 5,13 → 2,69 | 2,49 → 1,14 | 284,5 → 179,4 |
+| bank_jit | 6,36 → 3,12 | — | — | — | — | 4,19 → 3,71 | 5,64 → 3,63 | 2,49 → 1,17 | 288,9 → 183,0 |
+| rec_z0 | 30,04 → 20,22 | — | 1,26 → 1,14 | — | 1,98 → 1,79 | 0,37 → 0,36 | 4,34 → 2,73 | 1,37 → 1,07 | 308,6 → 198,7 |
+| rec_af | 28,30 → 19,94 | 123,64 → 123,25 | 1,04 → 1,00 | — | 1,90 → 1,79 | 0,37 → 0,36 | 4,24 → 2,69 | 1,47 → 1,28 | 430,7 → 321,8 |
+| rec_afc | — → 19,51 | — → 2,04 | — → 1,00 | — | — → 1,79 | — → 0,36 | — → 2,63 | — → 1,06 | — → 199,9 |
+| rec_edf | 28,67 → 19,97 | 123,75 → 123,23 | — | 49,51 → 45,55 | 1,93 → 1,79 | 0,37 → 0,36 | 4,20 → 2,66 | 1,50 → 1,25 | 480,0 → 366,3 |
+| rec_twin | 28,16 → 20,26 | 123,69 → 123,24 | — | 85,76 → 85,59 | 2,08 → 1,80 | 0,37 → 0,36 | 4,23 → 2,78 | 1,44 → 1,28 | 515,2 → 406,9 |
+
+  Os estágios de GPU pesada (autofocus, por objeto, twin, camada) ficam iguais (≤ 8 %); caem os que dependem da CPU e
+  da leitura do disco (normalização/carga ≈ 0,7×, embed ≈ 0,6×, decisão) e sobretudo a detecção (YOLO em 640² com a
+  CPU menos carregada: 269 → 171 ms, como na sessão de tempo E5). O fim a fim cai ≈ 100 ms em todos os fluxos.
+
+## 2026-11-14, 11:42 — `pytest` e `reproduce check` no fim
+
+`env -u HOLO_RESULTS python -m pytest -q`: **34 passed, 1 failed** (o teste de integração dos quadros inteiros, antes
+pulado, agora roda e passa). A falha é `test_tables_of_the_paper_match_the_results`, isto é, `reproduce check`:
+4/13 idênticos a `expected/`; diferem `numbers.tex`, `numbers_distancia.tex` (não está em `expected/`), `tab_e2e`,
+`tab_enroll`, `tab_full`, `tab_main`, `tab_robustness`, `tab_scale`, `tab_stages`. Esperado e combinado: `results/`
+mudou (tempos da E5, linhas novas de `rec_afc`, `bank_jit` fim a fim, quadros inteiros novos) e os geradores estão
+sendo alterados por outro agente; `expected/` é refeito depois. Não rodei `paper tables` nem mexi em `expected/`.
