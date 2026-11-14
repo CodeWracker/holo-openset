@@ -232,4 +232,11 @@ Regra: mexer só nas frases abaixo, mantendo a voz do texto; todo número por ma
   - Detector > 95 % só em GPU (CPU 82–94 %): o texto do paper diz "on a GPU".
   - `pytest` 24 passam e 1 falha, `reproduce check` 9/12: esperado enquanto `expected/` não for refeito (B2).
   Próximo: disparar "geradores" (B2, fase 1: código); "integração-runs" (B1) continua rodando (`tmux integ_*`).
+- 2026-11-14, 10:30: subagente "geradores" (B2) disparado na **fase 1 (só código)**: `rec_afc` no `ORDER`
+  ("narrow autofocus"; `rec_af` vira "blind autofocus"), linhas/coluna novas das tabelas, macros novas
+  (participação do detector em GPU, razão cega/estreita), `numbers_distancia.tex` como asset do paper e no
+  `reproduce check`, testes de consistência em `tests/test_paper_integration.py`, docs. Ele para ao fim da fase 1 e
+  devolve um relatório. **Fase 2 (regenerar tudo, `expected/`, figuras, `pipeline.py`, `sim/variants.py`) só começa
+  com uma mensagem minha, depois que "integração-runs" (B1) terminar** — mandar por `SendMessage` ao mesmo agente,
+  para ele manter o contexto.
 
