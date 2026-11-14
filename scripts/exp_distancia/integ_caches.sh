@@ -34,12 +34,19 @@ if [ ${#paper[@]} -gt 0 ]; then
   done
   stamp; echo "reconstruct --set _integ_staging/$SET --methods ${paper[*]}"
   python -m holo_openset reconstruct --set _integ_staging/$SET --methods "${paper[@]}" --device $DEV
-  if [ -e $D/autofocus.csv ]; then
-    if cmp -s $ST/autofocus.csv $D/autofocus.csv; then echo "autofocus.csv of the staging copy: identical to $D/autofocus.csv"
-    else echo "autofocus.csv of the staging copy DIFFERS from $D/autofocus.csv"; fi
+  if [ -e $D/autofocus.csv ]; then   # edf adds a column z_objects: compare the columns both logs have
+    python - $ST/autofocus.csv $D/autofocus.csv <<'EOF'
+import sys
+import pandas as pd
+a, b = pd.read_csv(sys.argv[1]), pd.read_csv(sys.argv[2])
+c = [k for k in b.columns if k in a.columns]
+same = len(a) == len(b) and (a[c].astype(str).values == b[c].astype(str).values).all()
+print(f'autofocus.csv of the staging copy against the set, columns {c}:', 'identical' if same else 'DIFFERENT',
+      f'(largest |z_af difference| {(a.z_af - b.z_af).abs().max() if len(a) == len(b) else "n/a"})')
+EOF
   fi
   mkdir -p $HOLO_LOGS/staging_autofocus
-  cp $ST/autofocus.csv $HOLO_LOGS/staging_autofocus/$(echo $SET | tr / _)_${paper[*]// /_}.csv
+  cp $ST/autofocus.csv $HOLO_LOGS/staging_autofocus/$(echo $SET | tr / _)_$(IFS=_; echo "${paper[*]}").csv
   for m in "${paper[@]}"; do
     if [ -e $D/rec_$m.npy ]; then echo "$D/rec_$m.npy appeared meanwhile: left in $ST"; exit 1; fi
     mv -n $ST/rec_$m.npy $D/rec_$m.npy && echo "moved rec_$m.npy into $D"
