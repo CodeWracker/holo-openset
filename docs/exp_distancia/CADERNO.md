@@ -1058,7 +1058,7 @@ escrever o relatório dele; a revisão da Etapa 3 foi feita por este caderno e p
 orientador pode reverter.
 
 n\* no quadro inteiro, GPU (`min_s`), com cada tentativa (`break_even` de `holo_openset/paper/distance.py`; script
-`nstar_attempts.py` do scratchpad). Conta completa: n\* = T_busca / (T_camada − (T_flat_field + T_backprop +
+`scripts/exp_distancia/nstar_attempts.py`). Conta completa: n\* = T_busca / (T_camada − (T_flat_field + T_backprop +
 T_channels)); simplificada: n\* = T_busca / (T_camada − T_backprop).
 
 | stack | busca | completa a1 | completa a2 | simplificada a1 | simplificada a2 |
@@ -1102,7 +1102,7 @@ letra**.
 **Faixa do `afc` contra as distâncias do teste.** A busca `afc` tem 7 candidatos grossos em [0,90; 1,10] z₀ (passo
 0,0333 z₀) e a busca fina vai de um passo grosso abaixo a um acima do melhor (`reconstruct.autofocus`, `fine =
 linspace(c - step, c + step, n_fine)`), então a faixa efetiva é [0,867; 1,133] z₀ (±13,3 %). Script
-`range_check.py` do scratchpad (lê `data/<conjunto>/metadata.csv`, split de teste, e o `autofocus_afc.csv` copiado):
+`scripts/exp_distancia/range_check.py` (lê `data/<conjunto>/metadata.csv`, split de teste, e o `autofocus_afc.csv` copiado):
 
 ```
 variants/session_5: z/z0 - 1 in [-0.1073, +0.1140], beyond +-10 %: 300, beyond +-13.33 %: 0
@@ -1178,3 +1178,8 @@ Relatório: `docs/exp_distancia/RELATORIO.md` (commit `d80b0b2`).
 - ✔ Custo amortizado de `afs` e `afM` identificado como soma de tempos medidos (marca † e notas de `tab_dist_time`).
 - ✔ Cada cenário tem um parágrafo de plausibilidade física (relatório, Seção 3).
 - ✔ O relatório diz o que não foi confirmado e o que não foi testado (relatório, Seção 5).
+
+### Revisão do relatório pelo responsável (00:20)
+
+- Cortado: a lista de resumo da Seção 0, a tabela de diferenças pareadas nos quadros inteiros (fica em `tab_dist_frames_paired.md`), as colunas "convencional mais barato" da tabela do critério e a tabela do checklist (fica acima); texto apertado para cerca de 2.300 palavras corridas, 7 tabelas e 3 figuras, sem mudar valores nem tirar ressalvas.
+- Corrigido: frases do paper (sem "no physical parameter"; n\* como limiar, "once a mounting yields more than"), a tolerância de 300 µm citada como Tabela 10 do paper transcrita na Seção 2.3 do protocolo, a sensibilidade de n\* dada exatamente (0,02 ms no denominador, 212 → 205), a maior |`rec_afc` − `rec_af`| nos seis conjuntos limpos (0,00048, `session_5`; `scripts/exp_distancia/paired_check.py`) e uma frase sobre rejeição e AUROC no base (`bank_wide`/`bank_w2` 0,826/0,838 de rejeição contra 0,913–0,924; AUROC 0,966–0,967 contra 0,978–0,983). Os scripts de conferência citados acima foram versionados em `scripts/exp_distancia/` (`nstar_attempts.py`, `range_check.py`, `paired_check.py`; mesma saída que as cópias do scratchpad).
