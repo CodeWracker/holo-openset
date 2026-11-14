@@ -1336,7 +1336,7 @@ difíceis em si.
 `rec_z0` 0,148 (0,949) na sessão 45 (−10,7 %), 0,183 (0,955) na 0 (−10,4 %), 0,104 (0,956) na 13 (+11,4 %), 0,793 (0,956)
 na 5 (+4,8 %), 0,933–0,954 nas outras quatro (|Δ| ≤ 2,2 %); `bank_jit` 0,424, 0,481, 0,391, 0,910 e 0,936–0,953. Isso é o
 que a curva de `frame_5` dá para esses desvios (`rec_z0` 0,141 em 10–12 %, 0,789 em 4–6 %; `bank_jit` 0,390 e 0,912).
-Os controles não mudam por sessão (`rec_afc` 0,946–0,965 contra 0,940–0,960 no base).
+Os controles não mudam por sessão (`rec_afc` 0,939–0,965 contra 0,940–0,960 no base).
 
 **Previsão e Monte Carlo** (`frame_vs_session_mc.csv`, faixas sem sinal; F1 open-set, média r1–r5):
 
