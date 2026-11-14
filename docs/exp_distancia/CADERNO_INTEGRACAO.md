@@ -527,3 +527,14 @@ pulado, agora roda e passa). A falha é `test_tables_of_the_paper_match_the_resu
 `tab_enroll`, `tab_full`, `tab_main`, `tab_robustness`, `tab_scale`, `tab_stages`. Esperado e combinado: `results/`
 mudou (tempos da E5, linhas novas de `rec_afc`, `bank_jit` fim a fim, quadros inteiros novos) e os geradores estão
 sendo alterados por outro agente; `expected/` é refeito depois. Não rodei `paper tables` nem mexi em `expected/`.
+
+## 2026-11-14, 11:45 — Fecho
+
+- **Passo 5, avaliação × robustez:** as métricas `novel_*` e `world*` dos `rec_afc_r{1..5}.json` contra as linhas
+  `base`/`rec_afc` do passo 3a (mesmo protocolo): maior |diferença| **1,9e-6** (não é 0: as duas rotas calculam os
+  embeddings em lotes diferentes; ruído de float).
+- **Disco usado** (em `/home/jovyan/compartilhado`): 37,5 GB dos 28 conjuntos novos (hologramas, blank frames,
+  `rec_afc`, e `rec_z0` em três); 16 GB de caches novos (`rec_edf`/`rec_twin` do base, 12,3 GB, e de `frame_2`,
+  `frame_5`, `walk_05`) e `data/realistic/dets_yolo_r{1..5}.csv`. Nenhum arquivo existente de `data/` foi
+  sobrescrito ou apagado; o diretório de preparo `data/_integ_staging` não existe mais.
+- Sessões tmux `integ_*`: todas terminadas.
