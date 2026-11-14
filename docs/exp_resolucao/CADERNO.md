@@ -297,7 +297,7 @@ Nyquist): até onde chegam as franjas que o sensor ainda registra, eq. `eq:sprea
 - Testes: `tests/test_resolution.py` (2 novos: o envelope da bancada é o do painel (b) da figura; o corte se move no
   sentido certo com D e a banda, e a subamostragem é marcada). `pytest` 46 passed, `reproduce check` 13/13.
 
-## 2026-11-14, 13:50 — Z6.6: o que o autor da bancada disse sobre a distância (piloto)
+## 2026-11-14, 13:49 — Z6.6: o que o autor da bancada disse sobre a distância (piloto)
 
 Comunicação pessoal do prof. Sobieranski ao orientador, relatada por este em 2026-11-14 (≈ 13:50; texto em
 `PROTOCOLO_Z.md`, sem página): na bancada, a lamínula fica quase encostada no sensor e só não encosta porque o sensor
@@ -306,7 +306,7 @@ derive durante uma sessão (dilatação e acomodação da montagem com a tempera
 simula: um passeio aleatório de 0,5 % de z por imagem dentro da sessão (cerca de 5 % depois de 100 imagens). A
 1 mm, 0,5 % são 5 µm por imagem.
 
-## 2026-11-14, 13:50 — Z6.1: o que os três conjuntos que já existem dizem (piloto)
+## 2026-11-14, 13:49 — Z6.1: o que os três conjuntos que já existem dizem (piloto)
 
 - Onde: container, CPU. `python scripts/exp_resolucao/small_preview.py` (1 s). Lê só
   `results/eval/{realistic,small_z0,small_near}/<fluxo>_r{1..5}.json` (do paper; os modelos de cada conjunto pequeno
@@ -416,7 +416,7 @@ Diferença pareada de F1 (fluxo − `raw`), média [mín; máx] (repetições co
   crop. Ele difere do base também no tamanho (o crop de 64 × 64 amplia letras de 28 px), nas cenas auxiliares e no
   pinhole quase irrelevante a 2 mm.
 
-## 2026-11-14, 13:50 — Z6.2: quanto do padrão fica dentro do crop, contra z (piloto)
+## 2026-11-14, 13:49 — Z6.2: quanto do padrão fica dentro do crop, contra z (piloto)
 
 - Definição: a mesma do painel (c) de `fig_fresnel` (`holo_openset/paper/figures.py`, linhas 298–316), que grava
   `crop_energy_bench` = 0,4496 e `crop_energy_coherent` = 0,3448 em `results/figure_numbers.json` (macros
@@ -479,7 +479,7 @@ Fração do padrão dentro do crop (caixa + 25 %), fonte pontual monocromática,
 - Limite desta conta: a 0,7–1,5 mm o simulador não representa o conteúdo acima do Nyquist do sensor (Z6.3(a)). Pela
   conta numa grade mais fina, esse conteúdo é 0,1–0,9 % da energia do padrão e não muda a conclusão.
 
-## 2026-11-14, 14:00 — Z6.3: o simulador grava direito a ≈ 1 mm do jeito que está? (piloto)
+## 2026-11-14, 13:51 — Z6.3: o simulador grava direito a ≈ 1 mm do jeito que está? (piloto)
 
 **(a) Grade e pixel.** O campo é propagado numa grade com o passo do próprio sensor:
 - `sim/physics.py`, linhas 201–202: `shape = phys.canvas` e `q = freq_sq(shape, dev)`, com `pixel=PIXEL`;
@@ -592,7 +592,7 @@ envelope zera essas frequências.
   (≈ 29 µm). A frase do paper "within the depth of field" (`06-results.tex`, linha 298) depende disso; já estava
   sinalizada em `docs/exp_distancia/TODO.md` (287–288).
 
-## 2026-11-14, 14:15 — Z6.4: inventário e custo de regravar e retreinar (piloto)
+## 2026-11-14, 13:51 — Z6.4: inventário e custo de regravar e retreinar (piloto)
 
 Fontes dos números: a fila (`holo_openset/pipeline.py::jobs()`, 583 tarefas), os logs de `logs/exp_distancia/` e
 `logs/integracao/` (13–14/11) e `docs/exp_distancia/CADERNO_INTEGRACAO.md`. **M** = medido (com a fonte); **E** =
@@ -638,7 +638,7 @@ Contagem da fila: 15 simulações, 54 caches, 240 treinos (110 do base, 100 dos 
   - as ferramentas de análise.
 - Nenhum número de reconhecimento pode ser reaproveitado: todos dependem do z do conjunto.
 
-## 2026-11-14, 14:15 — Z6.5: configurações candidatas na ferramenta do envelope (piloto)
+## 2026-11-14, 13:51 — Z6.5: configurações candidatas na ferramenta do envelope (piloto)
 
 - Onde: container, CPU. `python scripts/exp_resolucao/envelope_table.py --configs
   scripts/exp_resolucao/envelope_configs_z_near.csv --out results_exp_resolucao/envelope_z_near.csv` e
@@ -697,7 +697,7 @@ Configurações candidatas do levantamento (`envelope_candidates.csv`):
 - Nos trabalhos do grupo Ozcan (pixel de 2,2 µm, z ≈ 0,7 mm) o termo que manda é o pixel. Esses trabalhos usam
   super-resolução de pixel.
 
-## 2026-11-14, 14:35 — Z8.1: os três conjuntos lado a lado, com o vazamento do padrão (piloto)
+## 2026-11-14, 13:54 — Z8.1: os três conjuntos lado a lado, com o vazamento do padrão (piloto)
 
 - Onde: container, CPU. `python scripts/exp_resolucao/setup_comparison.py` (1 s). Lê `small_preview*.csv` (Z6.1) e
   `pattern_in_crop_z_summary.csv` (Z6.2). Saída: `results_exp_resolucao/setup_comparison.csv`.
@@ -722,7 +722,7 @@ Diferenças pareadas da rejeição (fluxo − crops): +0,82 / +0,82 no base, +0,
   existente tem tão pouco vazamento, e o base e o `small_near` diferem no tamanho de letra e na distância ao mesmo
   tempo (e nas cenas auxiliares de treino).
 
-## 2026-11-14, 14:35 — Z8.2: a figura "o que muda com o setup" (piloto)
+## 2026-11-14, 13:54 — Z8.2: a figura "o que muda com o setup" (piloto)
 
 - Onde: GPU 5 (só para simular a letra do painel (a)). `python scripts/exp_resolucao/fig_setup.py --device cuda:5`
   (8 s). Saída: `docs/exp_resolucao/img/fig_setup.{pdf,png}`. Tudo sai dos arquivos de resultado e do simulador:
@@ -759,7 +759,7 @@ Diferenças pareadas da rejeição (fluxo − crops): +0,82 / +0,82 no base, +0,
 - Surpresa (para o texto): o "não transfere (0,358)" do orientador é a camada aprendida real. A reconstrução calibrada
   treinada no idealizado transfere bem (0,899 na bancada); os outros fluxos ficam entre 0,36 e 0,58.
 
-## 2026-11-14, 14:35 — Z8.3: o que o autor da bancada confirmou (piloto)
+## 2026-11-14, 13:54 — Z8.3: o que o autor da bancada confirmou (piloto)
 
 Comunicação pessoal do prof. Sobieranski ao orientador, relatada por este em 2026-11-14 (≈ 14:10; texto em
 `PROTOCOLO_Z.md`):
@@ -774,3 +774,9 @@ Comunicação pessoal do prof. Sobieranski ao orientador, relatada por este em 2
 Redação daqui em diante: o gerador original foi "evoluído", não "estava errado"; o artigo de conferência anterior
 (CBMS 2024) é trabalho dos próprios autores, corrigido aqui por medição. (No Z1 eu chamei de "achado lateral" a
 amostragem do kernel do gerador original; é uma observação técnica sobre uma versão anterior, não um erro a apontar.)
+
+## 2026-11-14, 13:56 — Correção de horários (piloto)
+
+Escrevi os cabeçalhos das entradas Z6.3 a Z8.3 com horas adiantadas em relação ao relógio (14:00, 14:15, 14:35).
+Corrigi para a hora real dos commits: Z6.6, Z6.1 e Z6.2 às 13:49 (`07ffc03`); Z6.3 a Z6.5 às 13:51 (`5bdec63`); Z8
+às 13:54 (`6d2914f`). As referências "≈ 13:50" e "≈ 14:10" às atualizações do orientador vêm de `PROTOCOLO_Z.md`.
