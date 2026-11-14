@@ -165,7 +165,44 @@ Estado: `[ ]` a fazer, `[~]` em andamento, `[x]` feito (com commit), `[!]` bloqu
 - [x] Z8. (feito: `6d2914f`, `results_exp_resolucao/setup_comparison.csv`, `img/fig_setup.{pdf,png}`) Comparação base × `small_near` (métricas + vazamento do padrão) e a figura "o que muda com o setup" —
       subagente "piloto", junto com Z6.
 - [x] Z5. (feito: `docs/exp_resolucao/CHECKPOINT_Z.md`, `18d67a3`) Proposta de configuração + coerência com as resoluções reportadas + consequências (eu, com Z3 e Z4).
-- [!] **Checkpoint Z**: mandar tudo ao orientador e **parar**; A só anda com a aprovação dele.
+- [x] **Checkpoint Z**: entregue (`18d67a3`) e **aprovado para o piloto** em 2026-11-14, ≈ 15:40
+      (`PROTOCOLO_PILOTO_1MM.md`, na íntegra). A parte A (redução) continua sem sentido a ≈ 1 mm (b_max = 1).
+
+### Fase P: piloto na distância certa (1,0 mm) — EM ANDAMENTO (ver `PROTOCOLO_PILOTO_1MM.md`, `CADERNO_PILOTO_1MM.md`)
+
+Escolhas do orientador (fixadas antes de rodar): z₀ = 1,0 mm (0,7 mm só como robustez, com os modelos de 1,0 mm, sem
+retreinar); letras com o mesmo N_F do base (fator 0,22792: fontes 15,95–26,89 px, caixas ≈ 13–23,5 px = 22–39 µm);
+gravação sobreamostrada com teste de convergência 2× contra 4×; critério da tese: em ≥ 4 de 5 repetições, prop − crops
+≥ 0,10 em F1 **e** ≥ 0,30 em rejeição das não vistas; primeiro só r1 (`raw`, `prop`, `rec_z0`); **checkpoint com ele
+antes das 5 repetições**; no paper o base vira "a geometria do CBMS 2024" e os conjuntos são apresentados pelo N_F.
+Escolhas minhas (ele pode reverter; estão no P0 do caderno do piloto): tolerância da convergência = 1 % do rms do
+padrão, a 1,0 e a 0,7 mm, grava-se com o menor s tal que (s, 2s) passa; robustez a 0,7 mm em duas leituras, (a) como
+está e (b) distância e α recalibrados sem rótulo em 32 hologramas de validação a 0,7 mm, pesos intactos; nome do
+conjunto `bench_1mm`; 5000 imagens em 50 sessões, como os conjuntos pequenos; poeira, fonte, feixe e sensor iguais ao
+base.
+
+- [x] P0. Pré-registro no caderno do piloto (`15bfea7`), antes de qualquer código.
+- [!] P1. **Perguntado ao orientador (2026-11-14, ≈ 16:00), aguardando:** (i) letras por janela: 8 por janela 640 × 640
+      como no base e nos pequenos (minha recomendação: é o precedente do `small_near` e é o teste conservador para a
+      tese) ou a densidade relativa do base (≈ 154 por janela); (ii) espalhamento de profundidade por objeto: escalar
+      com z (2,6 µm rms, equivalência exata com o base; minha recomendação, com 50 µm como robustez sem retreinar) ou
+      manter 50 µm (1,7× a profundidade de campo a 1 mm). A gravação do conjunto espera a resposta.
+- [~] P2. Subagente "simulador" (lançado ≈ 15:55): S1 gravação sobreamostrada (`Physics.oversample`, s = 1 idêntico
+      ao de hoje; cena definida em unidades físicas; layout novo `fresnel`); S2 teste de convergência
+      (`scripts/exp_resolucao/oversampling_convergence.py` → `results_exp_resolucao/oversampling_convergence.csv`);
+      S3 preparar SEM RODAR o script do piloto (`scripts/exp_resolucao/pilot_1mm.sh`), a robustez a 0,7 mm e a faixa
+      do `calibrate_alpha`. Ele para depois do S3 e me devolve o relatório. **Revisar o diff e os números antes de
+      gravar.**
+- [ ] P3. Depois de P1 e da revisão de P2: registrar as respostas no caderno (entrada P1), gravar `bench_1mm`
+      (tmux `res_*`), reconstruir z0, treinar e avaliar r1 de `raw`, `prop`, `rec_z0` (`--no-aux`), gravar e avaliar a
+      robustez a 0,7 mm (a) e (b). Só validação para escolhas; teste lido uma vez.
+- [ ] P4. Vazamento do padrão para fora do crop no conjunto novo (mesma medida do Z6.2) e figura/tabela dos conjuntos
+      pelo N_F (base, `small_z0`, `small_near`, `bench_1mm`).
+- [ ] P5. **Checkpoint do piloto**: mandar r1 ao orientador (F1 e rejeição de crops/prop/rec_z0, convergência,
+      robustez a 0,7 mm, custo das 5 repetições) e **PARAR**. As 5 repetições só com a aprovação dele.
+- [~] C-extra. Subagente "cbms" (lançado ≈ 15:55): ler o CBMS 2024 completo (PDF que o orientador mandou,
+      `../referencias/c/rockembach2024_full/`) e atualizar a entrada [11] de `LEVANTAMENTO_C.md` (a p. 365 usa
+      "iterative"; conferir se mede tempo). A pendência "páginas 365–369" está resolvida.
 
 ### Fase A: experimento da resolução
 
@@ -326,4 +363,10 @@ errado".
   `scripts/exp_resolucao/fig_size_at_1mm.py`. Minha leitura: o paper não cai, mas o conjunto base não é a geometria
   da bancada; o teste que decide é o piloto da opção 2 com objetos de ≈ 15–40 µm a 0,7–1 mm (simulador
   sobreamostrado). **Continua PARADO: sem aprovação do Checkpoint Z, nada de gravar nem treinar.**
-
+- **2026-11-14, ≈ 15:40–16:00 — PILOTO APROVADO.** O orientador aprovou o piloto com seis escolhas (na íntegra em
+  `PROTOCOLO_PILOTO_1MM.md`) e mandou o PDF do CBMS 2024 (p. 367: "λ = 385nm, z = 50k, pixel size of 1.67μm", sem
+  unidade). Feito por mim: protocolo salvo (`13f350e`), pré-registro P0 no caderno novo `CADERNO_PILOTO_1MM.md`
+  (`15bfea7`), dois subagentes lançados (simulador; CBMS completo), duas perguntas feitas a ele (densidade de letras;
+  espalhamento de profundidade). Ver a Fase P do plano. **Próximo passo ao voltar: ler o relatório do subagente do
+  simulador, revisar o diff (s = 1 idêntico? `reproduce check` 13/13? pytest?), registrar as respostas do orientador
+  como entrada P1 do caderno do piloto, e só então mandar gravar o conjunto.**
