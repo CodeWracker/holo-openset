@@ -4,7 +4,7 @@ Registro de comandos, resultados e decisões da etapa descrita em `PROTOCOLO.md`
 Regras: resultados em `results_exp_resolucao/`; escolhas só na validação; o que vai ao teste é registrado aqui, com
 data, antes de rodar; nada em `results/` nem `expected/`.
 
-## 2026-11-14, 12:20 — Abertura (responsável)
+## 2026-11-14, 13:05 — Abertura (responsável)
 
 - Branch `exp/resolucao-fonte`, criado de `exp/distancia-autofocus` (`4e44f3a`).
 - Hipóteses e critério: os do protocolo (H5, H5b, A.6), copiados em `TODO.md`, Seção 1. Nada foi rodado ainda.

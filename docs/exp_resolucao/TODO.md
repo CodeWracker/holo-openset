@@ -125,6 +125,6 @@ errado".
 
 ## 6. Diário (mais recente embaixo)
 
-- 2026-11-14, 12:20: instrução recebida e copiada em `PROTOCOLO.md`; branch `exp/resolucao-fonte` criado; este
+- 2026-11-14, 13:05: instrução recebida e copiada em `PROTOCOLO.md`; branch `exp/resolucao-fonte` criado; este
   arquivo e a abertura do caderno escritos; subagente "piloto" (Opus, high) disparado para A0–A3. Próximo passo meu:
   revisar o que ele devolver, montar o material do P1 e **parar para aprovação**.
