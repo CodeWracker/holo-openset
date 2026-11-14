@@ -14,6 +14,10 @@ Output: results/holo_openset/robustness.csv
 ones in each test session, at the same threshold (a distance found once per session is right or wrong for a whole
 session). --own evaluates a flow of the distance study with a model trained on its own images instead of the model
 it borrows (rows saved as <flow>+own).
+
+--set, --variants-root and --out run the same experiment on another base set and its own recordings of the
+variants, e.g. a set reduced b x b (holo_openset.resolution): --set realistic_b4 --variants-root variants_b4
+--out robustness_b4 (models of models/<set>, test scenes of data/variants_b4/<name>).
 """
 import numpy as np
 import pandas as pd
@@ -52,9 +56,13 @@ def main(argv=None):
     ap.add_argument('--variants', nargs='+', default=['base'] + list(VARIANTS))
     ap.add_argument('--by-session', action='store_true', help='also robustness_sessions.csv')
     ap.add_argument('--own', action='store_true', help="the flow's own checkpoint instead of the one it borrows")
+    ap.add_argument('--set', default=paths.BASE, help='the base set: its models, gallery and thresholds')
+    ap.add_argument('--variants-root', default='variants', help='where the variants of that set are (data/<root>/<v>)')
+    ap.add_argument('--out', default='robustness', help='name of the csv (and of <out>_sessions.csv)')
     a = ap.parse_args(argv)
     dev = device(a)
-    base = dataset('raw')
+    broot = paths.dataset(a.set)
+    base = dataset('raw', broot)
     ann = base.ann
     val, test = (ann.split == 'val').to_numpy(), (ann.split == 'test').to_numpy()
     ref = ann[test].reset_index(drop=True)
@@ -63,13 +71,13 @@ def main(argv=None):
     for r in a.rep:
         rows, srows = [], []
         for flow in a.flows:
-            m = model(flow, r, dev, own=a.own)
+            m = model(flow, r, dev, train_set=a.set, own=a.own)
             if m is None:
                 continue
             name = f'{flow}+own' if a.own else flow
-            emb_val = embed_annotations(m, dataset(flow), ann[val])
+            emb_val = embed_annotations(m, dataset(flow, broot), ann[val])
             for v in a.variants:
-                root = paths.dataset(paths.BASE if v == 'base' else f'variants/{v}')
+                root = broot if v == 'base' else paths.dataset(f'{a.variants_root}/{v}')
                 if not (root / array_name(flow)).exists():
                     print('missing', root / array_name(flow), flush=True)
                     continue
@@ -88,6 +96,6 @@ def main(argv=None):
                 if a.by_session:
                     srows += [dict(rep=r, variant=v, flow=name, threshold=res['threshold'], **x)
                               for x in sessions(emb, ann, r, res['threshold'], session_of)]
-        save(rows, 'robustness', keys=['rep', 'variant', 'flow'])
+        save(rows, a.out, keys=['rep', 'variant', 'flow'])
         if srows:
-            save(srows, 'robustness_sessions', keys=['rep', 'variant', 'flow', 'session'])
+            save(srows, f'{a.out}_sessions', keys=['rep', 'variant', 'flow', 'session'])

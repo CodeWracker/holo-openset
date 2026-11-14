@@ -143,9 +143,13 @@ class FourierLayer(nn.Module):
 
 
 class HoloEmbedder(nn.Module):
-    def __init__(self, n_classes, mode='radial', crop=64, proj_dim=128, pretrained=True, n_dist=1):
+    """size: side of the frequency grid of the Fourier layer, IMAGE_SIZE for images at the pixel of the sensor and
+    IMAGE_SIZE / b for a set reduced b x b (holo_openset.resolution.grid_size): the same field, so the same physical
+    frequency at each index."""
+
+    def __init__(self, n_classes, mode='radial', crop=64, proj_dim=128, pretrained=True, n_dist=1, size=IMAGE_SIZE):
         super().__init__()
-        self.fourier = FourierLayer(IMAGE_SIZE, mode, n_dist)
+        self.fourier = FourierLayer(size, mode, n_dist)
         self.crop = crop
         m = torchvision.models.resnet18(weights='IMAGENET1K_V1' if pretrained else None)
         m.fc = nn.Identity()
@@ -243,7 +247,8 @@ def load_model(path, device='cpu'):
     n_dist = state['fourier.alpha'].numel() if 'fourier.alpha' in state else 1
     mode = ('bank' if n_dist > 1 else 'prop') if 'fourier.alpha' in state else \
         'complex' if 'fourier.weight_im' in state else 'radial' if 'fourier.inv' in state else 'none'
-    model = HoloEmbedder(n_classes, mode=mode, pretrained=False, n_dist=n_dist)
+    size = state['fourier.inv'].shape[-1] if 'fourier.inv' in state else IMAGE_SIZE   # reduced sets: a smaller grid
+    model = HoloEmbedder(n_classes, mode=mode, pretrained=False, n_dist=n_dist, size=size)
     model.load_state_dict(state)
     model.to(device).eval()
     return model, meta

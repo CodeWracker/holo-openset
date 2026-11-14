@@ -15,6 +15,7 @@ from PIL import Image
 from holo_openset import paths
 from holo_openset.model import square_boxes
 from holo_openset.protocol import classes as split_classes
+from holo_openset.resolution import set_pixel
 from holo_openset.sim.letters import CLASSES
 from holo_openset.sim.physics import Z0
 
@@ -35,6 +36,7 @@ class Dataset:
         self.arr = np.load(array if Path(str(array)).is_absolute() else self.root / array, mmap_mode='r')
         cfg = self.root / 'physics.json'
         self.z0 = json.load(open(cfg))['physics'].get('z0', Z0) if cfg.exists() else Z0
+        self.pixel = set_pixel(self.root)   # b x the sensor's on a set reduced b x b (holo_openset.resolution)
 
     @staticmethod
     def classes(rep):

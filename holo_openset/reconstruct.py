@@ -71,11 +71,12 @@ def kernel(shape, zs, dev, sign=+1, pixel=PIXEL):
     return torch.exp(sign * 1j * math.pi * WAVELENGTH * z * _q(shape, dev, pixel)[None]).to(CDT)
 
 
-def backprop(a, zs):
-    """a [h, w] real -> U [K, h, w]: the field in the object plane at each distance of zs."""
+def backprop(a, zs, pixel=PIXEL):
+    """a [h, w] real, sampled every `pixel` metres -> U [K, h, w]: the field in the object plane at each distance of
+    zs."""
     h, w = a.shape[-2:]
     p = fast_pad(a).to(CDT)
-    return torch.fft.ifft2(torch.fft.fft2(p)[None] * kernel(p.shape[-2:], zs, a.device))[..., :h, :w]
+    return torch.fft.ifft2(torch.fft.fft2(p)[None] * kernel(p.shape[-2:], zs, a.device, pixel=pixel))[..., :h, :w]
 
 
 def tog(u, boxes=None, mask=None):
@@ -269,6 +270,7 @@ class Holograms:
         cfg = json.load(open(self.root / 'physics.json'))
         self.intensity = cfg['physics']['intensity']
         self.z0 = cfg['physics'].get('z0', Z0)
+        self.pixel = cfg.get('pixel', PIXEL)   # a set reduced b x b (holo_openset.resolution): b x the sensor's
         self.bg = np.load(self.root / 'backgrounds.npy', mmap_mode='r')
         if aux is None:
             self.holo = np.load(self.root / 'holograms.npy', mmap_mode='r')
@@ -297,10 +299,13 @@ class Holograms:
         return normalise(h, b, self.intensity)
 
 
-def reconstruct(a, method, z_af=None, boxes=None, z0=Z0):
-    """One hologram amplitude a [h, w] -> U [h, w] by a method of METHODS (z_af: the autofocus distance)."""
+def reconstruct(a, method, z_af=None, boxes=None, z0=Z0, pixel=PIXEL):
+    """One hologram amplitude a [h, w] -> U [h, w] by a method of METHODS (z_af: the autofocus distance; pixel: the
+    sampling of a, for 'z0' only)."""
     if method == 'z0':
-        return backprop(a, [z0])[0]
+        return backprop(a, [z0], pixel)[0]
+    if pixel != PIXEL:
+        raise ValueError(f'{method} is implemented at the pixel of the sensor only')
     if method == 'af':
         return backprop(a, [z_af])[0]
     if method == 'edf':
@@ -359,6 +364,9 @@ def build_caches(root, methods, dev, aux=None, log=print):
     study = [m for m in methods if m in FOCUS]
     methods = [m for m in methods if m in METHODS]
     src = Holograms(root, aux)
+    if src.pixel != PIXEL and (set(methods) - {'z0'} or wide or study):
+        raise SystemExit(f'{root} is reduced (pixel {src.pixel * 1e6:.2f} um): only the back-propagation at z0 '
+                         'uses the effective pixel so far')
     pre = f"{src.root / 'aux' / aux}_" if aux else f'{src.root}/'
     h, w = src.holo.shape[1:]
     for m in wide:
@@ -402,7 +410,7 @@ def build_caches(root, methods, dev, aux=None, log=print):
                 u, zb = per_object(a, z_af, src.boxes.get(i, np.zeros((0, 4))))
                 row['z_objects'] = ';'.join(f'{v:.7f}' for v in zb)
             else:
-                u = reconstruct(a, m, z_af, z0=src.z0)
+                u = reconstruct(a, m, z_af, z0=src.z0, pixel=src.pixel)
             arrs[m][k] = channels(u).cpu().numpy()
         rows.append(row)
         if k % 500 == 0:

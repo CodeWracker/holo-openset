@@ -17,6 +17,7 @@ import torch.nn.functional as F
 from holo_openset.data import CLASSES
 from holo_openset.sim.physics import PIXEL, WAVELENGTH, Z0
 from holo_openset.model import IMAGE_SIZE, HoloEmbedder, physical_gpu, physics_weights, square_boxes
+from holo_openset.resolution import grid_size
 
 
 class SupConLoss(nn.Module):
@@ -37,28 +38,30 @@ class SupConLoss(nn.Module):
 
 
 @torch.no_grad()
-def alpha_sharpness(imgs_u8, device, alphas):
-    """Mean sharpness (Tamura coefficient of the gradient) of the holograms back-propagated with each alpha."""
+def alpha_sharpness(imgs_u8, device, alphas, size=IMAGE_SIZE):
+    """Mean sharpness (Tamura coefficient of the gradient) of the holograms back-propagated with each alpha (units of
+    a grid of `size` pixels of the images: IMAGE_SIZE at the pixel of the sensor, IMAGE_SIZE / b on a set reduced
+    b x b, the same field)."""
     from holo_openset.reconstruct import tog
     x = imgs_u8.to(device).float() / 255.0
     x = x - x.mean(dim=(-2, -1), keepdim=True)
     h, w = x.shape[-2:]
     A = torch.fft.fft2(x.to(torch.complex64))
-    fy = torch.fft.fftfreq(h, device=device, dtype=torch.float64) * IMAGE_SIZE
-    fx = torch.fft.fftfreq(w, device=device, dtype=torch.float64) * IMAGE_SIZE
+    fy = torch.fft.fftfreq(h, device=device, dtype=torch.float64) * size
+    fx = torch.fft.fftfreq(w, device=device, dtype=torch.float64) * size
     q = fx[None, :] ** 2 + fy[:, None] ** 2
     return [tog(torch.fft.ifft2(A * torch.exp(1j * float(a) * q).to(torch.complex64))).mean().item() for a in alphas]
 
 
 @torch.no_grad()
-def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41):
+def calibrate_alpha(imgs_u8, device, lo=0.001, hi=0.08, n_coarse=80, n_fine=41, size=IMAGE_SIZE):
     """The propagation phase alpha (units of the training grid) at which the holograms are sharpest, from the
     holograms alone: no label and no optical parameter. The sharpness is the Tamura coefficient of the gradient of the
     back-propagated field (the criterion of the blind autofocus), averaged over the images. Coarse scan on a
     geometric grid (the same relative step at every distance: 2 mm and 75 mm are both covered), then a fine linear
     scan between the neighbours of the best coarse value (resolution about 0.3 %)."""
     def sharpness(alphas):
-        return alpha_sharpness(imgs_u8, device, alphas)
+        return alpha_sharpness(imgs_u8, device, alphas, size)
     coarse = np.geomspace(lo, hi, n_coarse)
     k = int(np.argmax(sharpness(coarse)))
     fine = np.linspace(coarse[max(k - 1, 0)], coarse[min(k + 1, n_coarse - 1)], n_fine)
@@ -96,11 +99,13 @@ def train(dataset, classes, steps=3000, imgs_per_step=16, buffer=0.25, jitter=0.
         src, i = k
         return np.asarray(aux_imgs[int(i)]) if src == 'aux' else dataset.image(int(i))
 
-    model = HoloEmbedder(len(classes), mode=mode, n_dist=n_dist)
+    # the grid of the Fourier layer covers the training field (IMAGE_SIZE sensor pixels) at the pixel of the set
+    size = grid_size(getattr(dataset, 'pixel', PIXEL), IMAGE_SIZE)
+    model = HoloEmbedder(len(classes), mode=mode, n_dist=n_dist, size=size)
     if mode in ('prop', 'bank'):
         if alpha_init == 'calib':
             ids = rng.choice(np.unique(tr[tr.src == 'set'].image_id), 32, replace=False)
-            a0 = calibrate_alpha(dataset.images(ids), device)
+            a0 = calibrate_alpha(dataset.images(ids), device, size=size)
         else:
             a0 = float(alpha_init)
         k = model.fourier.alpha.numel()

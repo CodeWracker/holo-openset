@@ -3,6 +3,7 @@
 Build the data and the models (each command uses ONE device, --device cpu | cuda:N):
   simulate      simulate an acquisition: base | ideal | variant NAME | variants | aux --rep R | full | small
   reconstruct   conventional reconstructions of a set (back-propagation, autofocus, per-object focus, twin removal)
+  reduce        a new set with every image averaged over b x b pixels (the resolution the source allows)
   yolo          train the class-agnostic YOLO localiser of a repetition
   train         train the embedding network of a flow on the seen classes of a repetition
   evaluate      strict open-set evaluation of a flow (paper protocol)
@@ -78,6 +79,11 @@ def cmd_reconstruct(a):
     dev = _device(a)
     for aux in ([None] if not a.aux else a.aux):
         build_caches(_set(a), a.methods or METHODS, dev, aux=aux)
+
+
+def cmd_reduce(a):
+    from holo_openset.resolution import default_name, reduce_set
+    reduce_set(_set(a), paths.dataset(a.out or default_name(a.set, a.bin)), a.bin, aux=a.aux)
 
 
 def cmd_yolo(a):
@@ -265,6 +271,13 @@ def main(argv=None):
                                                 'study (reconstruct.FOCUS), which writes autofocus_<method>.csv')
     p.add_argument('--aux', nargs='*', help='auxiliary scenes instead (r1 r1_cal ...)')
     p.set_defaults(fn=cmd_reconstruct)
+
+    p = sub.add_parser('reduce', parents=[common], help='a set averaged over b x b pixels (holo_openset.resolution)')
+    p.add_argument('--bin', type=int, required=True, help='b: the side of the blocks averaged')
+    p.add_argument('--out', help='name of the new set (default: realistic -> realistic_b<b>, '
+                                 'variants/<v> -> variants_b<b>/<v>)')
+    p.add_argument('--aux', nargs='*', default=[], help='auxiliary scenes to carry (r1 r1_cal ...)')
+    p.set_defaults(fn=cmd_reduce)
 
     p = sub.add_parser('yolo', parents=[common], help='train the YOLO localiser')
     p.add_argument('--rep', type=int, nargs='+', default=[2])
