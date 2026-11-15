@@ -698,8 +698,9 @@ def fig_cost(rep=None):
     save(fig, 'fig_cost')
 
 
-def fig_full_frame(rep=1, frame=0, flow='learned'):
-    """A full frame of the sensor with the decisions of the proposed flow, and two zoomed regions."""
+def fig_full_frame(rep=1, frame=0, flow='prop'):
+    """A full frame of the sensor with the decisions of the proposed flow (the propagation layer), and two zoomed
+    regions: the hologram and the modulus of the output of the layer."""
     from holo_openset.detect import YoloDetector
     from holo_openset.experiments.full_frames import embed_boxes, gallery
     from holo_openset.flows import dataset
@@ -727,7 +728,7 @@ def fig_full_frame(rep=1, frame=0, flow='learned'):
     regions = [(600, 1400), (1800, 600)]
     view = filt[0, -1].cpu().numpy()
     for k, (y0, x0) in enumerate(regions):
-        for j, (im, name) in enumerate([(img, 'hologram'), (view, 'learned layer')]):
+        for j, (im, name) in enumerate([(img, 'hologram'), (view, 'propagation layer')]):
             a = fig.add_subplot(gs[j, 1 + k])
             show(a, im[y0:y0 + 500, x0:x0 + 500], f'({"bcde"[2 * k + j]}) {("upper", "lower")[k]}: {name}')
             if j == 0:
