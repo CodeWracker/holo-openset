@@ -26,6 +26,12 @@ recording, in grey levels of 8 bits (the background at the centre of the beam is
              pattern, per scene. -> oversampling_reach.csv
   margin     the same scene recorded with margin m and 2m (the periodic field wraps around less): rel_change =
              rms(I_m - I_2m) / rms of the pattern of I_2m. -> oversampling_margin.csv
+  native     the native recording (s = 1: the mask of each object on the pixels, the path of the sets of the paper)
+             against the converged one (s = --s, the master raster) on the same scenes, split in two (Q2, control S):
+               rel_total  rms(native - converged) / rms(pattern of the converged)
+               rel_prop   the same mask on the pixels propagated at s = 1 and at s (only the propagation)
+               rel_draw   the mask on the pixels against the master raster, both at s (only the drawing)
+             -> oversampling_native<tag>.csv
   dump       the noise-free recordings (and blank frames) of the 8 scenes at the first factor of --s, to --out (npz):
              run it with two versions of the package (PYTHONPATH) to compare two recorders
   compare    two dumps A B: rms(A - B) / rms of the pattern of B, per scene -> --out (csv)
@@ -152,6 +158,45 @@ def converge(a, dev):
           '-> oversampling', chosen)
 
 
+def on_pixels(o):
+    """The object as the native path sees it: its mask on the pixels, without the master raster (on a grid s times
+    finer each pixel becomes an s x s block, physics.sample_mask)."""
+    return {k: v for k, v in o.items() if k not in ('master', 'mx', 'my', 'factor')}
+
+
+def native(a, dev):
+    rows = []
+    lay = FresnelLayout(**a.layout)
+    s = a.s[0]
+    for depth in a.depths:
+        for z in a.z:
+            p1 = physics(z, a.margin, a.reach, depth)
+            ps = p1.replace(oversample=s)
+            cam = camera(CAMERA_SEED, p1, lay)
+            for i in IDS[::len(IDS) // a.n_scenes]:
+                sc = scene(i, p1, lay)
+                sc['sensor_dust'] = cam['dust']
+                px = dict(sc, objects=[on_pixels(o) for o in sc['objects']], dust=[on_pixels(o) for o in sc['dust']],
+                          sensor_dust=[on_pixels(o) for o in cam['dust']])
+                ses = session(SEED * 1000 + i // 100, p1)
+                nat, _ = recording(sc, ses, p1, cam, dev)        # the native path reads the masks on the pixels
+                pxs, _ = recording(px, ses, ps, cam, dev)        # the same masks, propagated at s
+                conv, _ = recording(sc, ses, ps, cam, dev)       # the master raster at s
+                blank, _ = recording(sc, ses, ps, cam, dev, sample=False)
+                pat = (conv - blank).std()
+                r = dict(z_mm=z, depth=depth, image_id=i, n_letters=len(sc['rows']), s=s, factor=lay.factor,
+                         pattern_rms_dn=float(pat))
+                for name, d in [('total', nat - conv), ('prop', nat - pxs), ('draw', pxs - conv)]:
+                    r[f'rel_{name}'] = float(d.std() / pat)
+                    r[f'max_abs_dn_{name}'] = float(d.abs().max())
+                rows.append(r)
+                print({k: (round(v, 5) if isinstance(v, float) else v) for k, v in r.items()}, flush=True)
+    t = pd.DataFrame(rows)
+    paths.RESULTS.mkdir(parents=True, exist_ok=True)
+    t.to_csv(paths.RESULTS / f'oversampling_native{a.tag}.csv', index=False, float_format='%.6g')
+    print(t.describe().T[['min', '50%', 'max']].to_string())
+
+
 def within(o, phys, r):
     """The object lies entirely within r pixels of the window."""
     m0, (h, w) = phys.margin, phys.window
@@ -257,7 +302,7 @@ def compare(a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('what', choices=['converge', 'reach', 'margin', 'dump', 'compare'])
+    ap.add_argument('what', choices=['converge', 'native', 'reach', 'margin', 'dump', 'compare'])
     ap.add_argument('dumps', nargs='*', help='compare: two npz written by dump (A B)')
     ap.add_argument('--out', help='dump: npz; compare: csv')
     ap.add_argument('--device', default='cpu')
@@ -282,9 +327,9 @@ def main():
     dev = pick_device(a.device)
     if a.what == 'dump':
         return dump(a, dev)
-    if a.what == 'converge':
+    if a.what in ('converge', 'native'):
         a.reach = a.reach[0]
-        converge(a, dev)
+        (converge if a.what == 'converge' else native)(a, dev)
     else:
         {'reach': reach, 'margin': margin}[a.what](a, dev)
 
