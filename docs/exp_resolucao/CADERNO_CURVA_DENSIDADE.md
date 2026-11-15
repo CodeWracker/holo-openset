@@ -501,3 +501,70 @@ o glifo foi desenhado a 1× pelo Pillow, o que é ainda outra máscara (não med
 | rec_z0 | 0,9778 | 0,9871 | — | — | 0,9712 / 0,9622 |
 
 (rec_z0: `small_near_control.sh 5 ref_train` e `ref_evaluate`, 13:48–13:49; raw e prop do D7 anterior.)
+
+## 2026-11-15, 14:25 — D7 (fim): `small_near_newrec` gravado, D, treinos, tabela e a leitura do Q2
+
+### Gravação e sanidade
+
+`S_CONV=2 MASTER=16 WORKERS=6 bash scripts/exp_resolucao/small_near_control.sh 5 record` (tmux `res_S_record`,
+13:49:24–14:16:32, 1628 s; 6 construtores, 6–9 threads prontas, `cpu.pressure` some avg10 = 0,00; GPU 5): `simulate
+fresnel --name small_near_newrec --n-images 5000 --workers 6 --set-physics z0=2.0e-3 oversample=2 --layout factor=16
+scale=1 font_min=16 font_max=48 border=6 margin=4 letters_mean=8 letters_std=3 letters_min=3 letters_max=18`. Disco:
+8,7 GB com o `rec_z0.npy`. `physics.json`: `lengths_given` = 16 / 48 / 6 / 4, `oversample` 2, z₀ 2,0 mm.
+
+Sanidade (`small_near_control.sh 5 verify` = `bench_sanity.py --set small_near_newrec --ref small_near`, só treino;
+`results_exp_resolucao/small_near_newrec_sanity.json`, folha `docs/exp_resolucao/img/small_near_newrec_examples.png`):
+3500 / 700 / 800 imagens e 8,06 letras por imagem (3–18), as do `small_near`; lado da caixa inteira p5 / p50 / p95 =
+15 / 27 / 40,6 px (`small_near`: 15 / 28 / 42), N_F 0,204 / 0,660 / 1,493 (0,204 / 0,710 / 1,597); lado da tinta
+14,1 / 25,8 / 39,6 px; nível médio 101,36 (101,31), brancos 101,51 (101,50); ruído refeito das sementes: média
+0,001–0,007, rms 2,091–2,101 (2,091–2,101). A fonte contínua e a caixa de tinta da grade mestra deixam as letras
+≈ 1 px menores na mediana, como no controle B.
+
+### D e sobreposição no caminho novo (`small_near_control.sh 5 diameter`, antes de qualquer treino; `hologram_diameter_small_near_newrec*`)
+
+Mesmas definição e amostra (semente 20261115, 10 por classe), leis do `small_near_newrec` (layout físico com os
+comprimentos dados, raster 16×, s = 2), raios × √2 (R = 136 / 181 / 272 / 362 px), janela 1088, margem 1728.
+**D_rms(192·k) = 99,2 px = 165,7 µm** (convergiu: 256/192 difere 0,006 %); D_86 167,5 µm; D_vis 233,0 µm. Com 7,06
+letras por mm² na janela: π D² σ = **0,609**, sobreposição **0,456** (o `small_near` nativo: 157,5 µm, 0,550,
+0,423).
+
+### Treino e avaliação do controle (`reconstruct` 68 s; `train` raw 14:19:35, prop 14:21:01, rec_z0 14:22:31, 276 s no total; `evaluate` 41 s; teste lido uma vez)
+
+α da camada: calibrado 0,002111, depois do treino 0,002106 (referência: 0,002100 → 0,002079; "the bench would be"
+0,002118 = 2,0 mm).
+
+### Tabela (`results_exp_resolucao/small_near_control.csv`, `small_near_control_reading.json`; `small_near_control.sh 5 table`)
+
+| linha | fluxo | F1 | rejeição | fechada | limiar | D (µm) | π D² σ | sobreposição |
+|---|---|---|---|---|---|---|---|---|
+| referência (`small_near` em disco, `--no-aux`, agora) | raw | 0,7909 | 0,1176 | 0,8885 | 0,5856 | 157,5 | 0,550 | 0,423 |
+| | prop | 0,9633 | 0,8953 | 0,9957 | 0,9859 | | | |
+| | rec_z0 | 0,9778 | 0,9871 | 0,9990 | 0,9871 | | | |
+| controle (`small_near_newrec`) | raw | 0,7993 | 0,1200 | 0,8992 | 0,5994 | 165,7 | 0,609 | 0,456 |
+| | prop | 0,9728 | 0,9775 | 0,9955 | 0,9876 | | | |
+| | rec_z0 | 0,9728 | 0,9541 | 0,9982 | 0,9881 | | | |
+| paper r1 (só referência) | raw | 0,7939 | 0,0974 | 0,8969 | 0,5733 | | | |
+| | prop | 0,9710 | 0,9420 | 0,9965 | 0,9842 | | | |
+| | rec_z0 | 0,9712 | 0,9622 | 0,9984 | 0,9870 | | | |
+| R_curva (família u50, crops, r1, níveis 15–69, peso 0,104 no 69) | raw | 0,9074 | 0,5137 | 0,9688 | | | 0,609 | 0,456 |
+
+### Leitura do Q2, aplicada mecanicamente (só crops)
+
+R_ant = (0,7909; 0,1176); controle = (0,7993; 0,1200); R_curva = (0,9074; 0,5137). Distâncias: F1 0,0084 a R_ant
+contra 0,1081 a R_curva; rejeição 0,0024 contra 0,3937. **Mais perto de R_ant nas duas: pela regra, a amostragem
+nativa não explica o desvio; o conjunto continua fora da curva.** O controle troca duas peças ao mesmo tempo (a
+propagação sobreamostrada e o desenho das letras); como nenhuma das duas muda os crops, a leitura vale para as duas
+juntas. Nenhum outro braço foi rodado.
+
+### O que pareceu estranho
+
+1. Os crops do controle ficaram onde estavam (0,799 / 0,120 contra 0,791 / 0,118), embora a gravação nativa difira
+   da convergida em 4,8–5,8 % do padrão nas cenas da conferência (3,4–5,2 % só da propagação, 6,2–7,2 % só do
+   desenho): o erro de amostragem é grande na imagem e não pesa nos crops.
+2. A camada melhorou no controle (rejeição 0,895 → 0,978) e a reconstrução caiu em rejeição (0,987 → 0,954), em
+   uma repetição só; sem critério para elas.
+3. Na mesma sobreposição (0,456), os crops da família de 1 mm dariam 0,907 / 0,514 por interpolação; as letras
+   pequenas a 2 mm ficam 0,11 / 0,39 abaixo, nos dois caminhos de gravação. Diferenças que ficam entre os dois: o
+   tamanho das letras em pixels (mediana 26 px contra 17,5 px), a faixa de N_F (0,20–1,49 contra 0,30–0,98), a
+   distância (2 mm contra 1 mm) e a profundidade (normal de 50 µm cortada em ±150 µm contra uniforme ±25 µm). Não
+   investiguei.
