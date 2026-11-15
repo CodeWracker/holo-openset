@@ -3,6 +3,9 @@
 2026-11-14. Aprovação e respostas em `PROTOCOLO_PILOTO_1MM.md`; pré-registros (P0, P2), execução e conferência (P3)
 em `CADERNO_PILOTO_1MM.md`. Este relatório substitui o checkpoint de r1 (`CHECKPOINT_PILOTO.md`).
 
+Atualizado às 21:26: a densidade da amostra passou a ser escolha nossa (seção 8, nova; entrada P4 do caderno). A
+pergunta ao prof. Sobieranski saiu das decisões, e a decisão sobre as densidades intermediárias ganhou números.
+
 ## 1. Resultado
 
 **O seu critério não foi cumprido: 0 de 5 repetições.** No conjunto do piloto, a camada fica em média 0,039 acima
@@ -109,27 +112,56 @@ reconstrução voltam a 0,977 e 0,975, e o modelo continua bom em amostra plana.
 
 ## 7. O que eu não sei
 
-- **Qual densidade é a da bancada.** O esparso tem 7 objetos por mm² e o denso 135 por mm². Não tenho fonte para
-  nenhum dos dois.
+- **Qual densidade é a da bancada.** O prof. Sobieranski não lembra, e não há outra fonte. A densidade fica como
+  suposição nossa (seção 8).
 - **A partir de que densidade o crop cai.** Só há os dois extremos.
 - **Quanto os controles variam entre repetições.** Eles são uma repetição; no base, r1 e a média de cinco diferem em
   até 0,09 na rejeição.
 - **Se a reconstrução ganha da camada no denso.** Em r1 ela fica 0,052 acima em rejeição; no base r1 o sinal é o
   contrário. Uma repetição não decide.
 
-## 8. Decisões que preciso de você
+## 8. Densidade da amostra: a escolha
+
+**Escolhi não fixar um valor único: a densidade vira um eixo do estudo, de 7 a 135 objetos por mm².** O resultado
+dos crops depende dela (0,94 de F1 no esparso, 0,80 no denso), e um valor único decidiria a conclusão por suposição.
+Ela continua declarada como suposição nossa.
+
+| nível | objetos por mm² | letras por janela | área coberta | de onde vem | situação |
+|---|---|---|---|---|---|
+| esparso | 7 | 8 | 0,6 % | o piloto | gravado |
+| intermediário 1 | 13 | 15 | 1,0 % | Seo 2009: 10 % dos hologramas se sobrepõem | a gravar |
+| intermediário 2 | 60 | 69 | 4,7 % | Seo 2009: limite do método deles sobre o holograma cru | a gravar |
+| denso | 135 | 154 | 10,5 % | a densidade relativa da geometria do CBMS 2024 | gravado |
+
+O que a literatura que já estava salva no projeto diz:
+
+- **Seo et al. 2009** (Lab Chip, seção "Discussions") classificam o holograma como gravado, sem reconstrução. Dão a
+  fração de hologramas que se sobrepõem em função da concentração: 10 % a 671 células por µL e 37 % a 3000 células
+  por µL, num canal de 20 µm. Acima de 3000 os erros de contagem crescem. Em área, pela minha conta, isso dá 13 e 60
+  células por mm².
+- **Isikman et al. 2012** (revisão, seção III.A), com reconstrução, contam hemácias com erro abaixo de 5 % até
+  0,4 milhão de células por µL, com mais de 150 mil células num campo. Pela minha conta, cerca de 6250 por mm².
+- **Sobieranski et al. 2015** (conclusões) citam a densidade como limitação intrínseca da holografia em linha.
+
+**Seo 2009 já relata o efeito que os nossos controles mostraram:** o reconhecimento sobre o holograma cru perde
+acurácia quando os hologramas se sobrepõem. É precedente, e precisa ser citado no texto.
+
+Ressalva da escolha: as células de Seo têm hologramas de cerca de 50 µm, menores que os das nossas letras. Na mesma
+contagem por mm², a nossa sobreposição é maior. A comparação justa é pela razão de sobreposição deles, que pede o
+diâmetro efetivo do nosso holograma. Não medi esse diâmetro.
+
+## 9. Decisões que preciso de você
 
 1. **Como a tese muda.** Recomendo a forma condicionada à densidade (terceiro item da seção 6), com o base como "a
-   geometria do CBMS 2024" e os conjuntos apresentados por número de Fresnel e por área coberta.
+   geometria do CBMS 2024" e os conjuntos apresentados por número de Fresnel e por densidade.
 2. **Rodar as cinco repetições no conjunto denso?** São mais quatro, cerca de 8 minutos cada, sem regravar.
    Recomendo: permite aplicar o seu critério também ali, com o mesmo rigor.
-3. **Gravar densidades intermediárias?** Duas ou três (por exemplo 2 % e 5 % de área coberta), só em r1, para mostrar
-   onde o crop cai. Cada uma custa de 30 a 50 minutos de gravação e 8 de treino. Recomendo, se a tese for a do item 1.
-4. **Perguntar ao prof. Sobieranski a densidade típica das amostras** (objetos por campo ou por mm²). É o parâmetro
-   novo do simulador que ainda não tem fonte.
-5. **Começar a reescrita (parte B)?** Só começo com o seu pedido.
+3. **Gravar os dois níveis intermediários da seção 8?** São 15 e 69 letras por janela, só em r1, para mostrar onde
+   o crop cai. As duas gravações somam cerca de 70 minutos, mais 8 de treino cada. Recomendo, junto com a medida do
+   diâmetro efetivo do nosso holograma, para reportar também a razão de sobreposição de Seo.
+4. **Começar a reescrita (parte B)?** Só começo com o seu pedido.
 
-## 9. Ressalvas
+## 10. Ressalvas
 
 - No controle do código, as letras foram desenhadas numa grade 4 vezes mais fina que o pixel (o piloto usa 16), por
   custo: 46 minutos contra cerca de 6,5 horas. Em relação ao tamanho da letra as duas se equivalem. O efeito isolado
@@ -139,7 +171,7 @@ reconstrução voltam a 0,977 e 0,975, e o modelo continua bom em amostra plana.
 - A leitura da seção 6 veio depois dos resultados. Só o critério e as regras dos controles foram fixados antes.
 - A 0,7 mm, com os vidros do simulador, a lamínula encosta na janela do sensor.
 
-## 10. O que foi feito
+## 11. O que foi feito
 
 - **Conjuntos novos:** `bench_1mm_depth50`, `bench_1mm_dense`, `base_newrec` (5000 imagens cada, 26 GB no total).
 - **Treinos:** 12 no piloto (repetições 2 a 5), 3 em cada um dos outros quatro conjuntos.

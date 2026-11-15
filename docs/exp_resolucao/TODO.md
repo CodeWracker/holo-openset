@@ -240,13 +240,24 @@ base.
       mesmo conteúdo pelo `reproduce check`).
 - [x] P6 concluído. Relatório completo: `docs/exp_resolucao/RELATORIO_PILOTO_1MM.md` (PDF no scratchpad,
       `entrega/relatorio_piloto_1mm.pdf`), enviado ao orientador às 20:43.
-- [ ] P7. **PARADO, esperando o orientador.** Decisões pedidas no relatório (seção 8): (1) como a tese muda (minha
-      recomendação: condicionada à densidade; amostra densa → o crop falha e a camada recupera, a 1,0 como a
-      19,25 mm; esparsa → o crop reconhece as conhecidas e a vantagem fica na rejeição das não vistas, 0,997 contra
-      0,730); (2) cinco repetições no conjunto denso (4 × ≈ 8 min); (3) densidades intermediárias em r1 (2–3
-      gravações de 30–50 min); (4) perguntar ao prof. Sobieranski a densidade típica das amostras (parâmetro sem
-      fonte: esparso = 7 objetos/mm², denso = 135/mm²); (5) começar a parte B. **Nada disso roda sem a resposta
-      dele; qualquer rodada nova pede pré-registro no caderno do piloto antes.**
+- [ ] P7. **PARADO, esperando o orientador.** Decisões pedidas no relatório (seção 9 depois da atualização das
+      21:25): (1) como a tese muda (minha recomendação: condicionada à densidade; amostra densa → o crop falha e a
+      camada recupera, a 1,0 como a 19,25 mm; esparsa → o crop reconhece as conhecidas e a vantagem fica na rejeição
+      das não vistas, 0,997 contra 0,730); (2) cinco repetições no conjunto denso (4 × ≈ 8 min); (3) gravar os dois
+      níveis intermediários de densidade em r1 (15 e 69 letras por janela; ≈ 70 min de gravação no total) e medir o
+      diâmetro efetivo do nosso holograma; (4) começar a parte B. **Nada disso roda sem a resposta dele; qualquer
+      rodada nova pede pré-registro no caderno do piloto antes.**
+      **Respondido às ≈ 21:20 (só o antigo item 4): "Pode escolher, ele não lembra. E se essa pergunta tava no
+      relatório, atualiza ele"** (na íntegra em `PROTOCOLO_PILOTO_1MM.md`). Feito: entrada P4 do caderno do piloto
+      (`2f8ccaf`): a densidade fica suposição nossa e vira eixo, 7 a 135 objetos/mm² (8 a 154 letras por janela),
+      com dois níveis intermediários nos pontos de Seo et al. 2009 (13 e 60 por mm² = 15 e 69 letras por janela);
+      relatório atualizado (seção 8 nova; a pergunta ao professor saiu das decisões) e reenviado; nota no fim de
+      `PARAMETROS.md`.
+      **Para as partes B e C:** Seo et al. 2009 (Lab Chip, 10.1039/b813943a, seção "Discussions") já relata que o
+      reconhecimento sobre o holograma cru, sem reconstrução, perde acurácia quando os hologramas se sobrepõem
+      (fórmula da razão de sobreposição; 10 % a 671 células/µL, ≥ 37 % a 3000 células/µL com canal de 20 µm). É
+      precedente do que os controles mostraram: citar. Isikman et al. 2012 (seção III.A): com reconstrução, até
+      0,4 milhão de células/µL. Textos em `../referencias/z/{seo2009,isi2012}/efetch.xml`.
 - [x] C-extra. (feito, `bed038c`) CBMS 2024 lido inteiro; entrada [11] de `LEVANTAMENTO_C.md` atualizada. O artigo
       afirma o custo da reconstrução em várias frases, usa "iterative" uma vez (p. 365), **não mede** tempo de
       reconstrução nem de inferência (só tempo de treino no Colab, T4, p. 368), é detecção com YOLOv5/v8/v9 em
@@ -441,3 +452,7 @@ errado".
   que derruba o crop é o padrão das vizinhas, não o vazamento do próprio padrão nem a distância. Treino com 50 µm
   recupera a perda de profundidade. **Próximo passo ao voltar: ler a resposta do orientador às cinco decisões da
   seção 8 de `RELATORIO_PILOTO_1MM.md` (ver P7). Sem resposta, não rodar nada nem reescrever.**
+- **2026-11-14, 21:25 — o orientador deixou a densidade conosco ("Pode escolher, ele não lembra").** Escolha (P4 do
+  caderno do piloto): eixo de 7 a 135 objetos/mm², níveis intermediários de Seo 2009 (15 e 69 letras por janela),
+  ainda não gravados. Relatório atualizado e reenviado. **Continua PARADO: as decisões 1 a 4 da seção 9 do relatório
+  (tese, cinco repetições no denso, níveis intermediários, parte B) não foram respondidas.**

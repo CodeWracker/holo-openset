@@ -204,3 +204,12 @@ conjunto base: absorção N(0,5; 0,25²) em [0,02; 1], fase N(1; 0,5²) em [0; 2
 |δ| ≤ 150 µm, z por sessão com 0,5 %, poeira 2/mm² e 7/mm², janela do sensor a 0,5 mm, 10 nm com 7 comprimentos de
 onda, pinhole 100 µm, 15 cm, cintura 2–3,5, descentramento 0,18, full well 6000 e⁻, exposição 45 %, leitura 3 e⁻,
 PRNU 1 %, 8 bits, 8 brancos, 100 imagens por sessão, 35/7/8 sessões, margem 1728 px, alcance 1,7 mm.
+
+## Atualização de 2026-11-14 (piloto a 1,0 mm): a densidade de objetos
+
+As linhas 31 e 33 (letras por janela, dentro e fora) descrevem os valores padrão do código, que não mudaram. O piloto
+mostrou que a densidade relativa ao tamanho da letra muda a conclusão sobre os crops (`RELATORIO_PILOTO_1MM.md`). O
+prof. Sobieranski não lembra a densidade típica das amostras, e o orientador deixou a escolha conosco. Nos conjuntos
+de 1,0 mm a densidade continua **suposição nossa** e passa a ser um eixo, de 7 a 135 objetos por mm² (8 a 154 letras
+por janela), com dois níveis intermediários nos pontos publicados por Seo et al. 2009 (13 e 60 por mm²). Fontes,
+citações literais e contas na entrada P4 de `CADERNO_PILOTO_1MM.md`.
