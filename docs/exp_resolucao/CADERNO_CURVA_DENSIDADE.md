@@ -703,3 +703,55 @@ profundidade mudou.** A seguir: r1, `raw`, `prop`, `rec_z0` (GPU 2).
 
 `small_near_ctlN` r1 (fila `S2_queue_ctlN`, 16:46–16:51, teste lido uma vez): `raw` 0,9160 / 0,5298; `prop` 0,9759 /
 0,9895; `rec_z0` 0,9607 / 0,8494 (F1 / rejeição). A leitura do Q3-D sai na tabela, quando o ctlP existir.
+
+## 2026-11-15, 16:58 — D12: Q3-D, tabela dos dois controles, leitura do Q3 e leitura estratificada
+
+### Tabela (`python scripts/exp_resolucao/small_near_factors.py` → `results_exp_resolucao/small_near_factors.csv`, `small_near_factors_reading.json`; o mesmo código de geometria e de interpolação do Q2-S)
+
+| conjunto | o que muda | D | π D² σ / sobrep. | raw F1 / rej. | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|---|---|---|
+| `small_near_newrec` (R_reg) | — | 165,7 µm | 0,609 / 0,456 | 0,7993 / 0,1200 | 0,9728 / 0,9775 | 0,9728 / 0,9541 |
+| `small_near_ctlN` | faixa de N_F da família | 164,6 µm | 0,601 / 0,451 | **0,9160 / 0,5298** | 0,9759 / 0,9895 | 0,9607 / 0,8494 |
+| `small_near_ctlP` | lei de profundidade da família | 165,7 µm | 0,609 / 0,456 | **0,8032 / 0,1361** | 0,9778 / 0,9968 | 0,9743 / 0,9984 |
+
+R_curva (crops da família u50 em r1, interpolação em log(π D² σ) entre os níveis 15 e 69): para o ctlN 0,9079 /
+0,5163 (peso 0,095 no 69); para o ctlP 0,9074 / 0,5137 (peso 0,104).
+
+### Leitura do Q3-D, aplicada mecanicamente (só crops)
+
+| controle | dist. F1 a R_reg / a R_curva | dist. rejeição a R_reg / a R_curva | mais perto de | resultado |
+|---|---|---|---|---|
+| ctlN | 0,1167 / **0,0081** | 0,4098 / **0,0135** | R_curva nas duas | **o fator explica o desvio** |
+| ctlP | **0,0039** / 0,1042 | **0,0161** / 0,3776 | R_reg nas duas | **o fator não explica** |
+
+A previsão registrada ("D-N volta para a curva e D-P não") valeu. É uma repetição, descritivo. Camada e reconstrução
+ao lado, sem critério: no ctlN a reconstrução cai em rejeição (0,849 contra 0,954 no R_reg); no ctlP as duas sobem
+(0,997 e 0,998).
+
+### Leitura estratificada (`python scripts/exp_resolucao/small_near_strata.py --set small_near_newrec --device cuda:2` → `results_exp_resolucao/small_near_newrec_strata.csv`, `.json`)
+
+Segunda passada no teste do `small_near_newrec` com o modelo de crops de r1 e o limiar dele (registrado no D8). O
+script refaz os passos do `evaluate` e confere: limiar 0,59941 igual ao do json, acerto das conhecidas 0,8932 e
+rejeição 0,1200 iguais aos do json. Tamanho = lado maior da caixa inteira, terços em 22 e 31 px. Vizinha = o centro de
+outra letra (anotada ou em volta da janela, das cenas refeitas das sementes; poeira não conta) a menos de D = 99,2 px;
+43,2 % das letras do teste têm uma (distância mediana à mais próxima: 109,3 px).
+
+| estrato | conhecidas | não vistas | aceitação das conhecidas | acerto das conhecidas | rejeição das não vistas | acerto em fechado |
+|---|---|---|---|---|---|---|
+| todas | 5129 | 1242 | 0,968 | 0,893 | 0,120 | 0,899 |
+| pequenas (12–22 px) | 1714 | 464 | 0,924 | 0,713 | 0,129 | 0,727 |
+| médias (22–31 px) | 1695 | 467 | 0,981 | 0,971 | 0,131 | 0,975 |
+| grandes (31–56 px) | 1720 | 311 | 0,998 | 0,996 | 0,090 | 0,997 |
+| com vizinha a menos de D | 2188 | 563 | 0,944 | 0,855 | 0,165 | 0,865 |
+| sem vizinha | 2941 | 679 | 0,985 | 0,922 | 0,083 | 0,925 |
+| pequenas, com vizinha | 755 | 229 | 0,868 | 0,632 | 0,210 | 0,654 |
+| pequenas, sem vizinha | 959 | 235 | 0,968 | 0,777 | 0,051 | 0,784 |
+| médias, com vizinha | 724 | 205 | 0,971 | 0,953 | 0,171 | 0,959 |
+| médias, sem vizinha | 971 | 262 | 0,989 | 0,985 | 0,099 | 0,987 |
+| grandes, com vizinha | 709 | 129 | 0,997 | 0,993 | 0,078 | 0,994 |
+| grandes, sem vizinha | 1011 | 182 | 0,999 | 0,998 | 0,099 | 0,998 |
+
+Em todos os estratos as não vistas são aceitas em ≥ 79 %. O que varia: o acerto das conhecidas cai nas letras
+pequenas (0,713, contra 0,996 nas grandes) e mais nas pequenas com vizinha (0,632). A rejeição é maior com vizinha
+(0,165 contra 0,083), onde o score todo é mais baixo (a aceitação das conhecidas também cai). Descritivo; não escolhe
+nada.
