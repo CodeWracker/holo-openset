@@ -518,3 +518,96 @@ Pré-registro: `CADERNO_CURVA.md`, Q3, seção J2 (commit `b97121d`); pedido do 
   reconstrução (como estão e por razão, r1–r5) lidas de `distance_tests_u50_rows.csv` (6 casas, como estão
   guardadas). "Reconstrução recalibrada" = por razão, a variante principal da d2. A regra do Q3-J2 é aplicada às
   linhas como está.
+
+## 2026-11-15, 16:31 — D5: teste J2 rodado (quatro bancos × r1–r5, como estão e recalibrados por razão) (execução)
+
+Quatro filas em tmux (`res_J2_bank_jit` e `res_J2_bank_wide` na GPU 3; `res_J2_bank_w2` e `res_J2_bank_w3` na GPU
+5), subidas às 16:02:20, 16:03:10, 16:03:40 e 16:04:57; terminaram às 16:17:00, 16:21:02, 16:30:34 e 16:30:34.
+Comando de cada fila: `for R in 1..5; do HOLO_THREADS=4 OMP_NUM_THREADS=4 ... BANK=<banco> REP=$R bash
+scripts/exp_resolucao/banks_distance.sh <GPU> rep; done`. Treinos: `bank_jit` 118–133 s, `bank_wide` 106–139 s,
+`bank_w2` 211–236 s, `bank_w3` 205–230 s (duas filas por GPU). `some avg10` 0,00 em todas as leituras; 5–22 threads
+prontas no container. Cada passo rodou uma vez (uma linha `start` por log), sem erro nem "missing"; o `bank_jit` r1
+pulou treino, avaliação e as linhas como está (do teste J) e só leu as recalibradas. Tabela:
+`bash scripts/exp_resolucao/banks_distance.sh 3 table`. Commits `dc9c62c` (resultados).
+
+α calibrado no início do treino (log): 0,001056 (r1), 0,001059 (r2), 0,001053 (r3, r4, r5 em parte dos bancos; os
+logs imprimem 6 casas), os mesmos da camada da mesma repetição: o sorteio das 32 imagens é o mesmo.
+
+### Médias de cinco (`results_exp_resolucao/banks_distance.csv`), F1 / rejeição
+
+| banco | 1,0 mm | 0,9 como está | 1,1 como está | 0,7 como está | 0,9 recal. | 1,1 recal. | 0,7 recal. |
+|---|---|---|---|---|---|---|---|
+| `bank_jit` (5, ±5 %, jitter 5 %) | 0,9786 / 0,9928 | 0,5751 / 0,9895 | 0,5793 / 0,9980 | 0,0150 / 1,0000 | 0,9599 / 0,9908 | 0,9591 / 0,9942 | 0,9330 / 0,9886 |
+| `bank_wide` (7, ±12 %, 12 %) | 0,9766 / 0,9987 | 0,8601 / 0,9953 | 0,9087 / 0,9965 | 0,0181 / 0,9966 | 0,9608 / 0,9961 | 0,9544 / 0,9920 | 0,9048 / 0,9962 |
+| `bank_w2` (9, ±12 %, 12 %) | 0,9761 / 0,9925 | 0,8672 / 0,9955 | 0,8920 / 0,9955 | 0,0171 / 1,0000 | 0,9601 / 0,9933 | 0,9547 / 0,9878 | 0,8991 / 0,9967 |
+| `bank_w3` (7, ±12 %, 5 %) | 0,9786 / 0,9958 | 0,6094 / 0,9870 | 0,7034 / 0,9903 | 0,0153 / 0,9989 | 0,9622 / 0,9939 | 0,9652 / 0,9923 | 0,9326 / 0,9968 |
+| camada (`prop`, d2) | 0,9748 / 0,9829 | 0,4261 / 0,9966 | 0,2893 / 0,9935 | 0,0150 / 1,0000 | 0,9325 / 0,9818 | 0,9303 / 0,9779 | 0,9190 / 0,9786 |
+| reconstrução (`rec_z0`, d2) | 0,9770 / 0,9961 | 0,2490 / 0,9998 | 0,3029 / 0,9986 | 0,0150 / 1,0000 | 0,9783 / 0,9962 | 0,9748 / 0,9965 | 0,9641 / 0,9973 |
+
+### Queda contra o próprio 1,0 mm (F1, média e faixa) e a regra do Q3-J2
+
+| banco | 0,9 como está | 1,1 como está | 0,9 recal. | 1,1 recal. | aguenta (r1…r5) | veredito |
+|---|---|---|---|---|---|---|
+| `bank_jit` | −0,4035 (−0,4723 a −0,3305) | −0,3993 (−0,4759 a −0,3029) | −0,0187 | −0,0195 | não ×5 | **0 de 5** |
+| `bank_wide` | −0,1165 (−0,1308 a −0,1040) | −0,0679 (−0,0885 a −0,0520) | −0,0158 | −0,0222 | não ×5 | **0 de 5** |
+| `bank_w2` | −0,1089 (−0,1251 a −0,0920) | −0,0841 (−0,1074 a −0,0685) | −0,0159 | −0,0214 | não, sim, não, sim, não | **2 de 5** |
+| `bank_w3` | −0,3692 (−0,4130 a −0,3122) | −0,2752 (−0,3110 a −0,2449) | −0,0164 | −0,0134 | não ×5 | **0 de 5** |
+
+A rejeição nunca cai mais que 0,045 (todas as quedas de rejeição como está entre −0,0451 e +0,0264): quem decide a
+regra é o F1. O `bank_wide` falha a 0,9 mm nas cinco (quedas de 0,104 a 0,131) e passa a 1,1 mm nas cinco; o
+`bank_w2` falha a 0,9 mm em r1, r3, r5 (0,125, 0,125, 0,110) e a 1,1 mm em r3, r5 (0,107, 0,102). **Nenhum banco
+aguenta a mudança de distância (≥ 4 de 5).** A 0,7 mm (fora da regra) todos rejeitam quase tudo (F1 0,015–0,023).
+
+### Diferenças para a reconstrução e a camada (F1; média; positivos)
+
+| banco | preço a 1,0 mm: − reconstrução / − camada (k de 5) | como está − reconstrução como está (k de 10) | como está − reconstrução recal. (k de 10) | recal. − reconstrução recal. (k de 10; k de 15 com 0,7) | recal. − camada recal. (k de 10; k de 15) |
+|---|---|---|---|---|---|
+| `bank_jit` | +0,0016 (4) / +0,0039 (5) | +0,3013 (10) | −0,3994 (0) | −0,0171 (1; 1 de 15) | +0,0281 (10; 14 de 15) |
+| `bank_wide` | −0,0004 (3) / +0,0018 (3) | +0,6084 (10) | −0,0922 (0) | −0,0190 (0; 0 de 15) | +0,0262 (10; 10 de 15) |
+| `bank_w2` | −0,0009 (2) / +0,0013 (2) | +0,6036 (10) | −0,0970 (0) | −0,0192 (0; 0 de 15) | +0,0260 (10; 10 de 15) |
+| `bank_w3` | +0,0016 (5) / +0,0038 (4) | +0,3805 (10) | −0,3202 (0) | −0,0129 (0; 0 de 15) | +0,0323 (10; 15 de 15) |
+
+Faixas e as diferenças de rejeição estão no csv (`kind = diff` e `diff_count`). "Reconstrução recalibrada" e "camada
+recalibrada" são as por razão da d2, lidas de `distance_tests_u50_rows.csv`. Recalibrado − reconstrução recalibrada
+a 0,7 mm: −0,0225 a −0,0625 (média por banco −0,0312 / −0,0593 / −0,0650 / −0,0315; no csv).
+
+### Planos depois do treino (mm; `models_exp_resolucao/curve_u50_L008/<banco>_r<k>.pt`, `fourier.alpha`)
+
+| banco | r1 | r2 | r3 | r4 | r5 |
+|---|---|---|---|---|---|
+| `bank_jit` | 0,9698 0,9746 0,9850 1,0114 1,0287 | 0,9735 0,9900 1,0196 0,9907 0,9936 | 0,9680 0,9708 0,9959 1,0040 1,0193 | 0,9607 0,9788 0,9875 1,0092 1,0107 | 0,9230 0,9477 0,9667 0,9846 0,9782 |
+| `bank_wide` | 0,9234 0,9635 0,9651 1,0051 1,0137 1,0277 1,0384 | 0,9480 0,9548 0,9801 0,9838 0,9953 1,0366 1,0879 | 0,9356 0,9640 0,9746 0,9901 1,0056 1,0407 1,0451 | 0,8846 0,9673 0,9730 1,0009 1,0193 1,0283 1,0492 | 0,9393 0,9578 0,9940 0,9647 1,0001 1,0299 1,0442 |
+| `bank_w2` | 0,9356 0,9691 0,9630 0,9773 0,9988 1,0071 1,0341 1,0490 1,0687 | 0,8139 0,9535 0,9684 0,9673 1,0046 0,9909 1,0383 1,0134 1,0707 | 0,9466 0,9568 0,9639 0,9754 0,9882 0,9953 1,0109 1,0597 1,0655 | 0,9637 0,9282 0,9618 0,9800 0,9848 1,0109 1,0227 1,0674 1,0493 | 0,9349 0,9528 0,9514 0,9786 0,9879 1,0288 1,0468 0,9916 1,0278 |
+| `bank_w3` | 0,9080 0,9428 0,9480 0,9667 1,0030 1,0428 1,0749 | 0,8893 0,9618 0,9872 0,9966 1,0169 1,0277 1,0388 | 0,9003 0,9259 0,9296 0,9495 0,9727 1,0523 1,0647 | 0,8721 0,9319 0,9617 0,9766 0,9984 1,0074 1,0228 | 0,9240 0,9122 0,9350 0,9565 1,0052 0,9936 1,0092 |
+
+Os planos iniciais eram α₀ (1 + linspace(−s, s, n)) com α₀ ≈ 0,994–1,000 mm: ±5 % ≈ 0,945–1,050 mm, ±12 % ≈
+0,875–1,120 mm. Depois do treino todos os bancos ficam mais estreitos que no início (os de ±12 % entre ≈ 0,81–0,96 e
+1,01–1,09 mm nas pontas), e os planos deixam de estar em ordem em vários modelos (por exemplo `bank_jit` r2:
+1,0196 no meio; `bank_w2` r2: 0,8139 sozinho embaixo).
+
+### Frase do Q3-J2 que os números sustentam
+
+**(i) Nenhum banco aguenta → "o banco focal não dispensa a recalibração".** Nenhum dos quatro aguenta em ≥ 4 de 5
+(máximo: `bank_w2`, 2 de 5). A frase (ii) não se aplica.
+
+### Desvios
+
+1. Um csv de robustez por banco (`robustness_curve_u50_L008_banks_<banco>.csv`), declarado no D4 antes de rodar,
+   para que duas filas nunca regravem o mesmo arquivo.
+2. Camada e reconstrução lidas de `distance_tests_u50_rows.csv` (6 casas, como guardadas): as diferenças com elas
+   têm erro de arredondamento ≤ 5 × 10⁻⁷. Isso só pesa nas contagens de sinal a 0,7 mm "como está", onde banco e
+   reconstrução rejeitam tudo e empatam (0,0148 contra 0,0148): ali o sinal de vários "+0,000000" é ruído de
+   arredondamento, e o "k de 15" de "como está − reconstrução como está" não é informativo.
+
+### O que parece estranho ou merece olhar (leitura minha)
+
+1. **Recalibrado, o banco fecha boa parte da diferença da camada para a reconstrução, mas não toda:** banco
+   recalibrado − camada recalibrada +0,026 a +0,032 (10 de 10 positivas nos quatro bancos); banco recalibrado −
+   reconstrução recalibrada −0,013 a −0,019 (0 ou 1 de 10 positivas). A camada ficava 0,045 abaixo (d2).
+2. **Os bancos largos caem bem menos sem recalibrar** (−0,07 a −0,12 contra −0,40 do `bank_jit`), mas a 0,9 mm
+   passam da linha de 0,10 em quase todas as repetições. Os de jitter 12 % (`bank_wide`, `bank_w2`) caem menos que
+   o de jitter 5 % com a mesma largura (`bank_w3`, −0,28 a −0,37): o jitter pesa mais que a largura dos planos.
+3. **A queda é assimétrica:** todos caem mais a 0,9 mm que a 1,1 mm, menos o `bank_jit` (iguais). Os planos ficam
+   mais densos acima de 1,0 mm em vários modelos, e o α treinado da camada já ficava abaixo de 1,0 mm (0,963–0,968).
+4. **A 1,0 mm não há preço visível:** banco − reconstrução entre −0,0009 e +0,0016 de média, com sinais divididos.
+5. O treino desordena os planos (item acima): a "largura ±12 %" é a do início do treino, não a do modelo final.
