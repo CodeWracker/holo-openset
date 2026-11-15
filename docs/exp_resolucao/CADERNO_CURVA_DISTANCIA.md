@@ -376,7 +376,8 @@ Diferenças pareadas (mesma repetição e fluxo; F1, r1…r5):
    0,426 / 0,289 contra 0,221 / 0,081 na d1; a reconstrução 0,249 / 0,303 contra 0,138 / 0,160). Continua sendo uma
    queda de 0,5–0,7. A 0,7 mm as duas famílias rejeitam tudo (0,015).
 2. **A camada literal fica bem melhor que na d1** (0,67–0,73 contra 0,51–0,56): o treino deslocou o α um pouco mais
-   (−3,2 a −3,7 % contra −2,1 a −2,8 %), mas o modelo treinado com 50 µm parece menos sensível a esse deslocamento.
+   (α treinado a 0,963–0,968 mm, contra 0,972–0,976 mm no piloto; o α calibrado no início do treino desta família
+   não foi lido por mim), mas o modelo treinado com 50 µm parece menos sensível a esse deslocamento.
    É leitura, não teste.
 3. **A diferença reconstrução recalibrada − camada por razão continua ≈ 0,045 de F1 nas três distâncias** (15 de 15
    positivas, de +0,034 a +0,058), um pouco menor que na d1 (0,050–0,061). A 1,0 mm as duas empatam (u50 → u50:
@@ -390,5 +391,5 @@ Diferenças pareadas (mesma repetição e fluxo; F1, r1…r5):
    da grade (0,27 %) é do mesmo tamanho dos erros da recalibração, então a "distância achada" está quantizada.
 6. **A perda do treino plano na lei padrão é pequena**: −0,019 (camada) e −0,008 (reconstrução) de F1, contra −0,19
    e −0,16 na lei larga. Os modelos treinados na lei padrão perdem −0,116 / −0,112 na lei larga, e não perdem nada no
-   plano (camada +0,005). Os crops não mudam com a profundidade em nenhuma combinação (|Δ| ≤ 0,004).
+   plano (camada +0,005). Os crops não mudam com a profundidade em nenhuma combinação (|Δ| ≤ 0,0043 de F1).
 7. Crops a 0,9 mm de novo melhores que a 1,0 mm, nas cinco repetições (+0,006 a +0,012), como na d1.
