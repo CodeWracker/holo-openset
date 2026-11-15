@@ -11,7 +11,10 @@ piece of evidence, every number read from the stored results (CPU only; no holog
   (d) the density: rejection of never-seen patterns against the density of objects, for every set of the 1.0 mm family
       found in results_exp_resolucao/eval (r1, or the mean of five when r1-r5 exist), and the CBMS geometry at its
       density scaled to the size of those letters
-  (e) the depth: open-set F1 when training and test differ in the depth spread of the sample (depth_training.csv, r1)
+  (e) the depth: open-set F1 against the depth law of the test, for models trained on a nearly flat sample and on the
+      standard law (depth_tests.csv)
+  (f) an error in the distance: models trained at 1.0 mm tested at 0.7 (stress test), 0.9 and 1.1 mm, as they are and
+      recalibrated without labels by ratio (distance_tests_u50.csv)
 
     python scripts/exp_resolucao/fig_simulation.py --out <paper>/figures/paper
     -> <out>/fig_simulation.pdf, .png
@@ -20,6 +23,7 @@ import argparse
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 from matplotlib.lines import Line2D
 
 import paper_resolucao as pr
@@ -77,7 +81,7 @@ def panel_b(ax):
     ax.set_ylim(0, 1.02)
     ax.set_xlabel('fineness of the fringes (cycles/mm)')
     ax.set_ylabel('contrast kept by the source')
-    ax.set_title('the distance', fontsize=7.5)
+    ax.set_title('the distance: 19.25 or 1.0 mm', fontsize=7.5)
 
 
 def panel_c(ax):
@@ -255,6 +259,33 @@ def panel_e(ax):
     ax.set_title('the depth', fontsize=7.5)
 
 
+def panel_f(ax):
+    """An error in the distance: open-set F1 of the models trained at 1.0 mm on test scenes recorded at 0.7 (stress
+    test), 0.9, 1.0 and 1.1 mm, as they are (open, dotted) and with the distance recalibrated without labels by ratio
+    (filled, solid); mean of five repetitions (distance_tests_u50.csv, else distance_tests.csv)."""
+    dt = pr.csv('distance_tests_u50')
+    dt = dt if len(dt) else pr.csv('distance_tests')
+    met = dt[dt.kind == 'metric']
+    for f in pr.FLOWS:
+        for cond, ls, filled in [('as_is', ':', False), ('recal_ratio', '-', True)]:
+            g = met[(met.flow == f) & (met.condition == cond)]
+            if f != 'raw' and cond == 'recal_ratio':          # the 1.0 mm point: the models as they are
+                g = pd.concat([g, met[(met.flow == f) & (met.condition == 'as_is') & np.isclose(met.distance_mm, 1.0)]])
+            if not len(g) or (f == 'raw' and cond != 'as_is'):
+                continue
+            g = g.sort_values('distance_mm')
+            ax.plot(g.distance_mm, g.f1_mean, ls, color=COLORS[f], lw=0.9)
+            ax.plot(g.distance_mm, g.f1_mean, 'o', color=COLORS[f], mfc=COLORS[f] if filled else 'white', ms=3.8)
+    ax.axvspan(0.65, 0.8, color=GRID, lw=0, zorder=0)
+    ax.text(0.725, 0.5, 'stress\ntest', ha='center', fontsize=6, color=MUTED)
+    ax.set_xticks([0.7, 0.9, 1.0, 1.1])
+    ax.set_xlim(0.65, 1.15)
+    ax.set_ylim(-0.03, 1.03)
+    ax.set_xlabel('test distance (mm), trained at 1.0')
+    ax.set_ylabel('open-set F1')
+    ax.set_title('an error in the distance', fontsize=7.5)
+
+
 def legend(ax):
     ax.axis('off')
     h = [Line2D([], [], color=COLORS[f], marker='o', lw=1.0, ms=4, label=NAME[f])
@@ -266,22 +297,24 @@ def legend(ax):
           Line2D([], [], color=MUTED, marker='o', mfc='white', ls=':', lw=0.8, ms=4,
                  label='(e) trained on a nearly flat sample'),
           Line2D([], [], color=MUTED, marker='o', ls='-', lw=0.8, ms=4, label='(e) trained on the standard law'),
+          Line2D([], [], color=MUTED, marker='o', mfc='white', ls=':', lw=0.8, ms=4, label='(f) as trained, not recalibrated'),
+          Line2D([], [], color=MUTED, marker='o', ls='-', lw=0.8, ms=4, label='(f) distance recalibrated, no labels'),
           Line2D([], [], color=ZC[19.25], lw=1.3, label='(b) 19.25 mm (CBMS 2024)'),
           Line2D([], [], color=ZC[1.0], lw=1.3, label='(b) 1.0 mm (bench)'),
           Line2D([], [], color=ZC[19.25], marker='v', mfc='white', lw=0, ms=5,
                  label='(b) cut-off measured on the\n     holograms (19.25 mm)')]
-    ax.legend(handles=h, loc='center left', fontsize=6.3, frameon=False, borderaxespad=0)
+    ax.legend(handles=h, loc='center', fontsize=6.3, frameon=False, borderaxespad=0, ncol=3)
 
 
 def main(out):
     setup()
-    fig = plt.figure(figsize=(7.4, 5.4))
-    gs = fig.add_gridspec(2, 3, hspace=0.55, wspace=0.45)
-    axes = [fig.add_subplot(gs[0, i]) for i in range(3)] + [fig.add_subplot(gs[1, i]) for i in range(3)]
-    for ax, fn, letter in zip(axes, [panel_a, panel_b, panel_c, panel_d, panel_e], 'abcde'):
+    fig = plt.figure(figsize=(7.4, 7.0))
+    gs = fig.add_gridspec(3, 3, hspace=0.6, wspace=0.45, height_ratios=[1, 1, 0.42])
+    axes = [fig.add_subplot(gs[r, i]) for r in range(2) for i in range(3)]
+    for ax, fn, letter in zip(axes, [panel_a, panel_b, panel_c, panel_d, panel_e, panel_f], 'abcdef'):
         fn(ax)
         panel(ax, letter)
-    legend(axes[5])
+    legend(fig.add_subplot(gs[2, :]))
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     fig.savefig(out / 'fig_simulation.pdf', bbox_inches='tight', pad_inches=0.02)
