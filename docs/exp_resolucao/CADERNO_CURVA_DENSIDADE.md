@@ -237,3 +237,71 @@ Mesmo código do `pilot_five_reps.py`: α calibrado recalculado na CPU por `trai
 hologramas de treino que o `train()` sorteou (RandomState(0)), grade estendida 12 passos; α treinado do checkpoint
 (`fourier.alpha`); distância pela mesma conversão (`pilot_five_reps.mm`). Conferido: o calibrado recalculado do L008
 bate, nas cinco repetições, com o que o log do treino imprimiu (6 casas). Rodo de novo no fim, com todos os níveis.
+
+## 2026-11-15, 10:51 — D5: L069 e L015 gravados e conferidos; r1 em todos os níveis; a regra "as curvas se separam" (ANTES de r2–r5)
+
+### Gravações e conferências (contra `curve_u50_L008`)
+
+| | L015 | L069 |
+|---|---|---|
+| gravação | 929 s (10:30–10:46) | 1331 s (10:08–10:30) |
+| `annotations.csv` byte a byte, rótulos, mapas, poeira, sessões, brancos, metadata comum | idênticos | idênticos |
+| `physics.json` | só `fill_mean` = 15 | só `fill_mean` = 69 |
+| sem enchimento = L008 / com = o conjunto (imagens 100 e 0) | 0 / 0 níveis | 0 / 0 níveis |
+| enchimento muda o holograma (rms) | 1,5–4,0 níveis | 10,3–10,5 níveis |
+| letras por janela (média, dp, p5–p95, mín.–máx.) | 15,12, 3,67, 10–22, 5–32 | 69,08, 8,27, 55–83, 44–103 |
+| na faixa, por 640² | 15,04 | 68,89 |
+| área coberta | 1,04 % | 4,78 % |
+| puladas | 0 | 0 |
+
+### r1 (teste lido uma vez por modelo; `results_exp_resolucao/density_curve.csv`, `_reps.csv`, `_reading.json`)
+
+`LAW=u50 bash scripts/exp_resolucao/density_curve.sh 5 table`. Correção no script antes: o passo `table` não tem
+`LEVEL` e o `printf %03d ""` falhava sob `set -e` (agora `${LEVEL:-0}`; nada mais muda).
+
+| nível | por janela / mm² | área | sobreposição (π D² σ) | raw F1 / rej. | prop F1 / rej. | rec_z0 F1 / rej. | prop − raw F1 / rej. | rec_z0 − prop F1 / rej. |
+|---|---|---|---|---|---|---|---|---|
+| 8 | 8,06 / 7,06 | 0,54 % | 0,242 (0,277) | 0,9251 / 0,6135 | 0,9747 / 0,9799 | 0,9737 / 0,9952 | +0,050 / +0,366 | −0,001 / +0,015 |
+| 15 | 15,12 / 13,24 | 1,04 % | 0,405 (0,520) | 0,9129 / 0,5435 | 0,9751 / 0,9815 | 0,9762 / 0,9863 | +0,062 / +0,438 | +0,001 / +0,005 |
+| 69 | 69,08 / 60,47 | 4,78 % | 0,907 (2,374) | 0,8608 / 0,2576 | 0,9695 / 0,9678 | 0,9590 / 0,8478 | +0,109 / +0,710 | −0,011 / −0,120 |
+| 154 | 154,10 / 134,90 | 10,54 % | 0,995 (5,295) | 0,7895 / 0,0588 | 0,9557 / 0,8325 | 0,9695 / 0,9694 | +0,166 / +0,774 | +0,014 / +0,137 |
+| 343 | 343,15 / 300,40 | 23,35 % | 1,000 (11,79) | 0,6739 / 0,0386 | 0,9417 / 0,7383 | 0,9527 / 0,8333 | +0,268 / +0,700 | +0,011 / +0,095 |
+
+Diferença para o esparso (mesma repetição, r1), F1 / rejeição:
+
+| nível | raw | prop | rec_z0 |
+|---|---|---|---|
+| 15 | −0,012 / −0,070 | +0,001 / +0,002 | +0,003 / −0,009 |
+| 69 | −0,064 / **−0,356 (caiu em rejeição)** | −0,005 / −0,012 | −0,015 / −0,147 |
+| 154 | **−0,136 / −0,555 (caiu nas duas)** | −0,019 / −0,147 | −0,004 / −0,026 |
+| 343 | **−0,251 / −0,575 (caiu nas duas)** | −0,033 / −0,242 | −0,021 / −0,162 |
+
+- **"Caiu" (r1, provisório):** os crops caem em rejeição a partir do 69 e em F1 a partir do 154. A camada e a
+  reconstrução não caem em nenhum nível (a maior queda da camada é −0,033 de F1 e −0,242 de rejeição, no 343).
+- **"As curvas se separam" (r1), aplicada mecanicamente:** 15 → sim, por (ii) (camada − crops em rejeição = +0,438
+  ≥ 0,30); 69 → sim, por (i), (ii) e (iii); 154 → sim, por (i), (ii) e (iii); 343 → sim, por (i), (ii) e (iii). O 8
+  recebe de qualquer jeito (já tem r1–r5). **Portanto r2–r5 em todos os quatro níveis: 15, 69, 154 e 343.**
+- Lançados a seguir, em dois processos de GPU: 15 e 69 num tmux, 154 e 343 no outro.
+
+### Q1, os conjuntos que já existem no mesmo eixo (descritivo; nenhum teste lido)
+
+`python scripts/exp_resolucao/hologram_diameter.py --set realistic|small_near --device cuda:5`, cada um pelo seu
+caminho de gravação (layout do paper: tamanho de fonte inteiro, máscara no pixel; caminho nativo, s = 1; o z₀, a
+margem e as leis do próprio conjunto; profundidade 0; sem ruído, sem poeira). Os raios crescem com √(z₀ / 1 mm)
+(o tamanho do padrão com o mesmo número de Fresnel), e a janela cresce para conter R_OUT·k.
+
+- **Um erro meu de código, achado e corrigido antes de qualquer número:** na generalização, a variável da escala dos
+  raios (`k`) era sobrescrita pelo índice da letra no laço (`for k in range(10)`), e a primeira chamada (realistic)
+  caiu com NaN (energia nula no disco de raio 0). Corrigido (`ks`); a versão corrigida, rodada de novo no
+  `bench_1mm`, refaz o `hologram_diameter.csv` da fase 1 **byte a byte** (o resumo e a figura da fase 1 foram
+  restaurados do git, intocados). O rótulo `layout` dos dois resumos novos dizia "type" (classe, não instância):
+  corrigido no código e no campo dos dois json.
+
+| conjunto | z₀ | k | R (192 nominal) | janela | lado p50 | D_rms(192) (D_ef) | conv. 256/192 | D_86 | D_vis | letras por mm² (janela / faixa) | π D² σ | sobreposição |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| bench_1mm (fase 1) | 1,0 mm | 1 | 192 px | 768 | 17,5 px | 111,8 µm | 0,17 % | 114,9 µm | 159,3 µm | 7,06 | 0,277 | 0,242 |
+| small_near | 2,0 mm | 1,414 | 272 px | 1088 | 28,0 px | **157,5 µm** (94,3 px) | 0,00006 % | 161,4 µm | 226,8 µm | 7,06 / 7,00 | 0,550 | **0,423** |
+| realistic | 19,25 mm | 4,387 | 842 px | 3200 | 80,0 px | **447,1 µm** (267,7 px) | 0,04 % | 455,1 µm | 668,2 µm | 7,06 / 7,00 | 4,43 | **0,988** |
+
+(`hologram_diameter_realistic*`, `hologram_diameter_small_near*`; figuras `img/hologram_diameter_<conjunto>.png`.)
+Nos três, D_rms convergiu (todas as letras dentro de 5 %), então o eixo usa D_rms(192·k).
