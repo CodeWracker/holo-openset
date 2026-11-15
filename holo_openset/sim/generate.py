@@ -48,7 +48,9 @@ def make_layout(name, params=None):
         if params:
             raise SystemExit(f'layout {name} takes no parameters')
         return lay
-    return lay(**{k: v for k, v in (params or {}).items() if k in lay.PARAMS})
+    params = params or {}
+    # the lengths that physics.json records are read only when they were given (lengths_given)
+    return lay(lengths_given=params.get('lengths_given'), **{k: v for k, v in params.items() if k in lay.PARAMS})
 
 
 def layout_of(cfg):

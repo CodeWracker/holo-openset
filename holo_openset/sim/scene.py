@@ -41,30 +41,48 @@ class FresnelLayout(Layout):
     The number of letters per 640 x 640 window keeps the values of Layout unless given (an open question of the
     pilot). An instance carries its parameters: FresnelLayout(letters_mean=...).
     fill_mean > 0 (default 0, off): un-annotated filler letters bring the mean number of letters per 640 x 640 window,
-    inside the window and in the band around it, to fill_mean (`fill_letters`); the rest of the scene does not move."""
+    inside the window and in the band around it, to fill_mean (`fill_letters`); the rest of the scene does not move.
+    font_min, font_max, border, margin (LENGTHS, px; optional): given, they replace the lengths derived from `scale`
+    (the laws of another layout written in physical units, e.g. SmallLayout: 16, 48, 6, 4); physics.json keeps the
+    given ones in layout_params['lengths_given'] (absent when none is given: the sets made before keep their file)."""
     physical = True
     factor = 16                         # the master grid: 1/16 of a pixel (0.10 um)
     scale = math.sqrt(1.0e-3 / Z0)      # 0.22792: the lengths of Layout for a sample at 1.0 mm
     fill_mean = 0.0                     # letters per 640 x 640 window with the fillers (0: no fillers)
     PARAMS = ('scale', 'factor', 'letters_mean', 'letters_std', 'letters_min', 'letters_max', 'unique_fraction_mean',
               'unique_std', 'rotation', 'max_attempts_per_letter', 'fill_mean')
+    LENGTHS = ('font_min', 'font_max', 'border', 'margin')
 
-    def __init__(self, **kw):
+    def __init__(self, lengths_given=None, **kw):
+        self.lengths_given = {k: float(v) for k, v in (lengths_given or {}).items()}
         for k, v in kw.items():
-            if k not in self.PARAMS:
-                raise ValueError(f'{k} is not a parameter of {type(self).__name__} ({", ".join(self.PARAMS)})')
-            setattr(self, k, type(getattr(type(self), k))(v))
+            if k in self.LENGTHS:
+                self.lengths_given[k] = float(v)
+            elif k not in self.PARAMS:
+                raise ValueError(f'{k} is not a parameter of {type(self).__name__} ({", ".join(self.PARAMS)}, '
+                                 f'{", ".join(self.LENGTHS)})')
+            else:
+                setattr(self, k, type(getattr(type(self), k))(v))
+        if set(self.lengths_given) - set(self.LENGTHS):
+            raise ValueError(f'lengths_given: only {", ".join(self.LENGTHS)}')
 
-    font_min = property(lambda self: Layout.font_min * self.scale)
-    font_max = property(lambda self: Layout.font_max * self.scale)
-    border = property(lambda self: Layout.border * self.scale)
-    margin = property(lambda self: Layout.margin * self.scale)
+    def _length(self, k):
+        return self.lengths_given[k] if k in self.lengths_given else getattr(Layout, k) * self.scale
+
+    font_min = property(lambda self: self._length('font_min'))
+    font_max = property(lambda self: self._length('font_max'))
+    border = property(lambda self: self._length('border'))
+    margin = property(lambda self: self._length('margin'))
 
     def params(self):
         """What physics.json keeps: the parameters, and the lengths they give (for the record). fill_mean only when
-        on, so that a set recorded before it existed keeps its physics.json byte for byte."""
-        return {**{k: getattr(self, k) for k in self.PARAMS if k != 'fill_mean' or self.fill_mean > 0},
-                **{k: getattr(self, k) for k in ('font_min', 'font_max', 'border', 'margin')}}
+        on, lengths_given only when some length is given, so that a set recorded before they existed keeps its
+        physics.json byte for byte."""
+        out = {**{k: getattr(self, k) for k in self.PARAMS if k != 'fill_mean' or self.fill_mean > 0},
+               **{k: getattr(self, k) for k in self.LENGTHS}}
+        if self.lengths_given:
+            out['lengths_given'] = dict(self.lengths_given)
+        return out
 
 
 def clipped_normal(rng, mean, std, lo, hi):

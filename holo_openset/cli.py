@@ -83,8 +83,12 @@ def cmd_simulate(a):
         if (out / 'physics.json').exists() and not a.force:
             raise SystemExit(f'{out} exists: pass --force to overwrite it')
         if a.what == 'fresnel':
+            lp = {k: float(v) for k, v in (x.split('=', 1) for x in a.layout)}
+            given = {k: lp.pop(k) for k in G.FresnelLayout.LENGTHS if k in lp}   # lengths given, not from scale
+            if given:
+                lp['lengths_given'] = given
             G.generate(out, phys=sets, n_images=a.n_images or 5000, per_session=100, workers=a.workers, dev=dev,
-                       layout='fresnel', layout_params={k: float(v) for k, v in (x.split('=', 1) for x in a.layout)})
+                       layout='fresnel', layout_params=lp)
         else:
             G.generate(out, phys=sets, like=paths.dataset(a.like), split=a.split, workers=a.workers, dev=dev)
 
@@ -283,7 +287,9 @@ def main(argv=None):
     p.add_argument('--like', help='like: the set whose scenes are recorded again (its physics, overridden by '
                                   '--set-physics; with --split, that split only)')
     p.add_argument('--layout', nargs='*', default=[], help='fresnel: parameters of sim.scene.FresnelLayout, key=value '
-                                                           '(letters_mean, letters_std, letters_min, letters_max, ...)')
+                                                           '(letters_mean, letters_std, letters_min, letters_max, ...; '
+                                                           'font_min, font_max, border, margin replace the lengths '
+                                                           'derived from scale)')
     p.set_defaults(fn=cmd_simulate)
 
     p = sub.add_parser('reconstruct', parents=[common], help='conventional reconstruction caches of a set')
