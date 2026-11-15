@@ -530,8 +530,9 @@ prontas no container. Cada passo rodou uma vez (uma linha `start` por log), sem 
 pulou treino, avaliação e as linhas como está (do teste J) e só leu as recalibradas. Tabela:
 `bash scripts/exp_resolucao/banks_distance.sh 3 table`. Commits `dc9c62c` (resultados).
 
-α calibrado no início do treino (log): 0,001056 (r1), 0,001059 (r2), 0,001053 (r3, r4, r5 em parte dos bancos; os
-logs imprimem 6 casas), os mesmos da camada da mesma repetição: o sorteio das 32 imagens é o mesmo.
+α calibrado no início do treino (log, 6 casas), igual nos quatro bancos: 0,001056 / 0,001059 / 0,001053 / 0,001053 /
+0,001056 (r1…r5), os mesmos da camada da mesma repetição (`curve_alpha.csv`: 0,997 / 1,000 / 0,994 / 0,994 / 0,997
+mm): o sorteio das 32 imagens é o mesmo.
 
 ### Médias de cinco (`results_exp_resolucao/banks_distance.csv`), F1 / rejeição
 
@@ -569,7 +570,8 @@ aguenta a mudança de distância (≥ 4 de 5).** A 0,7 mm (fora da regra) todos 
 
 Faixas e as diferenças de rejeição estão no csv (`kind = diff` e `diff_count`). "Reconstrução recalibrada" e "camada
 recalibrada" são as por razão da d2, lidas de `distance_tests_u50_rows.csv`. Recalibrado − reconstrução recalibrada
-a 0,7 mm: −0,0225 a −0,0625 (média por banco −0,0312 / −0,0593 / −0,0650 / −0,0315; no csv).
+a 0,7 mm: médias −0,0311 (`bank_jit`) / −0,0594 (`bank_wide`) / −0,0651 (`bank_w2`) / −0,0315 (`bank_w3`); faixa de
+todas as 20, −0,0789 a −0,0044.
 
 ### Planos depois do treino (mm; `models_exp_resolucao/curve_u50_L008/<banco>_r<k>.pt`, `fourier.alpha`)
 
@@ -607,7 +609,7 @@ Os planos iniciais eram α₀ (1 + linspace(−s, s, n)) com α₀ ≈ 0,994–1
 2. **Os bancos largos caem bem menos sem recalibrar** (−0,07 a −0,12 contra −0,40 do `bank_jit`), mas a 0,9 mm
    passam da linha de 0,10 em quase todas as repetições. Os de jitter 12 % (`bank_wide`, `bank_w2`) caem menos que
    o de jitter 5 % com a mesma largura (`bank_w3`, −0,28 a −0,37): o jitter pesa mais que a largura dos planos.
-3. **A queda é assimétrica:** todos caem mais a 0,9 mm que a 1,1 mm, menos o `bank_jit` (iguais). Os planos ficam
-   mais densos acima de 1,0 mm em vários modelos, e o α treinado da camada já ficava abaixo de 1,0 mm (0,963–0,968).
+3. **A queda é assimétrica:** todos caem mais a 0,9 mm que a 1,1 mm, menos o `bank_jit` (iguais). Não tenho
+   explicação testada; o α treinado da camada também fica abaixo de 1,0 mm (0,963–0,968).
 4. **A 1,0 mm não há preço visível:** banco − reconstrução entre −0,0009 e +0,0016 de média, com sinais divididos.
 5. O treino desordena os planos (item acima): a "largura ±12 %" é a do início do treino, não a do modelo final.
