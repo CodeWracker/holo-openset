@@ -393,3 +393,86 @@ Diferenças pareadas (mesma repetição e fluxo; F1, r1…r5):
    e −0,16 na lei larga. Os modelos treinados na lei padrão perdem −0,116 / −0,112 na lei larga, e não perdem nada no
    plano (camada +0,005). Os crops não mudam com a profundidade em nenhuma combinação (|Δ| ≤ 0,0043 de F1).
 7. Crops a 0,9 mm de novo melhores que a 1,0 mm, nas cinco repetições (+0,006 a +0,012), como na d1.
+
+## 2026-11-15, 13:45 — D3: teste J, o banco focal (`bank_jit`) a 0,9 e 1,1 mm sem recalibrar, r1 (execução)
+
+Pré-registro: `CADERNO_CURVA.md`, Q2, seção J (commit `40a8956`), seguido como está escrito. Commits `e40badf`
+(scripts) e `49cf2ae` (resultados).
+
+### Receita (achada no pacote; nenhum hiperparâmetro mudou)
+
+- `holo_openset/flows.py`: `'bank_jit': dict(mode='bank', fourier='learned', rec=None, train=dict(n_dist=5,
+  alpha_jitter=0.05))`; `alpha_spread` fica no padrão de `train.train` (0,05): cinco propagações em α·(1 + {−5, −2,5,
+  0, +2,5, +5} %), e a cada passo de treino todas as distâncias são multiplicadas por um fator uniforme em 1 ± 5 %.
+  Resto da receita: o padrão de `train` (3000 passos, 16 imagens por passo, `lr_alpha` 1e-5, `lr_fourier` 0,3,
+  semente 0), α inicial calibrado sem rótulo em 32 hologramas de treino. Não há seleção de modelo na receita (passos
+  fixos); o limiar sai da validação de 1,0 mm, dentro do `evaluate`.
+- Linha do paper (`holo_openset/pipeline.py`): `python -m holo_openset train --flow bank_jit --rep <r>`. Aqui, como em
+  todo conjunto de 1 mm, `--no-aux`, e a grade da calibração estendida 12 passos, como na camada (`prop`) da família
+  (`density_curve.sh`: `--alpha-extend 12`).
+- Comando: `bash scripts/exp_resolucao/bank_jit_distance.sh 3 train` =
+  `python -m holo_openset train --set curve_u50_L008 --flow bank_jit --rep 1 --no-aux --alpha-extend 12
+  --device cuda:3 --threads 4`, tmux `res_dist_bankjit`, 13:43:11–13:44:13 (62 s), log
+  `logs/exp_resolucao/bankjit_train.log`. Retomada: o `train` pula um modelo que já existe.
+
+### GPU (desvio)
+
+A instrução mandava a GPU 6. Este container só enxerga seis GPUs (`nvidia-smi -L`: 0–5; `torch.cuda.device_count()`
+= 6; `CUDA_VISIBLE_DEVICES` vazio): a GPU 6 não existe aqui. Usei a **GPU 3** (1,7 GB usados, 0 % de uso antes de cada
+job; 4 e 5 com os outros executores). Não muda nenhum número.
+
+### α (mm, z = α (640 × 1,67 µm)² / (π λ))
+
+- Calibrado (log do treino): α = 0,001056 → 0,997 mm (o log imprime 6 casas; é o mesmo sorteio de 32 imagens da
+  camada de r1, cujo α calibrado é 0,001055729 → 0,99709 mm em `curve_alpha.csv`). Planos iniciais ≈ 0,947 / 0,972 /
+  0,997 / 1,022 / 1,047 mm.
+- Depois do treino (checkpoint `models_exp_resolucao/curve_u50_L008/bank_jit_r1.pt`): α = 0,0010268 / 0,0010319 /
+  0,0010429 / 0,0010709 / 0,0010892 → **0,9698 / 0,9746 / 0,9850 / 1,0114 / 1,0287 mm**. O banco encolheu: de ±5 % em
+  torno de 0,997 mm (0,100 mm de largura) para −1,5 / +4,4 % em torno de 0,985 mm (0,059 mm de largura).
+
+### Avaliação, como está (modelo, galeria e limiar de 1,0 mm; cada teste lido uma vez)
+
+- 1,0 mm: `bank_jit_distance.sh 3 evaluate` = `evaluate --set curve_u50_L008 --flow bank_jit --rep 1` →
+  `results_exp_resolucao/eval/curve_u50_L008/bank_jit_r1.json` (13:44:26, 6 s).
+- 0,9 e 1,1 mm: `... shifted` = `experiment robustness --set curve_u50_L008 --variants-root curve_u50_robust
+  --variants z09 z11 --flows bank_jit --rep 1 --out robustness_curve_u50_L008_bank_jit` (o procedimento das linhas
+  "como está" da d2) (13:44:32, 6 s).
+- 0,7 mm (estresse, fora da regra): `... stress`, a mesma linha com `--variants z07` (13:44:38, 6 s).
+- Tabela: `... table` → `results_exp_resolucao/bank_jit_distance.csv` (`scripts/exp_resolucao/bank_jit_distance.py`).
+
+### Resultados (r1; `bank_jit_distance.csv`)
+
+| distância | banco, como está: F1 / rejeição / fechado / conhecidas | crops como está F1 / rej. | camada como está | reconstrução como está | camada recal. razão | reconstrução recal. razão | reconstrução recal. literal |
+|---|---|---|---|---|---|---|---|
+| 1,0 mm | 0,9808 / 0,9992 / 0,9963 / 0,9671 | 0,9251 / 0,6135 | 0,9747 / 0,9799 | 0,9737 / 0,9952 | — | — | — |
+| 0,9 mm | 0,6503 / 0,9936 / 0,9719 / 0,5059 | 0,9343 / 0,6087 | 0,3988 / 0,9952 | 0,2261 / 0,9992 | 0,9265 / 0,9823 | 0,9746 / 0,9944 | 0,9720 / 0,9944 |
+| 1,1 mm | 0,6779 / 0,9968 / 0,9731 / 0,5297 | 0,9150 / 0,6401 | 0,3007 / 0,9992 | 0,2678 / 0,9992 | 0,9264 / 0,9791 | 0,9701 / 0,9952 | 0,9691 / 0,9944 |
+| 0,7 mm (estresse) | 0,0148 / 1,0000 / 0,1973 / 0,0000 | 0,8921 / 0,6151 | 0,0148 / 1,0000 | 0,0148 / 1,0000 | 0,9161 / 0,9750 | 0,9609 / 0,9984 | 0,9611 / 0,9984 |
+
+As linhas ao lado são as de r1 que já estavam em arquivo (1,0 mm: `eval/curve_u50_L008/<fluxo>_r1.json`; as outras:
+`robustness_curve_u50_L008_dist.csv`, d2).
+
+**Regra "aguenta" (Q2), aplicada mecanicamente** (banco − ele próprio a 1,0 mm):
+- 0,9 mm: F1 −0,3305, rejeição −0,0056 → **não aguenta** (a queda de F1 passa de 0,10).
+- 1,1 mm: F1 −0,3029, rejeição −0,0024 → **não aguenta**.
+- **O banco não aguenta a mudança de distância de 10 %** (r1, descritivo). A 0,7 mm (fora da regra): F1 −0,9660.
+
+Banco como está − reconstrução recalibrada (F1 / rejeição): por razão −0,3243 / −0,0008 (0,9 mm) e −0,2921 / +0,0016
+(1,1 mm); literal −0,3216 / −0,0008 e −0,2912 / +0,0024. Preço a 1,0 mm (banco − camada / banco − reconstrução, F1):
+**+0,0061 / +0,0071** (rejeição +0,0193 / +0,0040): em r1 o banco é um pouco melhor que as duas a 1,0 mm.
+
+### O que pareceu estranho ou merece olhar (leitura minha)
+
+1. O banco não aguenta pela regra, mas cai bem menos que a camada e a reconstrução sem recalibrar: F1 0,650 / 0,678
+   contra 0,399 / 0,301 (camada) e 0,226 / 0,268 (reconstrução) a 0,9 / 1,1 mm. A rejeição fica (0,994 / 0,997) e o
+   acerto em fechado também (0,972 / 0,973); o que cai é o acerto das conhecidas (0,51 / 0,53 contra 0,97): como na
+   camada, os escores das conhecidas caem abaixo do limiar de 1,0 mm, sem que as classes se misturem.
+2. Os planos aprendidos (0,970–1,029 mm) não cobrem 0,9 mm, e cobrem 1,1 mm menos ainda; o treino estreitou o banco
+   (largura de 0,100 para 0,059 mm) e o deslocou para cima na ponta de fora (+4,4 %). Com o jitter de ±5 %, o treino
+   viu distâncias efetivas de ≈ 0,92 a 1,08 mm; 0,9 e 1,1 mm ficam logo fora dessa faixa, como o Q2 já dizia.
+3. A 1,0 mm o banco é o melhor dos três em r1 (0,9808 contra 0,9747 e 0,9737). É uma repetição só.
+4. A 0,7 mm o banco rejeita tudo, como a camada e a reconstrução.
+
+### O que NÃO foi feito (como o Q2 manda)
+
+r2–r5, banco mais largo ou com mais jitter, recalibração do banco. Nada em `results/`, `models/` nem `expected/`.
