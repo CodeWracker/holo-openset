@@ -432,7 +432,7 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
 
 - [x] **S-fig.** (15:54) Figura do item 3 reenviada (`docs/exp_resolucao/img/explica_regra_caiu.png`). A decisão
   do nível mais denso continua dele.
-- [ ] **S-titulo.** Título novo no `rewrite/inversion` (`main.tex`, linha 43): "Open-Set Recognition of Interference
+- [x] **S-titulo.** (16:03; paper `0bc6e5a`; compila em 45 páginas, 0 indefinidas, 0 overfull; o abstract continua na página 1) Título novo no `rewrite/inversion` (`main.tex`, linha 43): "Open-Set Recognition of Interference
   Patterns on Lensless Holograms: Why Crops of the Raw Hologram Fail, and What a Propagation Step Costs from a
   Window to the Whole Field of View". Conferir outros lugares que repetem o título.
 - [ ] **S-C.** (executor da densidade) Coluna de 2 mm: dez fluxos × r1–r5 no `small_near_newrec` (47 treinos novos),
