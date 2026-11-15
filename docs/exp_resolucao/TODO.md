@@ -418,9 +418,9 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
 - [x] **R-viz.** (13:45, conferido: placar e quedas refeitos por mim a partir de `density_curve_reps.csv`)
   `docs/exp_resolucao/img/explica_regra_caiu.png` (+ `.pdf`), script `scripts/exp_resolucao/explain_fall_rule.py`,
   commit `231e53e`. Enviada ao orientador com a explicação.
-- [ ] **R-titulo.** Responder: o título atual ainda fala em "Learnable Fourier Layer"; dar opinião e opções, não
+- [x] **R-titulo.** (respondido às 13:42; ele ainda não escolheu) Responder: o título atual ainda fala em "Learnable Fourier Layer"; dar opinião e opções, não
   mudar sem a palavra dele.
-- [ ] **R-rev.** Conferir cada devolução contra os arquivos; depois de R-S e R-J, pôr os resultados no texto
+- [x] **R-rev.** (feito; ver o diário) Conferir cada devolução contra os arquivos; depois de R-S e R-J, pôr os resultados no texto
   (macros), compilar, mandar PDF + diff. Sem merge, sem Overleaf.
 
 ### Fase A: experimento da resolução
@@ -708,3 +708,23 @@ errado".
   mensagem final. Perguntas abertas para o orientador: título; nível mais denso; r2–r5 / banco mais largo /
   recalibração do banco; refazer ou não a coluna de 2 mm da tabela de tamanho (5 repetições no conjunto regravado);
   abstract de ≈ 450 palavras; Overleaf só depois da revisão dele.**
+- **2026-11-15, 14:30 — FASE R ENTREGUE. PARADO, à espera do orientador.** Paper `rewrite/inversion` em `7ca14f6`
+  (56 commits à frente do `main`, 45 páginas, 0 indefinidas, 0 overfull), sem merge, NADA no Overleaf. Código
+  `exp/resolucao-fonte` enviado ao GitHub (sem merge); `pytest` 78, `reproduce check` 13/13; a fase não tocou em
+  `results/`, `expected/` nem `models/`. Entregues: `entrega/paper_inversao_7ca14f6.pdf`,
+  `entrega/latex_53ede2f..7ca14f6.diff`, `entrega/latex_main..rewrite-inversion_7ca14f6.diff`, a figura explicativa
+  e o diagrama da bancada.
+  **O que espera a palavra dele (não fazer sem ela):**
+  1. revisar o PDF → só então push para o Overleaf (`main` do paper; hoje `rewrite/inversion` não foi mesclado);
+  2. título (opções dadas; recomendei a 1);
+  3. nível mais denso que 300 por mm² (recomendei não gravar);
+  4. banco focal: r2–r5, banco mais largo, recalibração do banco (nada rodado além de r1);
+  5. coluna de 2 mm da tabela de tamanho com o conjunto regravado (cinco repetições) ou deixar como está, com a
+     frase declarando a amostragem;
+  6. abstract de ≈ 450 palavras (versão curta se a revista limitar);
+  7. frase-tese nova ("fails in the open set, and holds in the closed set only when the sample is sparse");
+  8. no diagrama da bancada: rótulo "1,0 mm" (efetivo em ar) contra "≈ 1 mm" (geométrico ≈ 0,9), e a posição da
+     amostra em relação à lamínula;
+  9. ele manda: PDF do HoloAtt-UNet 2026, os .RIS do Scopus e do ScienceDirect e os outros três PDFs (lista na nota
+     do Related Work).
+  **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro; nada vai ao Overleaf sem o "pode".**
