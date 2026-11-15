@@ -402,6 +402,7 @@ def numbers():
     small_near_macros()
     global SMALL_FIVE
     SMALL_FIVE = small_near_five()
+    small_near_factors()
 
     curve_macros()
 
@@ -767,6 +768,90 @@ def scale_table(st):
         cells.append(f'{st.loc[f, "f1"]:.3f}' if f in st.index else '--')
         lines.append(f'{name} & ' + ' & '.join(cells) + ' \\\\')
     return lines
+
+
+def ink_fresnel(set_name):
+    """Fresnel numbers N_F = (ink side / 2)^2 / (lambda z0) at the 5th, 50th and 95th percentile of the ink side of the
+    annotated letters of a set, and those sides (px): the definition of sets_by_fresnel.csv."""
+    from holo_openset.sim.physics import WAVELENGTH
+    root = DATA / set_name
+    if not (root / 'annotations.csv').exists():
+        return None
+    z = json.loads((root / 'physics.json').read_text())['physics']['z0']
+    a = pd.read_csv(root / 'annotations.csv')
+    ink = np.maximum(a.bx1 - a.bx0, a.by1 - a.by0).to_numpy(float)
+    q = {k: float(np.percentile(ink, k)) for k in (5, 50, 95)}
+    return {k: (v, (v * PIXEL / 2) ** 2 / (WAVELENGTH * z)) for k, v in q.items()}
+
+
+def small_near_factors():
+    """The two controls of the small letters at 2 mm, each changing one thing of the set on the finer grid, five
+    repetitions (small_near_factors_five_reps.csv and _reading.json): the letter sizes that give the Fresnel numbers of
+    the standard sets, and the depth law of the standard sets; the crops of the curve at the overlap of each control;
+    D and overlap (small_near_factors_reading.json, r1); the Fresnel numbers of the sets from their annotations; the
+    reading by stratum (small_near_newrec_strata.csv and .json, r1)."""
+    t = csv('small_near_factors_five_reps')
+    if not len(t):
+        print('WARNING: small_near_factors_five_reps.csv missing')
+        return None
+    rd = RES / 'small_near_factors_five_reps_reading.json'
+    jr = json.loads(rd.read_text()) if rd.exists() else {}
+    g1 = RES / 'small_near_factors_reading.json'
+    geo = json.loads(g1.read_text()) if g1.exists() else {}
+    out = {}
+    for ctl, K in [('small_near_ctlN', 'CtlN'), ('small_near_ctlP', 'CtlP')]:
+        d = t[t.control == ctl].set_index('rep')
+        if not len(d):
+            continue
+        for st, S in [('mean', ''), ('min', 'Min'), ('max', 'Max')]:
+            macro(f'Sn{K}RawFone{S}', d.loc[st, 'f1'])
+            macro(f'Sn{K}RawRej{S}', d.loc[st, 'rejection'])
+        macro(f'Sn{K}RawClosed', d.loc['mean', 'closed_acc'])
+        macro(f'Sn{K}CurveFone', d.loc['mean', 'R_curva_f1'])
+        macro(f'Sn{K}CurveRej', d.loc['mean', 'R_curva_rejection'])
+        macro(f'Sn{K}PropFone', d.loc['mean', 'prop_f1'])
+        macro(f'Sn{K}PropRej', d.loc['mean', 'prop_rejection'])
+        macro(f'Sn{K}RecFone', d.loc['mean', 'rec_z0_f1'])
+        macro(f'Sn{K}RecRej', d.loc['mean', 'rec_z0_rejection'])
+        macro(f'Sn{K}OverlapPct', 100 * d.loc['mean', 'overlap'], '{:.0f}')
+        macro(f'Sn{K}PiDSigma', d.loc['mean', 'pi_D2_sigma'], '{:.2f}')
+        r = jr.get(ctl, {})
+        macro(f'Sn{K}ToCurve', CARDINAL[r['returns_to_curve']] if 'returns_to_curve' in r else None)
+        macro(f'Sn{K}StaysAtSet', CARDINAL[r['stays_at_R_reg']] if 'stays_at_R_reg' in r else None)
+        gd = geo.get(ctl, {}).get('geometry', {})
+        macro(f'Sn{K}HoloDiameterUm', gd.get('D_um'), '{:.0f}')
+        out[ctl] = dict(x=d.loc['mean', 'pi_D2_sigma'], f1=d.loc[['mean', 'min', 'max'], 'f1'].tolist(),
+                        rejection=d.loc[['mean', 'min', 'max'], 'rejection'].tolist())
+    for set_name, K in [('small_near_newrec', 'SnFive'), ('small_near_ctlN', 'SnCtlN'), (SPARSE, 'Std')]:
+        fz = ink_fresnel(set_name)
+        if fz:
+            for k, Q in [(5, 'Lo'), (50, 'Mid'), (95, 'Hi')]:
+                macro(f'{K}InkFresnel{Q}', fz[k][1], '{:.2f}')
+                macro(f'{K}InkSide{Q}Px', fz[k][0], '{:.0f}')
+    sb = csv('sets_by_fresnel')
+    r = sb[sb.set == 'small_near']
+    if len(r):
+        macro('SnOutsideLo', 100 * r.outside_crop_p5.iloc[0], '{:.0f}')
+    s_csv, s_js = csv('small_near_newrec_strata'), RES / 'small_near_newrec_strata.json'
+    if len(s_csv) and s_js.exists():
+        js = json.loads(s_js.read_text())
+        st = s_csv.set_index('stratum')
+        thirds = js['size_thirds_px']
+        macro('SnStrataThirdLoPx', thirds[0], '{:.0f}')
+        macro('SnStrataThirdHiPx', thirds[1], '{:.0f}')
+        sizes = [x for x in st.index if x.startswith('size ') and ',' not in x]
+        for name, K in zip(sizes, ['Small', 'Middle', 'Large']):
+            macro(f'SnStrata{K}Known', st.loc[name, 'known_accuracy'])
+        near = [x for x in st.index if x.startswith('neighbour within')]
+        far = [x for x in st.index if x.startswith('no neighbour within')]
+        if near and far:
+            macro('SnStrataNearKnown', st.loc[near[0], 'known_accuracy'])
+            macro('SnStrataFarKnown', st.loc[far[0], 'known_accuracy'])
+        rest = st.drop(index='all')
+        macro('SnStrataRejLo', rest.unseen_rejection.min(), '{:.2f}')
+        macro('SnStrataRejHi', rest.unseen_rejection.max(), '{:.2f}')
+        macro('SnStrataDPx', js['D_px'], '{:.0f}')
+    return out
 
 
 def calib_step_pct():
