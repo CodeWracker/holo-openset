@@ -397,6 +397,7 @@ def numbers():
     # ---- the distance of the sample changes (distance_tests_u50.csv when it exists, else distance_tests.csv)
     distance_macros()
     bank_macros()
+    banks_macros()
     small_near_macros()
 
     curve_macros()
@@ -581,6 +582,118 @@ def small_near_macros():
     if len(r):
         macro('SnFresnelLo', r.fresnel_p5.iloc[0], '{:.2f}')
         macro('SnFresnelHi', r.fresnel_p95.iloc[0], '{:.2f}')
+
+
+BANKS = [('bank_jit', 'BankFive'), ('bank_wide', 'BankSevenWide'), ('bank_w2', 'BankNine'),
+         ('bank_w3', 'BankSevenNarrow')]                       # the stacks of Table tab:stack, at 1.0 mm
+
+
+def bank_params(flow):
+    """K distances, width w and jitter j of a focal stack, from its definition (holo_openset.flows and the defaults
+    of holo_openset.train.train)."""
+    import inspect
+    from holo_openset.flows import FLOWS as F
+    from holo_openset.train import train
+    d = {k: v.default for k, v in inspect.signature(train).parameters.items()}
+    d.update(F[flow].get('train', {}))
+    return int(d['n_dist']), d['alpha_spread'], d['alpha_jitter']
+
+
+def banks_macros():
+    """The four focal stacks of the sparse standard set tested at 0.7, 0.9 and 1.1 mm, five repetitions
+    (banks_distance.csv, banks_distance_rows.csv): F1 as they are and recalibrated by ratio, the rule registered in
+    Q3 (holds in k of 5), the paired differences against the reconstruction and the layer, the price at 1.0 mm."""
+    t = csv('banks_distance')
+    rows = csv('banks_distance_rows')
+    if not len(t):
+        print('WARNING: banks_distance.csv missing')
+        return None
+    m = t[t.kind == 'metric']
+    for f, K in BANKS:
+        n, w, j = bank_params(f)
+        macro(f'{K}Planes', CARDINAL[n])
+        macro(f'{K}WidthPct', 100 * w, '{:g}')
+        macro(f'{K}JitterPct', 100 * j, '{:g}')
+        for d, k in DIST_KEY.items():
+            for cond, c in [('as_is', 'As'), ('recal_ratio', 'Ratio')]:
+                r = m[(m.flow == f) & np.isclose(m.distance_mm, d) & (m.condition == cond)]
+                if len(r):
+                    macro(f'{K}{c}{k}Fone', r.f1_mean.iloc[0])
+                    macro(f'{K}{c}{k}Known', r.known_acc_mean.iloc[0])
+        v = t[(t.kind == 'verdict') & (t.flow == f)]
+        if len(v):
+            macro(f'{K}HoldsIn', CARDINAL[int(float(v.holds_in.iloc[0]))])
+        dr = t[(t.kind == 'drop') & (t.flow == f) & (t.condition == 'as_is - own 1.0 mm')]
+        for d, k in DIST_KEY.items():
+            x = dr[np.isclose(dr.distance_mm, d)]
+            if len(x):
+                macro(f'{K}Drop{k}Lo', -x.f1_max.iloc[0])
+                macro(f'{K}Drop{k}Hi', -x.f1_min.iloc[0])
+        if len(rows):        # repetitions that pass the rule at each distance alone
+            q = rows[(rows.kind == 'drop') & (rows.flow == f) & (rows.condition == 'as_is - own 1.0 mm')]
+            for d, k in DIST_KEY.items():
+                x = q[np.isclose(q.distance_mm, d)]
+                if len(x):
+                    macro(f'{K}Pass{k}', CARDINAL[int(((x.f1 > -0.10) & (x.rejection > -0.30)).sum())])
+    met = m[m.distance_mm.round(2).isin([0.9, 1.1])]
+    asis, rec = met[met.condition == 'as_is'], met[met.condition == 'recal_ratio']
+    macro('BanksAsRejMin', asis.rejection_mean.min())
+    macro('BanksRatioFoneLo', rec.f1_mean.min())
+    macro('BanksRatioFoneHi', rec.f1_mean.max())
+    seven = m[(m.distance_mm.round(2) == 0.7)]
+    macro('BanksAsSevenTenthsFoneHi', seven[seven.condition == 'as_is'].f1_mean.max())
+    macro('BanksRatioSevenTenthsFoneLo', seven[seven.condition == 'recal_ratio'].f1_mean.min())
+    macro('BanksRatioSevenTenthsFoneHi', seven[seven.condition == 'recal_ratio'].f1_mean.max())
+    dc = t[t.kind == 'diff_count']
+    for cond, K in [('bank as_is - rec_z0 recal_ratio (0.9 + 1.1)', 'AsMinusRecRatio'),
+                    ('bank recal_ratio - rec_z0 recal_ratio (0.9 + 1.1)', 'RatioMinusRecRatio'),
+                    ('bank recal_ratio - prop recal_ratio (0.9 + 1.1)', 'RatioMinusPropRatio')]:
+        x = dc[dc.condition == cond]
+        wide = x[x.flow.isin(['bank_wide', 'bank_w2'])]            # the two stacks trained with the wider jitter
+        for name, y in [('', x), ('WideJitter', wide)]:
+            if len(y):
+                macro(f'Banks{name}{K}Lo', y.f1_mean.abs().min())
+                macro(f'Banks{name}{K}Hi', y.f1_mean.abs().max())
+                macro(f'Banks{name}{K}PosLo', int(y.f1_positive.min()), '{}')
+                macro(f'Banks{name}{K}PosHi', int(y.f1_positive.max()), '{}')
+                macro(f'Banks{name}{K}N', int(y.n.iloc[0]), '{}')
+    pr = t[(t.kind == 'diff') & t.condition.str.startswith('price:')]
+    macro('BanksPriceMax', pr.f1_mean.abs().max())
+    return t
+
+
+def banks_table():
+    """tab_banks: one row per focal stack (K, width, jitter) and, for reference, the propagation layer and the
+    reconstruction at z0 of the same set: open-set F1 at 1.0, 0.9 and 1.1 mm as they are, at 0.9 and 1.1 mm
+    recalibrated without labels by ratio, and the number of repetitions in which the stack holds the change (rule of
+    Q3); mean of five repetitions."""
+    t = csv('banks_distance')
+    if not len(t):
+        return None
+    m = t[t.kind == 'metric']
+    cols = [(1.0, 'as_is'), (0.9, 'as_is'), (1.1, 'as_is'), (0.9, 'recal_ratio'), (1.1, 'recal_ratio')]
+    lines = []
+    for f, _ in BANKS:
+        n, w, j = bank_params(f)
+        cells = []
+        for d, c in cols:
+            r = m[(m.flow == f) & np.isclose(m.distance_mm, d) & (m.condition == c)]
+            cells.append(f'{r.f1_mean.iloc[0]:.3f}' if len(r) else '--')
+        v = t[(t.kind == 'verdict') & (t.flow == f)]
+        k = f'{int(float(v.holds_in.iloc[0]))} of {int(v.n.iloc[0])}' if len(v) else '--'
+        lines.append(f'stack: {n} distances, $\\pm{100 * w:g}$\\,\\%, jitter {100 * j:g}\\,\\% & ' + ' & '.join(cells)
+                     + f' & {k} \\\\')
+    u = csv('distance_tests_u50')
+    if len(u):
+        um = u[u.kind == 'metric']
+        lines.append('\\midrule')
+        for f, name in [('prop', 'propagation layer'), ('rec_z0', 'reconstruction at $z_0$')]:
+            cells = []
+            for d, c in cols:
+                r = um[(um.flow == f) & np.isclose(um.distance_mm, d) & (um.condition == c)]
+                cells.append(f'{r.f1_mean.iloc[0]:.3f}' if len(r) else '--')
+            lines.append(f'{name} & ' + ' & '.join(cells) + ' & -- \\\\')
+    return lines
 
 
 def calib_step_pct():
@@ -951,6 +1064,12 @@ def write(out, cite):
              'physics.json of the sets -- do not edit'] + parameter_table(fam, cite)
     (out / 'tables' / 'tab_parameters.tex').write_text('\n'.join(lines) + '\n')
     print('wrote', out / 'tables' / 'tab_parameters.tex', f'({len(lines) - 1} rows)')
+    bt = banks_table()
+    if bt:
+        (out / 'tables' / 'tab_banks.tex').write_text('\n'.join(
+            ['% generated by scripts/exp_resolucao/paper_resolucao.py from banks_distance.csv and distance_tests_u50.csv'
+             ' -- do not edit'] + bt) + '\n')
+        print('wrote', out / 'tables' / 'tab_banks.tex')
     ct = curve_table()
     if ct:
         (out / 'tables' / 'tab_curve.tex').write_text('\n'.join(
