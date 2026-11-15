@@ -399,6 +399,23 @@ def numbers():
 
     curve_macros()
 
+    # ---- the main results (geometry of CBMS 2024, the models of the paper): closed-set accuracy, not in numbers.tex
+    mn = evals(CBMS, PAPER_RESULTS)
+    for f in FLOWS:
+        macro(f'Main{FLOW_KEY[f]}Closed', value(mn, f, CLOSED, reps_mode(mn)))
+    # ---- enrollment, propagation layer against the reconstruction at z0, paired by repetition (enroll_paired.csv)
+    ep = csv('enroll_paired')
+    if len(ep):
+        for metric, k in [('world5_new_class_acc', 'Five'), ('world20_new_class_acc', 'Twenty'),
+                          ('worldall_new_class_acc', 'All'), ('world20_absent_rejection', 'AbsentTwenty')]:
+            r = ep[(ep.layer == 'prop') & (ep.reconstruction == 'rec_z0') & (ep.metric == metric)]
+            if len(r):
+                r = r.iloc[0]
+                macro(f'EnrollPair{k}Diff', r.diff_mean, '{:+.3f}')
+                macro(f'EnrollPair{k}Lo', r.diff_min, '{:+.3f}')
+                macro(f'EnrollPair{k}Hi', r.diff_max, '{:+.3f}')
+                macro(f'EnrollPair{k}Pos', int(sum(r[f'diff_r{i}'] > 0 for i in range(1, 6))), '{}')
+
     # ---- the parameter table: counts by source
     pt = csv('simulator_parameters')
     if len(pt):
