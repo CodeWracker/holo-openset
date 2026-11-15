@@ -445,7 +445,14 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
   máx. 0,79 %; nativa contra s = 2: 0,5–0,8 %): nada regravado. FALTA: texto (escritor, parte 2, acionado).
   (Texto original do item:) Coluna de 2 mm: dez fluxos × r1–r5 no `small_near_newrec` (47 treinos novos),
   tabela ao lado da coluna do paper; conferência nativa contra convergida a 19,25 mm para as letras pequenas.
-- [~] **S-D.** (17:00, r1 conferido por mim contra `eval/small_near_ctl{N,P}/` e refazendo a interpolação)
+- [x] **S-D (cinco repetições, Q4).** (17:18, conferido por mim contra `eval/small_near_ctl{N,P}/*_r[1-5].json`,
+  refazendo R_curva(k) e as distâncias) **D-N volta para a curva em 5 de 5: a faixa de N_F explica. D-P fica com o
+  conjunto em 5 de 5: a profundidade não explica.** Crops, média de cinco: D-N 0,925 / 0,626 (curva 0,915 / 0,578;
+  conjunto 0,806 / 0,191); D-P 0,810 / 0,208. Camada / reconstrução: D-N 0,972 / 0,963 e 0,973 / 0,961; D-P 0,974 /
+  0,994 e 0,973 / 0,996 (o 0,849 de rejeição da reconstrução no D-N em r1 não se repete: 0,96–1,00 em r2–r5).
+  Arquivos: `small_near_factors_five_reps.csv`, `_reading.json`. Commits do executor: `f6a3f7c` (D13), `6a00346`,
+  `a6b8010` (D14). Texto: escritor, parte 3, acionado. O que segue é o registro do r1:
+- [x] **S-D (r1).** (17:00, r1 conferido por mim contra `eval/small_near_ctl{N,P}/` e refazendo a interpolação)
   **r1: a faixa de N_F explica, a lei de profundidade não; as duas previsões valeram.** D-N (fontes × 0,3223; N_F
   0,295 / 0,544 / 0,979; sobreposição 0,451): crops 0,916 / 0,530, R_curva 0,908 / 0,516, R_reg 0,799 / 0,120;
   camada 0,976 / 0,990; reconstrução 0,961 / 0,849 (estranho, sem critério). D-P (uniforme ±25 µm): crops 0,803 /
@@ -814,3 +821,12 @@ errado".
   mecanismo com o limite de N_F, sem tocar na frase-tese); (4) `pytest` + `reproduce check`, compilar, PDF + diff,
   push do código (GitHub, sem merge), mensagem final com: aviso do Q4, pergunta do #3 com a viabilidade, e o que
   segue esperando (Overleaf, frase-tese, abstract, diagrama, arquivos dele).**
+- **2026-11-15, 17:18 — Q4 conferido: a faixa de N_F explica o conjunto de 2 mm fora da curva (5 de 5); a
+  profundidade não (5 de 5).** `pytest` 78 e `reproduce check` 13/13 (17:17; a fase não tocou no pacote). Escritor:
+  partes 1 e 2 revisadas (paper em `5652fe4`, 46 páginas); parte 3 (diagnóstico na 8.4, ponto na figura da curva,
+  limitação vii; sem tocar abstract/intro/conclusão) em andamento. **Próximo passo ao voltar: revisar a parte 3;
+  compilar; PDF + diff em `entrega/`; `git push origin exp/resolucao-fonte` (GitHub, sem merge); atualizar a
+  memória; mensagem final com: o aviso do Q4 (levantei a trava de r2–r5 dos controles), a pergunta do #3 com a
+  viabilidade (450 por mm² é gravável; recomendo gravar agora que o custo não pesa), as frases de
+  abstract/intro/conclusão que o escritor listar, e o que segue esperando (Overleaf, frase-tese, abstract,
+  diagrama, arquivos dele).**
