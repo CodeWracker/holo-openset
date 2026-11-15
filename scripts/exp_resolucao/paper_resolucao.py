@@ -396,6 +396,7 @@ def numbers():
 
     # ---- the distance of the sample changes (distance_tests_u50.csv when it exists, else distance_tests.csv)
     distance_macros()
+    bank_macros()
 
     curve_macros()
 
@@ -491,6 +492,38 @@ def distance_macros():
             x = rc[np.isclose(rc.z_nominal_mm, d)]
             if len(x):   # the distance found by ratio against the true mean distance of the recorded sessions
                 macro(f'DistZErr{k}Pct', 100 * x.z_ratio_minus_true_mm.iloc[0] / x.z_true_mm.iloc[0], '{:+.2f}')
+
+
+def bank_macros():
+    """The focal stack (models of the sparse standard set, r1) tested at 0.7, 0.9 and 1.1 mm as it is, next to the
+    other flows of the same repetition (bank_jit_distance.csv): F1, rejection, closed-set and known accuracy, the drop
+    from 1.0 mm, and the gap to the reconstruction recalibrated by ratio."""
+    t = csv('bank_jit_distance')
+    if not len(t):
+        print('WARNING: bank_jit_distance.csv missing')
+        return
+    m = t[t.kind == 'metric']
+    for d, k in DIST_KEY.items():
+        for f, F in [('bank_jit', 'Bank'), ('prop', 'Prop'), ('rec_z0', 'Rec'), ('raw', 'Raw')]:
+            for cond, c in [('as_is', 'As'), ('recal_ratio', 'Ratio')]:
+                r = m[np.isclose(m.distance_mm, d) & (m.flow == f) & (m.condition == cond)]
+                if len(r):
+                    r = r.iloc[0]
+                    macro(f'BankRun{c}{k}{F}Fone', r.f1)
+                    if f == 'bank_jit':
+                        macro(f'BankRun{c}{k}{F}Rej', r.rejection)
+                        macro(f'BankRun{c}{k}{F}Closed', r.closed_acc)
+                        macro(f'BankRun{c}{k}{F}Known', r.known_acc)
+    dd = t[t.kind == 'diff']
+    for d, k in DIST_KEY.items():
+        x = dd[np.isclose(dd.distance_mm, d) & (dd.condition == 'as_is - bank_jit at 1.0 mm')]
+        if len(x):
+            macro(f'BankRunDrop{k}', -x.f1.iloc[0])
+        x = dd[np.isclose(dd.distance_mm, d) & (dd.condition == 'bank_jit as_is - rec_z0 recal_ratio')]
+        if len(x):
+            macro(f'BankRunBelowRecal{k}', -x.f1.iloc[0])
+    rule = t[t.kind == 'rule']
+    macro('BankRunHolds', None if not len(rule) else ('holds' if str(rule.holds.iloc[0]) == 'True' else 'does not hold'))
 
 
 def calib_step_pct():
