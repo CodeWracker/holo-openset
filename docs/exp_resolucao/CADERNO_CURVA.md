@@ -170,3 +170,54 @@ tiverem, reporto assim.
 Escrevi que Isikman et al. 2012 contam "com reconstrução" até ≈ 0,4 milhão de células por µL. A frase do artigo não
 diz em que domínio a contagem foi feita (a legenda da Fig. 5a mostra os dois). A fonte primária da contagem com
 reconstrução e hologramas sobrepostos é Seo et al. 2010 (Anal. Chem.), lida pelo escritor do Related Work.
+
+## 2026-11-15, 13:37 — Q2: pré-registro do controle das letras pequenas a 2 mm e do banco focal sob mudança de distância (responsável)
+
+Pedidos do orientador de ≈ 13:30 e ≈ 13:34 (`PROTOCOLO_CURVA.md`, na íntegra). Escrito antes de qualquer gravação,
+treino ou leitura de teste destes dois itens. Valem as regras de sempre: pastas da etapa (`HOLO_RESULTS`,
+`HOLO_MODELS`), escolhas só na validação, cada teste lido uma vez por modelo, nada em `results/`.
+
+### S. Controle da amostragem no conjunto de letras pequenas a 2 mm (r1)
+
+Pergunta: o conjunto `small_near` foi gravado na amostragem nativa do sensor, e os de 1 mm pelo caminho
+sobreamostrado. Isso explica por que os crops dele se comportam como num nível denso (0,793 / 0,153, cinco
+repetições) com sobreposição de só 0,42?
+
+- **Referência igual com igual:** o `small_near` como está em disco, treinado agora em r1 nas pastas da etapa, com a
+  receita que o pacote usa para esse conjunto (`--no-aux`), nos três fluxos (`raw`, `prop`, `rec_z0`). Os números
+  do paper ficam ao lado, só para referência.
+- **Controle:** conjunto novo `small_near_newrec`, com as leis do `small_near` (tamanhos, número de letras por
+  janela, borda e espaçamento, 2,0 mm, a física, a profundidade, o ruído e a poeira do próprio conjunto) escritas em
+  unidades físicas e gravadas pelo caminho sobreamostrado, como foi feito no controle B do piloto para o conjunto
+  base. Os fatores de sobreamostragem e do raster mestre saem da mesma conferência de convergência do piloto
+  (4 cenas sem ruído, tolerância de 1 %), a 2,0 mm. Mesma receita, r1, três fluxos.
+- **Medidas sem leitura de teste, antes dos treinos:** (i) a diferença entre a gravação nativa e a convergida nas
+  4 cenas da conferência (quanto a amostragem nativa erra a 2 mm); (ii) o diâmetro efetivo D medido de novo no
+  caminho novo, com a mesma definição, e a sobreposição recalculada.
+- **Leitura, fixada agora, só com os crops (`raw`):** seja R_ant o par (F1, rejeição) da referência e R_curva o par
+  dos crops da família padrão na mesma sobreposição, em r1, por interpolação linear em log(π D² σ) entre os dois
+  níveis que cercam o valor do controle. Se o controle ficar mais perto de R_curva que de R_ant nas duas métricas,
+  a amostragem nativa explica o desvio; nesse caso a coluna das letras pequenas a 2 mm do paper teria de ser
+  refeita, e eu pergunto antes de refazer. Se ficar mais perto de R_ant nas duas, a amostragem não explica, o
+  conjunto continua fora da curva e o texto continua dizendo que não sabemos por quê. Uma de cada: inconclusivo;
+  reporto e não rodo outro braço sem perguntar.
+- Camada e reconstrução entram na tabela ao lado, sem critério.
+
+### J. Banco focal (`bank_jit`) a 0,9 e 1,1 mm sem recalibrar (só r1, por decisão do orientador)
+
+Pergunta dele: o banco foi feito para tolerar deriva da distância. Ele aguenta um erro de 10 % em z sem
+recalibrar? Se aguentar, é uma vantagem real da camada sobre a reconstrução; se não, dizemos isso.
+
+- **Modelo:** `bank_jit` com a receita do paper, sem mudar nenhum hiperparâmetro (cinco propagações em ±5 % de α,
+  treino com jitter de 5 % na distância), treinado no nível esparso da família padrão (`curve_u50_L008`), r1,
+  `--no-aux`, α calibrado sem rótulo como na camada. Seleção e limiar na validação de 1,0 mm.
+- **Testes:** o teste do nível esparso a 1,0 mm (referência) e os testes de d2 regravados a 0,9 e a 1,1 mm, como
+  estão: modelo, galeria e limiar de 1,0 mm. O de 0,7 mm entra à parte, como estresse, fora da regra.
+- **Regra "aguenta", fixada agora, por analogia com o "caiu" do Q0:** numa distância deslocada, o banco aguenta se
+  o F1 dele ficar menos de 0,10 abaixo e a rejeição menos de 0,30 abaixo dos valores dele próprio a 1,0 mm. Ele
+  aguenta a mudança de distância se aguentar a 0,9 e a 1,1 mm. É uma repetição só: o resultado é descritivo.
+- **Ao lado, do mesmo r1 e já em arquivo:** camada e reconstrução como estão, camada recalibrada por razão e
+  reconstrução recalibrada. Reporto também a diferença do banco, como está, para a reconstrução recalibrada em cada
+  distância, e o preço do banco a 1,0 mm (banco − camada e banco − reconstrução). Sem limiar para essas diferenças.
+- **O que não rodo sem perguntar:** r2–r5; um banco mais largo ou com mais jitter (a mudança de 10 % está fora da
+  faixa de ±5 % em que ele foi treinado); a recalibração do banco.

@@ -58,3 +58,48 @@ Opções: "Uniforme nos 50 µm (Recomendado)" e "Normal, desvio 50 µm (±150 µ
 
 Resposta: **"Uniforme nos 50 µm (Recomendado)"**. Registrada na entrada Q1 de `CADERNO_CURVA.md`.
 
+
+## Resposta do orientador ao relatório da curva (2026-11-15, ≈ 13:30)
+
+Na íntegra (os números respondem às seis perguntas da seção 8 de `RELATORIO_CURVA.md`):
+
+> TB tem o artigo do HoloAtt-UNet 2026 q eu tenho q te mandar. O push vc pode mandar pro git e overleaf
+>
+> #1 me explica melhor e faz uma visualização disso pra eu entender
+> #2 faça sua recomendação
+> #3 deixa no todo do related works isso aí pra eu pegar e te mandar
+> #4 o título PRECISA mudar?
+> #5 corrija
+> #6 pode mandar
+
+## Complemento do orientador (2026-11-15, ≈ 13:34)
+
+Na íntegra:
+
+> Complementando:
+>
+> 1. Push: manda os branches pro GitHub, sem merge. No Overleaf, só depois que eu revisar o PDF (se o Overleaf estiver ligado na branch principal, não empurra a reescrita pra lá ainda).
+>
+> 2. Camada contra reconstrução: no denso (135 e 300 por mm²) a reconstrução rejeita mais em 5 de 5, e com a distância mudando ela fica 0,045 acima em 15 de 15. O abstract e a conclusão têm que dizer isso com todas as letras: a reconstrução calibrada é a melhor rota no denso e quando z muda; a camada é a alternativa que se calibra sozinha. Nada de vender a camada como superior.
+>
+> 3. As três frases que mudaram de sentido (fonte a 5 cm, feixe estreito, crops a 0,881 na geometria do CBMS 2024): entram com o sentido novo, sem suavizar.
+>
+> 4. Seção "a simulação muda a resposta": a profundidade agora é 0,02 dentro do canal de 50 µm (o 0,2 só no teste de estresse); usa o número certo. E acrescenta a distância como evidência: 10 % de erro em z derruba camada e reconstrução sem recalibração.
+>
+> 5. só r1: testa o bank_jit a 0,9 e 1,1 mm sem recalibrar. Ele foi feito pra tolerar drift; se aguentar, é uma vantagem real da camada sobre a reconstrução, e se não aguentar, a gente diz isso.
+
+### O que cada item vira (leitura do responsável; Fase R do `TODO.md`)
+
+- **Push:** `exp/distancia-autofocus` e `exp/resolucao-fonte` vão para o GitHub como branches, sem merge. O
+  repositório do paper só tem o Overleaf como remoto, ligado ao `main`: nada é enviado para lá (nem os dois commits
+  locais do `main`, nem `rewrite/inversion`) até o orientador revisar o PDF.
+- **Pergunta 1 (a camada "cair"):** explicação e uma figura para o orientador; nenhum nível novo é gravado.
+- **Pergunta 2 (letras pequenas a 2 mm):** o controle recomendado, pré-registrado na entrada Q2 de
+  `CADERNO_CURVA.md` antes de rodar.
+- **Pergunta 3 (levantamento):** lista do que falta (os .RIS e os PDFs bloqueados) na nota do Related Work; o
+  orientador manda o artigo do HoloAtt-UNet 2026.
+- **Pergunta 4 (título):** é pergunta; respondo com a minha opinião e não mudo o título sem a palavra dele.
+- **Pergunta 5 (figura do quadro inteiro):** regenerar com a camada de propagação; autorizado mexer no arquivo de
+  `expected/` que isso muda.
+- **Complemento 2, 3 e 4:** ajustes de texto no branch `rewrite/inversion`.
+- **Complemento 5:** banco focal (`bank_jit`) a 0,9 e 1,1 mm sem recalibrar, só r1; pré-registrado na entrada Q2.

@@ -378,6 +378,35 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       da seção; prosa do método; título); (5) regenerar a figura do quadro inteiro com a camada de propagação (muda
       `expected/`); (6) push/merge. Nada novo roda sem a resposta dele e sem pré-registro.
 
+### Fase R: resposta ao relatório da curva (2026-11-15, ≈ 13:30 e ≈ 13:34; `PROTOCOLO_CURVA.md`, fim)
+
+Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
+
+- [ ] **R-push.** `exp/distancia-autofocus` e `exp/resolucao-fonte` para o GitHub, como branches, SEM merge.
+  Overleaf: NADA (o remoto do paper é só o Overleaf, ligado ao `main`); só depois de o orientador revisar o PDF.
+- [ ] **R-S.** Controle das letras pequenas a 2 mm (`small_near_newrec`, r1, três fluxos; referência retreinada).
+  Executor "densidade".
+- [ ] **R-J.** Banco focal (`bank_jit`) treinado em `curve_u50_L008`, r1; testes a 1,0 / 0,9 / 1,1 mm como estão
+  (0,7 mm à parte). Executor "distância". Só r1.
+- [ ] **R-txt.** Texto no `rewrite/inversion` (executor da escrita):
+  (a) abstract e conclusão dizem com todas as letras: a reconstrução calibrada é a melhor rota no denso e quando z
+  muda; a camada é a alternativa que se calibra sozinha; nada de vender a camada como superior (conferir intro e
+  discussão);
+  (b) as três frases que mudaram de sentido (fonte a 5 cm, feixe estreito, crops a 0,881 em conjunto fechado na
+  geometria do CBMS 2024) sem suavizar;
+  (c) seção da simulação: profundidade 0,02 dentro do canal (0,2 só no estresse) em todo lugar, figura-resumo
+  incluída; distância como evidência (10 % de erro em z derruba camada e reconstrução sem recalibrar), também na
+  figura-resumo, no abstract e nas contribuições;
+  (d) nota do Related Work vira lista do que o orientador vai mandar (.RIS do Scopus e do ScienceDirect; PDFs do
+  HoloAtt-UNet 2026, Cotter 2021, Delli Priscoli 2021, JBO 26:036001);
+  (e) figura do quadro inteiro com a camada de propagação (muda `expected/`: autorizado para isso).
+- [ ] **R-viz.** Figura que explica a pergunta 1 (a regra "caiu", as quedas por repetição dos três fluxos, como é a
+  amostra em cada nível). Nenhum nível novo.
+- [ ] **R-titulo.** Responder: o título atual ainda fala em "Learnable Fourier Layer"; dar opinião e opções, não
+  mudar sem a palavra dele.
+- [ ] **R-rev.** Conferir cada devolução contra os arquivos; depois de R-S e R-J, pôr os resultados no texto
+  (macros), compilar, mandar PDF + diff. Sem merge, sem Overleaf.
+
 ### Fase A: experimento da resolução
 
 - [x] A0. (feito, `88b5ed9`; `results_exp_resolucao/enroll_paired.csv`) Teste pareado de enrollment (`prop` − reconstruções, por repetição).
@@ -609,3 +638,9 @@ errado".
 - **2026-11-15, 11:58 — etapa da curva entregue.** Relatório, PDF do paper e diff enviados; tudo commitado
   localmente nos dois repositórios, nada enviado ao GitHub nem ao Overleaf. **Próximo passo ao voltar: ler a resposta
   do orientador às seis perguntas da seção 8 de `RELATORIO_CURVA.md`; não rodar nem mesclar nada antes.**
+- **2026-11-15, 13:38 — o orientador respondeu ao relatório da curva (duas mensagens, na íntegra no fim de
+  `PROTOCOLO_CURVA.md`).** Fase R aberta acima; pré-registro Q2 escrito antes de rodar. Decisões dele: GitHub sem
+  merge e nada no Overleaf até ele revisar o PDF; controle das letras pequenas a 2 mm; figura do quadro inteiro
+  com a camada de propagação; texto sem vender a camada como superior; banco focal a 0,9 e 1,1 mm só em r1.
+  **Próximo passo ao voltar: ver as devoluções dos executores (densidade: R-S; distância: R-J; escrita: R-txt;
+  figura: R-viz), conferir contra os arquivos, integrar no texto, compilar e mandar PDF + diff.**
