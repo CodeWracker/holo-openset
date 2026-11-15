@@ -131,8 +131,23 @@ def family():
             continue
         dens, per_window = density(name)
         out.append(dict(set=name, density=dens, per_window=per_window, depth_std_um=ph['physics']['depth_std'] * 1e6,
-                        depth_max_um=ph['physics']['depth_max'] * 1e6, mode=mode, df=df))
+                        depth_max_um=ph['physics']['depth_max'] * 1e6, law=depth_law(ph), mode=mode, df=df))
     return out
+
+
+def depth_law(ph):
+    """The depth law of a set: ('uniform', half-height um) with depth_uniform > 0 (the standard of Q1), else
+    ('normal', sd um, cut um)."""
+    p = ph['physics']
+    if p.get('depth_uniform', 0) > 0:
+        return ('uniform', round(p['depth_uniform'] * 1e6, 3))
+    return ('normal', round(p['depth_std'] * 1e6, 3), round(p['depth_max'] * 1e6, 3))
+
+
+def law_tex(law):
+    if law[0] == 'uniform':
+        return f'uniform in $\\pm${g(law[1])}\\,$\\mu$m'
+    return f'$\\mathcal{{N}}(0,{g(law[1])}^2)$, $\\le${g(law[2])}\\,$\\mu$m'
 
 
 def cbms_equivalent_density():
@@ -342,15 +357,60 @@ def numbers():
                 macro(f'{key}OverlapPct', 100 * (1 - math.exp(-math.pi * (d * 1e-3) ** 2 * sigma))
                       if sigma is not None else None, '{:.0f}')
 
+    # ---- the distance of the sample changes (distance_tests_u50.csv when it exists, else distance_tests.csv)
+    distance_macros()
+
     # ---- the parameter table: counts by source
     pt = csv('simulator_parameters')
     if len(pt):
         modelled = pt[~pt.code_name.astype(str).str.contains(r'not modelled|derived', regex=True)]
         macro('ParamCount', len(modelled), '{}')
-        for t, k in [('article', 'Article'), ('datasheet', 'Datasheet'), ('personal communication', 'Personal'),
+        # 'personal communication' in the csv: what the authors know of their own bench and the article does not report
+        for t, k in [('article', 'Article'), ('datasheet', 'Datasheet'), ('personal communication', 'Bench'),
                      ('our assumption', 'Assumption')]:
             macro(f'Param{k}', int((modelled.source_type == t).sum()), '{}')
     return M, fam
+
+
+DIST_KEY = {0.7: 'SevenTenths', 0.9: 'NineTenths', 1.0: 'One', 1.1: 'ElevenTenths'}
+
+
+def distance_macros():
+    """Models of the 1.0 mm sets tested at other distances: as they are, and with the distance recalibrated without
+    labels (literal, and by ratio: the variant registered as the main one). distance_tests_u50.csv (models of the
+    standard family) is preferred when it exists; distance_tests.csv holds the models of the sparse pilot set."""
+    u50 = csv('distance_tests_u50')
+    dt = u50 if len(u50) else csv('distance_tests')
+    macro('DistModelsText', None if not len(dt) else
+          'the five models of the sparse set of the standard family' if len(u50) else
+          'the five models of the sparse set with a nearly flat sample')
+    if not len(dt):
+        return
+    met = dt[dt.kind == 'metric']
+    for d, k in DIST_KEY.items():
+        macro(f'Dist{k}Mm', d, '{:.1f}')
+        for cond, c in [('as_is', 'As'), ('recal_literal', 'Literal'), ('recal_ratio', 'Ratio')]:
+            for f in FLOWS:
+                r = met[np.isclose(met.distance_mm, d) & (met.flow == f) & (met.condition == cond)]
+                if len(r):
+                    macro(f'Dist{c}{k}{FLOW_KEY[f]}Fone', r.f1_mean.iloc[0])
+                    macro(f'Dist{c}{k}{FLOW_KEY[f]}Rej', r.rejection_mean.iloc[0])
+    near = [d for d in DIST_KEY if d != 1.0 and d != 0.7]          # 0.7 mm is the stress test (Q1)
+    asis = met[(met.condition == 'as_is') & met.distance_mm.round(3).isin(near) & met.flow.isin(['prop', 'rec_z0'])]
+    if len(asis):
+        macro('DistAsIsFoneLo', asis.f1_mean.min())
+        macro('DistAsIsFoneHi', asis.f1_mean.max())
+        macro('DistAsIsRejLo', asis.rejection_mean.min())
+    rm = dt[(dt.kind == 'rec_minus_prop') & (dt.condition == 'rec_z0 recal_ratio - prop recal_ratio')]
+    if len(rm):
+        macro('DistRecMinusPropLo', rm.f1_mean.min())
+        macro('DistRecMinusPropHi', rm.f1_mean.max())
+        macro('DistRecAbovePropCount', int(rm[rm.f1_min > 0].n.sum()), '{}')
+        macro('DistRecAbovePropTotal', int(rm.n.sum()), '{}')
+        macro('DistRecAbovePropDistances', CARDINAL[len(rm)])
+    rc = dt[dt.kind == 'recal']
+    if len(rc):
+        macro('DistRecalImages', int(rc.n.iloc[0]), '{}')
 
 
 # ------------------------------------------------------------------------------------------------ parameter table
@@ -376,7 +436,7 @@ def source_cell(row, cite):
     if t == 'datasheet':
         return 'datasheet~\\cite{' + (cite['led'] if 'Thorlabs' in row.source else cite['sensor']) + '}'
     if t == 'personal communication':
-        return 'pers.\\ comm.'
+        return 'the bench (not reported in the article)'
     kind = next((w for w in ('numerical', 'design', 'implementation', 'protocol', 'standard', 'physics')
                  if w in str(row.source)), None)
     return 'our assumption' + {'numerical': ' (numerical)', 'design': ' (design)', 'protocol': ' (design)',
@@ -398,6 +458,11 @@ def parameter_table(fam, cite):
     meta_c = pd.read_csv(DATA / CBMS / 'metadata.csv')
     meta_b = pd.read_csv(DATA / SPARSE / 'metadata.csv')
     dens = sorted(x['density'] for x in fam if x['density'] is not None)
+    laws = {x['law'] for x in fam}
+    depth_cell = '; '.join(
+        [f'{law_tex(l)} (standard)' for l in sorted(laws) if l[0] == 'uniform']
+        + [f'{law_tex(depth_law(pb))} (pilot sets)']
+        + ([f'{law_tex(depth_law(deep))} (stress test)'] if deep else []))
 
     def side(s):
         r = sb[sb.set == s].iloc[0]
@@ -417,11 +482,7 @@ def parameter_table(fam, cite):
         'PRNU': (f'{g(100 * c["prnu"])}\\,\\% rms', same),
         'sample-to-sensor distance': (f'{g(c["z0"] * 1e3, 4)}\\,mm', f'{b["z0"] * 1e3:.1f}\\,mm'),
         'distance spread between sessions': (f'{g(100 * c["session_z_std"])}\\,\\% of $z_0$', same),
-        'depth spread of objects': (f'$\\mathcal{{N}}(0,{g(c["depth_std"] * 1e6)}^2)$, $\\le${g(c["depth_max"] * 1e6)}'
-                                    '\\,$\\mu$m',
-                                    f'$\\mathcal{{N}}(0,{g(b["depth_std"] * 1e6)}^2)$, $\\le${g(b["depth_max"] * 1e6)}'
-                                    '\\,$\\mu$m' + (f'; depth set {g(deep["physics"]["depth_std"] * 1e6)}, '
-                                                    f'$\\le${g(deep["physics"]["depth_max"] * 1e6)}' if deep else '')),
+        'depth spread of objects': (law_tex(depth_law(pc)), depth_cell),
         'absorption of the letters': (f'$\\mathcal{{N}}({g(c["absorption_mean"])},{g(c["absorption_std"])}^2)$ in '
                                       f'$[{g(c["absorption_min"])},1]$', same),
         'phase delay of the letters': (f'$\\mathcal{{N}}({g(c["phase_mean"])},{g(c["phase_std"])}^2)$\\,rad in '
@@ -461,8 +522,11 @@ def parameter_table(fam, cite):
                                'our assumption'),
     }
     notes = {   # what the source cell must say besides its type, where the two columns differ in source
-        'sample-to-sensor distance': 'CBMS: our reading of the routine of~\\cite{%s}; 1.0\\,mm: pers.\\ comm.\\ '
-                                     '($z\\approx1$\\,mm)' % cite['cbms'],
+        'sample-to-sensor distance': 'CBMS 2024: read from the code of its generator~\\cite{%s}; 1.0\\,mm: the bench '
+                                     '(not reported in the article)' % cite['cbms'],
+        'depth spread of objects': 'our assumption' + ('; 1.0\\,mm standard: the height of the channel of the bench~'
+                                                       '\\cite{%s}' % cite['article'] if any(l[0] == 'uniform'
+                                                                                             for l in laws) else ''),
         'letter size (base)': 'our assumption; 1.0\\,mm: scaled to the Fresnel number of the CBMS geometry',
         'pinhole distance': 'article~\\cite{%s} (to the sensor; the simulator takes it to the sample)' % cite['article'],
     }

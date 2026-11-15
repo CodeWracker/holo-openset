@@ -113,12 +113,13 @@ def panel_c(ax):
 
 def panel_d(ax):
     fam = pr.family()
-    groups = sorted({round(x['depth_std_um'], 1) for x in fam})
-    main = max(groups, key=lambda g: sum(round(x['depth_std_um'], 1) == g for x in fam)) if groups else None
+    groups = sorted({x['law'] for x in fam})
+    uni = [g for g in groups if g[0] == 'uniform']            # the standard family of Q1, when it exists
+    main = uni[0] if uni else max(groups, key=lambda g: sum(x['law'] == g for x in fam)) if groups else None
     for g in groups:
-        if g != main and sum(round(x['depth_std_um'], 1) == g for x in fam) < 2:
+        if g != main and sum(x['law'] == g for x in fam) < 2:
             continue                     # a depth law with one level only is not a curve (panel e shows it)
-        pts = sorted((x for x in fam if round(x['depth_std_um'], 1) == g), key=lambda x: x['density'])
+        pts = sorted((x for x in fam if x['law'] == g), key=lambda x: x['density'])
         ls = '-' if g == main else '--'
         for f in pr.FLOWS:
             xs = [x['density'] for x in pts]
@@ -127,7 +128,8 @@ def panel_d(ax):
             for x, y, p in zip(xs, ys, pts):
                 ax.plot(x, y, 'o', color=COLORS[f], mfc=COLORS[f] if p['mode'] == 5 else 'white', ms=4, zorder=3)
         if g != main and pts:
-            ax.annotate(f'depth sd {g:g} $\\mu$m', xy=(pts[-1]['density'], 0.5), fontsize=5.5, color=MUTED)
+            lab = f'depth uniform $\\pm${g[1]:g} $\\mu$m' if g[0] == 'uniform' else f'depth sd {g[1]:g} $\\mu$m'
+            ax.annotate(lab, xy=(pts[-1]['density'], 0.5), fontsize=5.5, color=MUTED)
     cb = pr.evals(pr.CBMS)
     m = pr.reps_mode(cb)
     x = pr.cbms_equivalent_density()
