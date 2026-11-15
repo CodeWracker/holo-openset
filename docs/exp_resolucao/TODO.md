@@ -385,8 +385,16 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
 - [x] **R-push.** (13:39) `exp/distancia-autofocus` e `exp/resolucao-fonte` para o GitHub, como branches, SEM merge.
   Commits posteriores desta fase: enviar de novo no fim (`git push origin exp/resolucao-fonte`).
   Overleaf: NADA (o remoto do paper é só o Overleaf, ligado ao `main`); só depois de o orientador revisar o PDF.
-- [ ] **R-S.** Controle das letras pequenas a 2 mm (`small_near_newrec`, r1, três fluxos; referência retreinada).
-  Executor "densidade".
+- [x] **R-S.** (14:26, conferido por mim contra `eval/small_near*/` e refazendo a interpolação e as distâncias)
+  Controle das letras pequenas a 2 mm, r1: **a amostragem não explica.** Crops: referência 0,791 / 0,118; regravado
+  (s = 2, raster mestre 16) 0,799 / 0,120; curva na mesma sobreposição (r1, interpolado) 0,907 / 0,514; distâncias
+  0,008 / 0,002 ao antigo e 0,108 / 0,394 à curva. Camada 0,963 / 0,895 → 0,973 / 0,978; reconstrução 0,978 / 0,987
+  → 0,973 / 0,954. D novo 165,7 µm, sobreposição 0,456. A gravação nativa a 2 mm difere da convergida em 4,8–5,8 %
+  do rms do padrão ((2, 4): 0,6–0,8 %). Não testado: tamanho em pixels, faixa de N_F, distância, lei de
+  profundidade. Mudança no pacote: comprimentos opcionais no `FresnelLayout` (`64e9e94`, 6 testes novos). Cache
+  `rec_z0.npy` e `autofocus.csv` criados em `data/small_near` (nenhum arquivo existente mudou; hashes no D7).
+  Tabela: `results_exp_resolucao/small_near_control.csv`. FALTA: texto (8.4, onde o conjunto é descrito,
+  limitação vii).
 - [x] **R-J.** (13:46, conferido por mim contra `eval/curve_u50_L008/bank_jit_r1.json` e
   `robustness_curve_u50_L008_bank_jit.csv`) Banco focal, r1: **não aguenta** pela regra do Q2. F1 0,981 a 1,0 mm;
   0,650 a 0,9 mm (−0,330) e 0,678 a 1,1 mm (−0,303); rejeição 0,994 / 0,997; acerto em fechado 0,972 / 0,973;
@@ -694,3 +702,9 @@ errado".
   R-S: conjunto gravado (5000 imagens, s = 2, mestre 16); resto em tmux `res_S_rest` desde 14:17.
   **Próximo passo ao voltar: devolução do R-S (conferir; leitura do Q2; parágrafo no texto); PDF + diff finais;
   push do código; mensagem final.**
+- **2026-11-15, 14:26 — R-S conferido; escritor pondo no texto.** **Próximo passo ao voltar: revisar a devolução do
+  escritor (frases de 8.4, declaração da amostragem do conjunto de 2 mm, limitação vii); `pytest` + `reproduce
+  check`; compilar; PDF + diff finais (`entrega/`); `git push origin exp/resolucao-fonte` (só GitHub, sem merge);
+  mensagem final. Perguntas abertas para o orientador: título; nível mais denso; r2–r5 / banco mais largo /
+  recalibração do banco; refazer ou não a coluna de 2 mm da tabela de tamanho (5 repetições no conjunto regravado);
+  abstract de ≈ 450 palavras; Overleaf só depois da revisão dele.**
