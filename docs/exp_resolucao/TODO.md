@@ -423,6 +423,34 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
 - [x] **R-rev.** (feito; ver o diário) Conferir cada devolução contra os arquivos; depois de R-S e R-J, pôr os resultados no texto
   (macros), compilar, mandar PDF + diff. Sem merge, sem Overleaf.
 
+### Fase S: resposta à entrega da Fase R (2026-11-15, ≈ 15:50; `PROTOCOLO_CURVA.md`, fim)
+
+Resposta dele: "#2 ok / #4 faz o que achar melhor / #5 tempo de gpu não é um problema, faça o necessário pela
+qualidade da pesquisa / #6 calma já leio / #3 que figura?". Pré-registro: entrada Q3 de `CADERNO_CURVA.md` (15:58,
+commit `b97121d`), antes de rodar. GPUs: 0, 1, 2 (executor da densidade), 3 e 5 (executor da distância); a 4 está
+ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cada 1–2 min.
+
+- [x] **S-fig.** (15:54) Figura do item 3 reenviada (`docs/exp_resolucao/img/explica_regra_caiu.png`). A decisão
+  do nível mais denso continua dele.
+- [ ] **S-titulo.** Título novo no `rewrite/inversion` (`main.tex`, linha 43): "Open-Set Recognition of Interference
+  Patterns on Lensless Holograms: Why Crops of the Raw Hologram Fail, and What a Propagation Step Costs from a
+  Window to the Whole Field of View". Conferir outros lugares que repetem o título.
+- [ ] **S-C.** (executor da densidade) Coluna de 2 mm: dez fluxos × r1–r5 no `small_near_newrec` (47 treinos novos),
+  tabela ao lado da coluna do paper; conferência nativa contra convergida a 19,25 mm para as letras pequenas.
+- [ ] **S-D.** (executor da densidade) Dois controles em r1 para o conjunto fora da curva: D-N (faixa de N_F da
+  família padrão) e D-P (lei de profundidade padrão); leitura estratificada do modelo de crops que já existe.
+- [ ] **S-L.** (executor da densidade) Quanto o gerador coloca a 450 e 675 por mm² (sem holograma, sem treino).
+- [ ] **S-J.** (executor da distância) Banco focal: `bank_jit` r2–r5; `bank_wide`, `bank_w2`, `bank_w3` r1–r5; como
+  estão a 0,9 / 1,1 mm (0,7 estresse); recalibração dos bancos por razão. Regra: aguenta em ≥ 4 de 5.
+- [ ] **S-txt.** (escritor, depois dos resultados) Tabela de tamanho com a coluna nova; números das letras pequenas
+  a 2 mm fora da tabela; 8.6 e limitação (iii) com o banco em cinco repetições; 8.4 e limitação (vii) com o
+  diagnóstico; macros no `paper_resolucao.py`. NÃO mexer na frase-tese (o orientador ainda vai ler).
+- [ ] **S-rev.** Conferir cada devolução contra os arquivos; `pytest` + `reproduce check`; compilar; PDF + diff;
+  `git push origin exp/resolucao-fonte` (só GitHub, sem merge); mensagem final. Overleaf: NADA.
+
+Continuam esperando a palavra dele: revisão do PDF (→ Overleaf), nível mais denso (#3), frase-tese (#6), abstract
+de ≈ 450 palavras, os dois pontos do diagrama da bancada, e os arquivos que ele vai mandar.
+
 ### Fase A: experimento da resolução
 
 - [x] A0. (feito, `88b5ed9`; `results_exp_resolucao/enroll_paired.csv`) Teste pareado de enrollment (`prop` − reconstruções, por repetição).
@@ -728,3 +756,11 @@ errado".
   9. ele manda: PDF do HoloAtt-UNet 2026, os .RIS do Scopus e do ScienceDirect e os outros três PDFs (lista na nota
      do Related Work).
   **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro; nada vai ao Overleaf sem o "pode".**
+- **2026-11-15, 15:59 — FASE S ABERTA.** O orientador respondeu (≈ 15:50): título aprovado; banco focal a meu
+  critério; refazer a coluna de 2 mm ("tempo de gpu não é um problema, faça o necessário pela qualidade da
+  pesquisa"); a frase-tese ele ainda vai ler; pediu a figura do item 3 (reenviada). Pré-registro Q3 commitado
+  (`b97121d`) antes de rodar. Decisões minhas nesta fase, que ele pode reverter: bancos largos do pacote
+  (`bank_wide`, `bank_w2`, `bank_w3`) e recalibração do banco; dois controles em r1 (D-N, D-P) para o conjunto de
+  2 mm fora da curva; a medida de quanto o gerador coloca acima de 300 por mm². **Próximo passo ao voltar: ver a
+  seção "Fase S" acima; conferir as devoluções dos dois executores contra `results_exp_resolucao/`; depois o
+  escritor; nada no Overleaf.**
