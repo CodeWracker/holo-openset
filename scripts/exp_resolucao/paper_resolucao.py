@@ -352,6 +352,19 @@ def numbers():
     # (recal_<set>_*.json: z_ref, 32 unlabelled validation holograms at 1.0 mm); the pilot's training-time file kept
     rj = sorted(RES.glob(f'recal_{SPARSE}_*.json'))
     macro('AlphaZCalibMm', json.loads(rj[0].read_text())['z_ref'] * 1e3 if rj else None, '{:.2f}')
+    ca = csv('curve_alpha')          # alpha calibrated on 32 training holograms and after training, per level and rep
+    if len(ca):
+        sp_ = ca[ca.set == SPARSE]
+        macro('AlphaZCalibMm', sp_.z_calibrated_mm.mean(), '{:.2f}')
+        macro('AlphaZCalibLoMm', sp_.z_calibrated_mm.min(), '{:.3f}')
+        macro('AlphaZCalibHiMm', sp_.z_calibrated_mm.max(), '{:.3f}')
+        macro('AlphaZCalibOffLoPct', 100 * (sp_.z_calibrated_mm.min() - 1.0), '{:+.1f}')
+        macro('AlphaChangeLoPct', -100 * sp_.change.max(), '{:.1f}')
+        macro('AlphaChangeHiPct', -100 * sp_.change.min(), '{:.1f}')
+        macro('AlphaChangeMeanPct', -100 * sp_.change.mean(), '{:.1f}')
+        dn = ca[ca.level == ca.level.max()]
+        macro('AlphaChangeDensestMeanPct', -100 * dn.change.mean(), '{:.1f}')
+        macro('AlphaRepsTotal', len(sp_), '{}')
     al = csv('pilot_five_reps_alpha')
     if len(al):
         macro('PilotAlphaZCalibMm', al.z_calibrated_mm.mean(), '{:.2f}')
@@ -517,6 +530,26 @@ def depth_macros():
                   '{:.2f}')
 
 
+def curve_table():
+    """tab_curve: one row per level of the density curve: objects per mm^2, share of overlapping holograms, F1 and
+    rejection of the three flows (mean of five, or r1), rejection with its min-max over the repetitions."""
+    t = csv('density_curve')
+    if not len(t):
+        return None
+    lines = []
+    for lv, g in t.groupby('level'):
+        g = g.set_index('flow')
+        r0 = g.iloc[0]
+        five = int(g.loc['raw', 'n_reps']) == 5
+        f1 = [f'{(g.loc[f, "f1_mean"] if five else g.loc[f, "f1_r1"]):.3f}' for f in FLOWS]
+        rej = [(f'{g.loc[f, "rejection_mean"]:.3f} \\tiny({g.loc[f, "rejection_min"]:.2f}--{g.loc[f, "rejection_max"]:.2f})'
+                if five else f'{g.loc[f, "rejection_r1"]:.3f}') for f in FLOWS]
+        ov = 100 * r0.overlap
+        lines.append(f'{r0.per_mm2:.0f} & {ov:.0f} & ' + ' & '.join(f1) + ' & ' + ' & '.join(rej)
+                     + f' & {int(g.loc["raw", "n_reps"])} \\\\')
+    return lines
+
+
 def depth_table():
     """tab_depth: rows the training law, columns the test law, cells 'layer / reconstruction' F1, and the number of
     repetitions of each row (depth_tests.csv)."""
@@ -570,6 +603,61 @@ def curve_macros():
             for m_, M_ in [('f1', 'Fone'), ('rej', 'Rej')]:
                 v = r.get(f'fell_{m_}_4of5') if five else r.get(f'fell_{m_}_r1')
                 macro(f'{L}{k}Fell{M_}', None if pd.isna(v) else ('fell' if str(v) == 'True' else 'did not fall'))
+    # the paired differences per level (rows 'prop - raw', 'rec_z0 - prop'), with the count of repetitions by sign
+    reps = csv('density_curve_reps')
+    for lv, g in t.groupby('level'):
+        L = 'Curve' + LEVEL_WORD.get(int(lv), f'L{int(lv)}')
+        for fl, K in [('prop - raw', 'PropMinusRaw'), ('rec_z0 - prop', 'RecMinusProp')]:
+            r = g[g.flow == fl]
+            if len(r):
+                r = r.iloc[0]
+                macro(f'{L}{K}Fone', r.f1_mean, '{:+.3f}')
+                macro(f'{L}{K}Rej', r.rejection_mean, '{:+.3f}')
+                if fl == 'prop - raw' and not pd.isna(r.get('p0_both_count')):
+                    macro(f'{L}MarginBoth', int(r.p0_both_count), '{}')
+            if len(reps):
+                q = reps[(reps.level == lv) & (reps.flow == fl)]
+                if len(q):
+                    macro(f'{L}{K}RejPos', int((q.rejection > 0).sum()), '{}')
+                    macro(f'{L}{K}FonePos', int((q.f1 > 0).sum()), '{}')
+        for f in FLOWS:
+            r = g[g.flow == f]
+            if len(r):
+                r = r.iloc[0]
+                macro(f'{L}{FLOW_KEY[f]}Closed', r.closed_acc_mean)
+                macro(f'{L}{FLOW_KEY[f]}DropFone', -r.d_f1_mean, '{:.3f}')
+                macro(f'{L}{FLOW_KEY[f]}DropRej', -r.d_rej_mean, '{:.3f}')
+                macro(f'{L}{FLOW_KEY[f]}RejLo', r.rejection_min)
+                macro(f'{L}{FLOW_KEY[f]}RejHi', r.rejection_max)
+                if len(reps):
+                    q = reps[(reps.level == lv) & (reps.flow == f)]
+                    macro(f'{L}{FLOW_KEY[f]}DropRejRepLo', -q.d_rej.max(), '{:.3f}')
+                    macro(f'{L}{FLOW_KEY[f]}DropRejRepHi', -q.d_rej.min(), '{:.3f}')
+                    macro(f'{L}{FLOW_KEY[f]}FellRejCount', int(q.fell_rej.astype(str).eq('True').sum()), '{}')
+                    macro(f'{L}{FLOW_KEY[f]}FellFoneCount', int(q.fell_f1.astype(str).eq('True').sum()), '{}')
+    # where each flow falls first (rule of Q0, from the five repetitions), as a density
+    for f in FLOWS:
+        for m_, M_ in [('f1', 'Fone'), ('rej', 'Rej')]:
+            g = t[(t.flow == f) & (t[f'fell_{m_}_4of5'].astype(str) == 'True')].sort_values('per_mm2')
+            macro(f'CurveFirstFall{FLOW_KEY[f]}{M_}', g.per_mm2.iloc[0] if len(g) else 'none', '{:.0f}')
+    macro('CurveDensestDensity', t.per_mm2.max(), '{:.0f}')
+    macro('CurveSparsestDensity', t.per_mm2.min(), '{:.0f}')
+    # the sets that existed before, on the same axis (hologram_diameter_<set>_summary.json: their own D)
+    sb = csv('sets_by_fresnel')
+    for key, s_ in [('Cbms', CBMS), ('SmallNear', 'small_near')]:
+        f = RES / f'hologram_diameter_{s_}_summary.json'
+        if f.exists():
+            j = json.loads(f.read_text())
+            macro(f'{key}HoloDiameterUm', j['D_ef_um'][j['axis']], '{:.0f}')
+            macro(f'{key}OverlapPct', 100 * j['density']['overlap_window'], '{:.0f}')
+            macro(f'{key}PiDSigma', j['density']['pi_D2_sigma_window'], '{:.2f}')
+            macro(f'{key}ZAxisMm', j['z_mm'], '{:g}')
+        r = sb[(sb.set == s_) & (sb.repetitions == 'mean5')]
+        if len(r):
+            macro(f'{key}MeanFiveRawFone', r.f1_raw.iloc[0])
+            macro(f'{key}MeanFiveRawRej', r.rejection_raw.iloc[0])
+            macro(f'{key}MeanFivePropFone', r.f1_prop.iloc[0])
+            macro(f'{key}MeanFiveRecFone', r.f1_rec_z0.iloc[0])
     rd = RES / 'density_curve_reading.json'
     if rd.exists():
         j = json.loads(rd.read_text())
@@ -744,6 +832,13 @@ def write(out, cite):
              'physics.json of the sets -- do not edit'] + parameter_table(fam, cite)
     (out / 'tables' / 'tab_parameters.tex').write_text('\n'.join(lines) + '\n')
     print('wrote', out / 'tables' / 'tab_parameters.tex', f'({len(lines) - 1} rows)')
+    ct = curve_table()
+    if ct:
+        (out / 'tables' / 'tab_curve.tex').write_text('\n'.join(
+            ['% generated by scripts/exp_resolucao/paper_resolucao.py from density_curve.csv -- do not edit'] + ct) + '\n')
+        print('wrote', out / 'tables' / 'tab_curve.tex')
+    else:
+        print('WARNING: density_curve.csv missing: tab_curve not written')
     lines = ['% generated by scripts/exp_resolucao/paper_resolucao.py from depth_tests.csv -- do not edit'] + depth_table()
     (out / 'tables' / 'tab_depth.tex').write_text('\n'.join(lines) + '\n')
     print('wrote', out / 'tables' / 'tab_depth.tex')
