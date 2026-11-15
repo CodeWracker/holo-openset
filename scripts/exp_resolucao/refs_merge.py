@@ -4,7 +4,9 @@ Usage:
     python3 -I scripts/exp_resolucao/refs_merge.py REFS_DIR [--out OUT_DIR] [--year-from 2020]
 
 REFS_DIR is the survey folder (``referencias/c``). Every ``*.ris`` file under
-``REFS_DIR/pubmed``, ``REFS_DIR/scopus`` and ``REFS_DIR/sciencedirect`` is read
+``REFS_DIR/pubmed``, ``REFS_DIR/scopus``, ``REFS_DIR/sciencedirect`` and the two
+open indexes of the declared complement, ``REFS_DIR/openalex`` and
+``REFS_DIR/semanticscholar`` (written by ``refs_open_search.py``), is read
 (sub-folders included). The database is the first folder under REFS_DIR; the
 search string (S1..S8) is taken from the first ``S<digit>`` token found in the
 file's path relative to that folder (``pubmed/S3/records.ris``,
@@ -40,7 +42,7 @@ import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
-DATABASES = ("pubmed", "scopus", "sciencedirect")
+DATABASES = ("pubmed", "scopus", "sciencedirect", "openalex", "semanticscholar")
 SCREEN_COLS = ("decision", "reason", "access", "notes")
 
 
@@ -197,7 +199,7 @@ def main(argv=None):
     if scr.exists():
         with scr.open(newline="", encoding="utf-8") as fh:
             for row in csv.DictReader(fh):
-                for kind in ("doi", "pmid", "title_norm"):
+                for kind in ("doi", "pmid", "title_norm", "title"):
                     if row.get(kind):
                         prev[(kind, row[kind])] = row
 
@@ -221,7 +223,9 @@ def main(argv=None):
             "strings": ";".join(sorted({items[i][1] for i in g})),
             "n_records": len(g),
         }
-        old = prev.get(("doi", doi)) or prev.get(("pmid", pmid)) or prev.get(("title_norm", k["title"])) or {}
+        # the raw title is the last resort, for titles that normalise to nothing (non-Latin scripts)
+        old = (prev.get(("doi", doi)) or prev.get(("pmid", pmid)) or prev.get(("title_norm", k["title"]))
+               or prev.get(("title", first(rec, "TI", "T1", "CT"))) or {})
         for c in SCREEN_COLS:
             row[c] = old.get(c, "")
         rows.append(row)
