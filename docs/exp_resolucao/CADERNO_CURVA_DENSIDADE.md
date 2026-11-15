@@ -688,3 +688,18 @@ Contagens (3500 / 700 / 800, 8,06 letras por imagem, 3–18), nível médio (101
 2,091–2,101) iguais. **Só a faixa de tamanhos (e com ela a de N_F) mudou; a de N_F agora é a da família padrão.** D e
 a sobreposição quase não mudaram (164,6 contra 165,7 µm): o padrão a 2 mm é dominado pelo alcance da franja, não pelo
 tamanho da letra. A seguir: r1, `raw`, `prop`, `rec_z0`, `--no-aux` (GPU 0).
+
+## 2026-11-15, 16:52 — D11: Q3-D, `small_near_ctlP` gravado e conferido, ANTES do treino (e o r1 do ctlN, que já saiu)
+
+`phaseS.sh 2 record_ctlP` (tmux `res_S2_recP`, 16:06:11–16:48:37, 2546 s, 6 construtores): `simulate fresnel --name
+small_near_ctlP --n-images 5000 --workers 6 --set-physics z0=2.0e-3 oversample=2 depth_uniform=25e-6 --layout factor=16
+scale=1 font_min=16 font_max=48 border=6 margin=4 letters_mean=8 letters_std=3 letters_min=3 letters_max=18`.
+`prep_ctlP` (174 s): anotações iguais às do `small_near_newrec` em todas as colunas a menos de `depth` e `z` (as
+mesmas letras: a lei uniforme usa o mesmo sorteio); |depth| máx. 24,9993 µm, desvio 14,427 µm (lei uniforme ±25
+µm); lados (15 / 27 / 40,6 px), N_F (tinta 0,179 / 0,603 / 1,417), contagens, nível médio (101,36) e ruído (rms
+2,091–2,102) **idênticos aos do `small_near_newrec`**. D_rms(192·k) = 165,7 µm, π D² σ = 0,609, sobreposição 0,456
+(o mesmo do `small_near_newrec`: a medida de D é feita com profundidade 0, então não vê a lei). **Só a lei de
+profundidade mudou.** A seguir: r1, `raw`, `prop`, `rec_z0` (GPU 2).
+
+`small_near_ctlN` r1 (fila `S2_queue_ctlN`, 16:46–16:51, teste lido uma vez): `raw` 0,9160 / 0,5298; `prop` 0,9759 /
+0,9895; `rec_z0` 0,9607 / 0,8494 (F1 / rejeição). A leitura do Q3-D sai na tabela, quando o ctlP existir.
