@@ -1,0 +1,57 @@
+{
+ "max_abs_mean_f1_change": 0.013013093292867928,
+ "flow_of_max": "raw",
+ "f1_change_by_flow": {
+  "raw": 0.013013093292867928,
+  "learned": 0.006355354481838216,
+  "complex": -0.006048748035902385,
+  "wiener": -0.0015473351893756648,
+  "prop": 0.0011271794726214202,
+  "bank_jit": -0.0072427598946142036,
+  "bank_w3": 0.001971576990270507,
+  "rec_z0": 0.00030518183431382795,
+  "rec_af": -0.001610260381926354,
+  "rec_twin": 0.0009592049292624916
+ },
+ "within_0_02": true,
+ "order_by_mean_f1_new": [
+  "rec_twin",
+  "rec_af",
+  "rec_z0",
+  "bank_w3",
+  "prop",
+  "bank_jit",
+  "wiener",
+  "learned",
+  "complex",
+  "raw"
+ ],
+ "order_by_mean_f1_paper": [
+  "bank_jit",
+  "rec_af",
+  "rec_twin",
+  "rec_z0",
+  "prop",
+  "bank_w3",
+  "wiener",
+  "complex",
+  "learned",
+  "raw"
+ ],
+ "same_order": false,
+ "crops_lowest_new": true,
+ "crops_lowest_paper": true,
+ "propagation_routes_f1_range_new": [
+  0.9643293495908184,
+  0.9774345486080247
+ ],
+ "propagation_routes_f1_range_paper": [
+  0.9658766847801941,
+  0.9769184075500217
+ ],
+ "lowest_propagation_minus_crops_f1": {
+  "new": 0.15837426595446158,
+  "paper": 0.17293469443670517
+ },
+ "note": "routes with propagation: wiener, prop, bank_jit, bank_w3, rec_z0, rec_af, rec_twin; learned and complex are layers without a propagation phase"
+}
