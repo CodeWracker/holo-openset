@@ -333,9 +333,14 @@ def numbers():
     hd = RES / 'hologram_diameter_summary.json'
     macro('HoloDiameterUm', None)
     if hd.exists():
-        j = json.loads(hd.read_text())
-        d = next((j[k] for k in ('axis_um', 'D_axis_um', 'D_ef_axis_um') if isinstance(j.get(k), (int, float))), None)
+        j = json.loads(hd.read_text())          # hologram_diameter.py: the axis chosen by the rule of Q0
+        d = j.get('D_ef_um', {}).get(j.get('axis'))
         macro('HoloDiameterUm', d, '{:.0f}')
+        if d is not None:                         # Seo et al. 2009: 1 - exp(-pi D^2 sigma), at the densities obtained
+            for key, s_ in [('Sparse', SPARSE), ('Dense', DENSE)]:
+                sigma = density(s_)[0]
+                macro(f'{key}OverlapPct', 100 * (1 - math.exp(-math.pi * (d * 1e-3) ** 2 * sigma))
+                      if sigma is not None else None, '{:.0f}')
 
     # ---- the parameter table: counts by source
     pt = csv('simulator_parameters')
