@@ -281,7 +281,7 @@ def panel_f(ax):
     ax.set_xticks([0.7, 0.9, 1.0, 1.1])
     ax.set_xlim(0.65, 1.15)
     ax.set_ylim(-0.03, 1.03)
-    ax.set_xlabel('test distance (mm), trained at 1.0')
+    ax.set_xlabel('distance of the test (mm)')
     ax.set_ylabel('open-set F1')
     ax.set_title('an error in the distance', fontsize=7.5)
 
