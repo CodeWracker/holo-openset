@@ -568,3 +568,33 @@ juntas. Nenhum outro braço foi rodado.
    tamanho das letras em pixels (mediana 26 px contra 17,5 px), a faixa de N_F (0,20–1,49 contra 0,30–0,98), a
    distância (2 mm contra 1 mm) e a profundidade (normal de 50 µm cortada em ±150 µm contra uniforme ±25 µm). Não
    investiguei.
+
+## 2026-11-15, 16:01 — D8: Fase S (Q3: C, D, L), o que vai rodar, ANTES de qualquer treino ou leitura de teste
+
+Pré-registro: `CADERNO_CURVA.md`, Q3 (commit `b97121d`), seções C, D e L. GPUs 0, 1 e 2. Script da fase:
+`scripts/exp_resolucao/phaseS.sh <GPU> <passo>` (fila retomável; logs `logs/exp_resolucao/S2_*.log`).
+
+- **C (coluna de 2 mm):** `small_near_newrec` em disco; os dez fluxos de `SMALL_FLOWS` (`pipeline.py:31`), r1–r5,
+  receita `train --set small_near_newrec --flow F --rep R --no-aux` e `evaluate --set small_near_newrec --flow F
+  --rep R` (`pipeline.py:105–110`), `--threads 4`. Caches: `rec_z0` existe (Q2-S); `rec_af` e `rec_twin` por
+  `reconstruct --set small_near_newrec --methods af twin` (a pipeline roda `z0 af twin` de uma vez, `pipeline.py:54`;
+  o `rec_z0.npy` não é reescrito; o `autofocus.csv` do conjunto, escrito pela reconstrução só em z₀, é reescrito
+  com as distâncias do autofoco; cópia dele antes em `logs/exp_resolucao/S2_small_near_newrec_autofocus_z0only.csv`).
+  `wiener`, `learned`, `complex`, `prop`, `bank_jit`, `bank_w3` e `raw` leem o holograma. Os modelos e as
+  avaliações de r1 de `raw`, `prop`, `rec_z0` já existem e são pulados (não retreinados, não relidos). Cada
+  avaliação nova lê o teste uma vez, na própria fila; a tabela só junta os json.
+- **C, ao lado:** nativa × convergida para as letras pequenas a 19,25 mm (leis do `small_z0`: as do `small_near`
+  com z₀ = 19,25 mm), pares (1, 2) e (2, 4) e a separação em propagação e desenho, 4 cenas sem ruído. Se a nativa
+  passar de 1 %, paro e aviso; não regravo.
+- **D (controles em r1; s = 2, raster 16, semente 17, 5000 imagens):**
+  - `small_near_ctlN`: fontes = as do conjunto base × √(2,0 / 19,25) = 0,3223292 (a lei da família padrão: o `scale`
+    do `FresnelLayout`, contínuo em 22,563–38,035 px), borda 6 e espaçamento 4 dados (como no `small_near_newrec`);
+    `--layout factor=16 scale=0.3223291856101521 border=6 margin=4 letters_mean=8 letters_std=3 letters_min=3
+    letters_max=18`, `--set-physics z0=2.0e-3 oversample=2`.
+  - `small_near_ctlP`: o `small_near_newrec` com `depth_uniform=25e-6` (`--layout factor=16 scale=1 font_min=16
+    font_max=48 border=6 margin=4 …`, `--set-physics z0=2.0e-3 oversample=2 depth_uniform=25e-6`).
+  - Antes dos treinos: sanidade contra o `small_near_newrec`, D e sobreposição, tamanhos e N_F (p5 / p50 / p95)
+    escritos aqui. Depois: r1, `raw`, `prop`, `rec_z0`, `--no-aux`.
+- **D, estratificada:** registro aqui que é **uma segunda passada no mesmo teste do `small_near_newrec`, com o mesmo
+  modelo de crops de r1 e o mesmo limiar**; não escolhe nada.
+- **L:** o teste de `curve_feasibility_343.csv` a 514 e 771 letras por janela, nas mesmas 20 cenas (sem holograma).
