@@ -11,6 +11,8 @@
             session); letters per 640 x 640 window (annotated + fillers, from metadata) and in the band; the area they
             cover (sum of the ink boxes and of max side^2, over 100 scenes rebuilt) against the base set (realistic,
             from its annotations) -> $HOLO_RESULTS/bench_1mm_dense_checks.json
+  sparse    the sparse level of a family with another depth law against --ref (see `sparse`)
+            -> $HOLO_RESULTS/<set>_checks.json
   master    control B: the cost of the master raster of the glyphs (factor 16, 8, 4) on 4 scenes of the base_newrec
             layout (scene build time, one process) and its effect on the recording at s = 2 (noise free; rms of the
             difference to factor 16 / rms of the pattern), with the scenes compared object by object
@@ -201,6 +203,63 @@ def newrec_base():
     return base, dict(seed=17, per_session=100), [k * 1250 for k in range(4)]
 
 
+def sparse(a, dev):
+    """The sparse level of a family with another depth law (curve_u50_L008) against the set it re-records with
+    only the depths changed (bench_1mm): annotations equal up to depth and z, the depths (|d| <= depth_uniform, std,
+    Kolmogorov-Smirnov against the uniform law, the pairing d = U erf(g / sqrt 2) with g = d_ref / depth_std where
+    d_ref is not clipped), z - depth equal, labels / objects / dust / sessions / blank frames / metadata identical,
+    physics.json differences, and 2 images rebuilt from their seeds equal to the stored ones."""
+    from scipy import stats
+    root, rroot = paths.dataset(a.set), paths.dataset(a.ref)
+    res = dict(set=a.set, ref=a.ref)
+    A, R = pd.read_csv(root / 'annotations.csv'), pd.read_csv(rroot / 'annotations.csv')
+    same = [c for c in R.columns if c not in ('depth', 'z')]
+    cfg, rcfg = json.load(open(root / 'physics.json')), json.load(open(rroot / 'physics.json'))
+    U = cfg['physics'].get('depth_uniform', 0.0)
+    sd = rcfg['physics']['depth_std']
+    g = R.depth / sd
+    ok = g.abs() < 3 - 1e-9
+    pred = U * np.vectorize(math.erf)(g[ok] / math.sqrt(2))
+    res['annotations'] = dict(rows=len(A), same_columns=list(A.columns) == list(R.columns),
+                              equal_except_depth_z=bool(A[same].equals(R[same])),
+                              columns_equal={c: bool(A[c].equals(R[c])) for c in R.columns},
+                              z_minus_depth_max_abs_diff=float(((A.z - A.depth) - (R.z - R.depth)).abs().max()),
+                              splits={k: int(v) for k, v in A.split.value_counts().items()})
+    res['depth'] = dict(depth_uniform=U, max_abs=float(A.depth.abs().max()), mean=float(A.depth.mean()),
+                        std=float(A.depth.std()), std_expected=U / math.sqrt(3),
+                        ks_pvalue=float(stats.kstest(A.depth / U, 'uniform', args=(-1, 2)).pvalue),
+                        pairing_rows=int(ok.sum()), pairing_max_abs_diff=float(np.abs(A.depth[ok] - pred).max()))
+    for name in ['dust.csv', 'sessions.csv', 'backgrounds.npy', 'metadata.csv']:
+        res[name] = sha(root / name) == sha(rroot / name)
+    for d in ['labels', 'objects']:
+        fa = sorted(p.name for p in (root / d).iterdir())
+        fr = sorted(p.name for p in (rroot / d).iterdir())
+        res[d] = dict(files=len(fa), all_equal=fa == fr and all((root / d / x).read_bytes() ==
+                                                               (rroot / d / x).read_bytes() for x in fa))
+    res['physics_json_differences'] = {k: (cfg.get(k), rcfg.get(k)) for k in set(cfg) | set(rcfg)
+                                       if k != 'physics' and cfg.get(k) != rcfg.get(k)}
+    res['physics_differences'] = {k: (cfg['physics'].get(k), rcfg['physics'].get(k))
+                                  for k in set(cfg['physics']) | set(rcfg['physics'])
+                                  if cfg['physics'].get(k) != rcfg['physics'].get(k)}
+    M = pd.read_csv(root / 'metadata.csv')
+    first = M.groupby('session').image_id.min()
+    sp = M.groupby('session').split.first()
+    ids = [int(first[sp[sp == 'train'].index[0]]), int(first[sp[sp == 'test'].index[0]])]
+    phys = physics_from_dict(cfg['physics'])
+    lay = layout_of(cfg)
+    cam = camera(cfg.get('camera_seed', CAMERA_SEED), phys, lay)
+    holo = np.load(root / 'holograms.npy', mmap_mode='r')
+    res['rebuilt'] = []
+    for i in ids:
+        img = record_as_generate(scene_of(i, cfg, phys, lay), i, cfg, phys, cam, dev)
+        res['rebuilt'].append(dict(image_id=i, equal=bool(np.array_equal(img, holo[i])),
+                                   max_abs_dn=int(np.abs(img.astype(int) - holo[i].astype(int)).max())))
+    out = paths.RESULTS / f'{a.set}_checks.json'
+    json.dump(res, open(out, 'w'), indent=1, default=float)
+    print(json.dumps(res, indent=1, default=float))
+    print('wrote', out)
+
+
 def master(a, dev):
     """Control B: the master factor of the glyphs."""
     rows = []
@@ -358,7 +417,7 @@ def table(a):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('what', choices=['removed', 'dense', 'master', 'raster', 'table'])
+    ap.add_argument('what', choices=['removed', 'dense', 'sparse', 'master', 'raster', 'table'])
     ap.add_argument('--set', default='bench_1mm_dense')
     ap.add_argument('--ref', default='bench_1mm')
     ap.add_argument('--ids', type=int, nargs='*', default=[])
@@ -375,6 +434,8 @@ def main():
         removed(a.ref, a.set, a.ids, dev)
     elif a.what == 'dense':
         dense(a, dev)
+    elif a.what == 'sparse':
+        sparse(a, dev)
     elif a.what == 'raster':
         raster(*newrec_base(), dev, coarse=a.coarse)
     else:
