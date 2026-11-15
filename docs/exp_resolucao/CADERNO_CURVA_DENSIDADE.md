@@ -376,3 +376,51 @@ Nível 8, por repetição (α calibrado → mm; α treinado → mm; variação):
 r4 0,001053 → 0,9943; 0,001020 → 0,9631; −3,14 % · r5 0,001056 → 0,9971; 0,001024 → 0,9667; −3,04 %.
 
 `pytest`: 72 passam; `reproduce check`: 13/13.
+
+## 2026-11-15, 13:43 — D7: controle S (Q2), começo; parado antes de gravar, com duas perguntas
+
+### Passo 1: as leis do `small_near` (com arquivo e linha)
+
+- Gerado por `simulate small` (`holo_openset/cli.py:70–75`): `G.generate(data/small_near, phys=dict(sets, z0=2e-3),
+  n_images=5000, workers, layout='small')`; pela pipeline do paper com `--workers 16` (`holo_openset/pipeline.py:49`).
+- `generate` (`holo_openset/sim/generate.py:182`): semente 17, 100 imagens por sessão, 50 sessões, divisão por
+  sessão 35 / 7 / 8 (`split_sessions`, `generate.py:162–165`); 3500 / 700 / 800 imagens (conferido no
+  `metadata.csv`); câmera semente 7, 8 brancos.
+- Física (`data/small_near/physics.json`, conferida campo a campo contra `Physics()`): o padrão inteiro, a menos de
+  z₀ = 2,0 mm: margem 1728, alcance 1024, profundidade normal com desvio 50 µm cortada em ±150 µm, poeira 2/mm² em
+  +1,0 e −0,2 mm, poeira da janela 7/mm² a 0,5 mm, LED 385 nm ± 10 nm em 7 comprimentos de onda, pinhole 100 µm a 15
+  cm, feixe, PRNU 1 %, poço 6000 e⁻, exposição 0,45, leitura 3 e⁻, 8 bits, caixa do pixel (s = 1).
+- Layout `SmallLayout` (`holo_openset/sim/scene.py:28–31`, herdando `Layout`, `scene.py:17–25`): fonte inteira
+  uniforme em 16–48 px (`rng.randint`, `scene.py:146`), borda 6 px, espaçamento 4 px, 3–18 letras por janela
+  (média 8, desvio 3), 72 % distintas, rotação ±35°, 500 tentativas; letras de fora da janela com a mesma densidade
+  (`make_scene`, `scene.py:182–203`).
+- Receita do paper para ele (`pipeline.py:105–110`): `train --set small_near --flow F --rep R --no-aux` (grade
+  padrão de α, sem `--alpha-extend`) e `evaluate --set small_near --flow F --rep R`; o cache `rec_z0` vem de
+  `reconstruct --set small_near --methods z0 af twin` (`pipeline.py:54`).
+
+**O que o caminho novo não consegue escrever hoje:** o `FresnelLayout` deriva fonte mínima, fonte máxima, borda e
+espaçamento de um único `scale` × os valores do `Layout` (70, 118, 12, 6; `scene.py:58–61`). O `SmallLayout` pede
+16 / 48 / 6 / 4, que não são proporcionais (16/70 = 0,229; 48/118 = 0,407; 6/12 = 0,5; 4/6 = 0,667). Pela regra
+("se alguma lei não puder ser reproduzida exatamente no caminho novo, pare"), parei antes da convergência e da
+gravação. Proposta (não implementada): quatro parâmetros opcionais do `FresnelLayout` (`font_min`, `font_max`,
+`border`, `margin`) que, dados, substituem os derivados do `scale`; ausentes, nada muda (os digests das cenas
+conferem). Ficariam também, como no controle B, as diferenças de definição do caminho novo: fonte contínua em [16,
+48] em vez de inteira, posição contínua, caixa do pixel que contém a tinta para o espaçamento, poeira na grade mestra.
+
+**Segunda pergunta:** o `data/small_near` em disco não tem `rec_z0.npy`. A referência `rec_z0` precisa dele;
+`reconstruct --set small_near --methods z0` o escreveria dentro de `data/small_near` (≈ 6 GB, como a pipeline do
+paper faz). Não escrevi.
+
+### Passo 5 (parcial): referência, `small_near` em disco, r1, GPU 5 (a GPU 4 estava ocupada por outro usuário)
+
+`python -m holo_openset train --set small_near --flow raw|prop --rep 1 --no-aux --device cuda:5 --threads 4`;
+`python -m holo_openset evaluate --set small_near --flow raw|prop --rep 1 --device cuda:5 --threads 4`
+(log `logs/exp_resolucao/curve_S_reference.log`, 13:41–13:43; teste lido uma vez):
+
+| fluxo | F1 | rejeição | paper r1 (só referência) |
+|---|---|---|---|
+| raw | 0,7909 | 0,1176 | 0,7939 / 0,0974 |
+| prop | 0,9633 | 0,8953 | 0,9710 / 0,9420 |
+| rec_z0 | não rodado (falta o cache) | | 0,9712 / 0,9622 |
+
+α da camada: calibrado 0,002100 (o log diz "the bench would be 0,002118", 2,0 mm), depois do treino 0,002079.
