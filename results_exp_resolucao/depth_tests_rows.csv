@@ -1,0 +1,121 @@
+kind,trained,tested,flow,rep,f1,rejection,closed_acc,known_acc,source
+metric,flat,u50,raw,1,0.928784,0.621578,0.978358,0.954767,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,prop,1,0.955305,0.995974,0.996296,0.924352,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,rec_z0,1,0.964650,1.000000,0.998245,0.939364,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,raw,2,0.942698,0.743691,0.977464,0.959240,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,prop,2,0.955431,1.000000,0.996277,0.925338,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,rec_z0,2,0.968709,1.000000,0.998628,0.947090,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,raw,3,0.934153,0.702955,0.976205,0.948279,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,prop,3,0.956877,0.995334,0.997050,0.927630,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,rec_z0,3,0.973669,0.990669,0.998820,0.957325,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,raw,4,0.946313,0.830467,0.976117,0.947573,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,prop,4,0.964575,0.999181,0.996117,0.940000,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,rec_z0,4,0.972278,1.000000,0.998447,0.952427,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,raw,5,0.941200,0.750592,0.978252,0.949255,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,prop,5,0.956825,1.000000,0.996473,0.926724,robustness_depth_from_bench_1mm.csv
+metric,flat,u50,rec_z0,5,0.973949,1.000000,0.998629,0.955133,robustness_depth_from_bench_1mm.csv
+metric,u50,flat,raw,1,0.924740,0.611111,0.977189,0.952427,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,prop,1,0.978929,0.977456,0.997270,0.968415,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,rec_z0,1,0.970785,0.991948,0.998245,0.951453,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,raw,2,0.938047,0.712934,0.976876,0.958456,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,prop,2,0.981640,1.000000,0.998432,0.968254,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,rec_z0,2,0.979617,0.999211,0.998236,0.965119,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,raw,3,0.935388,0.724728,0.975025,0.947099,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,prop,3,0.974934,0.933126,0.998033,0.970501,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,rec_z0,3,0.978713,0.986003,0.998230,0.966175,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,raw,4,0.946965,0.830467,0.976893,0.948738,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,prop,4,0.981115,0.997543,0.998252,0.968544,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,rec_z0,4,0.973940,1.000000,0.998252,0.955534,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,raw,5,0.936996,0.689029,0.974726,0.956897,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,prop,5,0.980134,1.000000,0.998041,0.966105,robustness_depth_from_curve_u50_L008.csv
+metric,u50,flat,rec_z0,5,0.978361,0.999211,0.998824,0.962774,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,raw,1,0.924736,0.615942,0.976799,0.951258,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,prop,1,0.858027,0.973430,0.981673,0.772860,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,rec_z0,1,0.850544,0.995169,0.977384,0.756483,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,raw,2,0.939870,0.721609,0.977072,0.959632,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,prop,2,0.863094,1.000000,0.983735,0.775034,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,rec_z0,2,0.865872,1.000000,0.977268,0.780325,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,raw,3,0.935459,0.725505,0.975418,0.946903,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,prop,3,0.862163,0.947900,0.982104,0.782301,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,rec_z0,3,0.872316,0.985226,0.976598,0.791347,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,raw,4,0.947839,0.836200,0.978058,0.948544,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,prop,4,0.863031,0.999181,0.979612,0.777282,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,rec_z0,4,0.862649,1.000000,0.979612,0.774369,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,raw,5,0.935364,0.692186,0.973942,0.953566,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,prop,5,0.845723,1.000000,0.981387,0.749412,robustness_depth_from_curve_u50_L008.csv
+metric,u50,wide,rec_z0,5,0.875402,1.000000,0.976489,0.793691,robustness_depth_from_curve_u50_L008.csv
+metric,u50,u50,raw,1,0.925067,0.613527,0.977773,0.952427,eval/curve_u50_L008/raw_r1.json
+metric,u50,u50,prop,1,0.974672,0.979871,0.996686,0.960811,eval/curve_u50_L008/prop_r1.json
+metric,u50,u50,rec_z0,1,0.973723,0.995169,0.998050,0.955547,eval/curve_u50_L008/rec_z0_r1.json
+metric,u50,u50,raw,2,0.938405,0.714511,0.975897,0.958848,eval/curve_u50_L008/raw_r2.json
+metric,u50,u50,prop,2,0.977529,1.000000,0.998040,0.961199,eval/curve_u50_L008/prop_r2.json
+metric,u50,u50,rec_z0,2,0.978687,1.000000,0.998628,0.963355,eval/curve_u50_L008/rec_z0_r2.json
+metric,u50,u50,raw,3,0.936674,0.724728,0.975615,0.948476,eval/curve_u50_L008/raw_r3.json
+metric,u50,u50,prop,3,0.969347,0.937014,0.997443,0.960079,eval/curve_u50_L008/prop_r3.json
+metric,u50,u50,rec_z0,3,0.979614,0.987558,0.998623,0.967355,eval/curve_u50_L008/rec_z0_r3.json
+metric,u50,u50,raw,4,0.946637,0.827191,0.978058,0.948738,eval/curve_u50_L008/raw_r4.json
+metric,u50,u50,prop,4,0.977534,0.997543,0.996893,0.962524,eval/curve_u50_L008/prop_r4.json
+metric,u50,u50,rec_z0,4,0.975296,0.998362,0.998058,0.958252,eval/curve_u50_L008/rec_z0_r4.json
+metric,u50,u50,raw,5,0.937433,0.689818,0.974922,0.957288,eval/curve_u50_L008/raw_r5.json
+metric,u50,u50,prop,5,0.974776,1.000000,0.997257,0.956897,eval/curve_u50_L008/prop_r5.json
+metric,u50,u50,rec_z0,5,0.977686,0.999211,0.998824,0.961795,eval/curve_u50_L008/rec_z0_r5.json
+diff,flat->u50,flat->u50 - u50->u50,raw,1,0.003717,0.008052,,,
+diff,flat->u50,flat->u50 - flat->flat,raw,1,0.000455,-0.000805,,,
+diff,u50->flat,u50->flat - u50->u50,raw,1,-0.000327,-0.002415,,,
+diff,u50->wide,u50->wide - u50->u50,raw,1,-0.000330,0.002415,,,
+diff,flat->u50,flat->u50 - u50->u50,raw,2,0.004293,0.029180,,,
+diff,flat->u50,flat->u50 - flat->flat,raw,2,0.000503,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,raw,2,-0.000358,-0.001577,,,
+diff,u50->wide,u50->wide - u50->u50,raw,2,0.001465,0.007098,,,
+diff,flat->u50,flat->u50 - u50->u50,raw,3,-0.002521,-0.021773,,,
+diff,flat->u50,flat->u50 - flat->flat,raw,3,0.000260,0.003110,,,
+diff,u50->flat,u50->flat - u50->u50,raw,3,-0.001286,0.000000,,,
+diff,u50->wide,u50->wide - u50->u50,raw,3,-0.001215,0.000778,,,
+diff,flat->u50,flat->u50 - u50->u50,raw,4,-0.000323,0.003276,,,
+diff,flat->u50,flat->u50 - flat->flat,raw,4,0.001202,0.001638,,,
+diff,u50->flat,u50->flat - u50->u50,raw,4,0.000329,0.003276,,,
+diff,u50->wide,u50->wide - u50->u50,raw,4,0.001203,0.009009,,,
+diff,flat->u50,flat->u50 - u50->u50,raw,5,0.003767,0.060773,,,
+diff,flat->u50,flat->u50 - flat->flat,raw,5,-0.000327,-0.003946,,,
+diff,u50->flat,u50->flat - u50->u50,raw,5,-0.000437,-0.000789,,,
+diff,u50->wide,u50->wide - u50->u50,raw,5,-0.002069,0.002368,,,
+diff,flat->u50,flat->u50 - u50->u50,prop,1,-0.019367,0.016103,,,
+diff,flat->u50,flat->u50 - flat->flat,prop,1,-0.021652,0.000805,,,
+diff,u50->flat,u50->flat - u50->u50,prop,1,0.004257,-0.002415,,,
+diff,u50->wide,u50->wide - u50->u50,prop,1,-0.116645,-0.006441,,,
+diff,flat->u50,flat->u50 - u50->u50,prop,2,-0.022098,0.000000,,,
+diff,flat->u50,flat->u50 - flat->flat,prop,2,-0.018152,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,prop,2,0.004111,0.000000,,,
+diff,u50->wide,u50->wide - u50->u50,prop,2,-0.114435,0.000000,,,
+diff,flat->u50,flat->u50 - u50->u50,prop,3,-0.012470,0.058320,,,
+diff,flat->u50,flat->u50 - flat->flat,prop,3,-0.020102,0.002333,,,
+diff,u50->flat,u50->flat - u50->u50,prop,3,0.005587,-0.003888,,,
+diff,u50->wide,u50->wide - u50->u50,prop,3,-0.107184,0.010886,,,
+diff,flat->u50,flat->u50 - u50->u50,prop,4,-0.012959,0.001638,,,
+diff,flat->u50,flat->u50 - flat->flat,prop,4,-0.015447,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,prop,4,0.003581,0.000000,,,
+diff,u50->wide,u50->wide - u50->u50,prop,4,-0.114503,0.001638,,,
+diff,flat->u50,flat->u50 - u50->u50,prop,5,-0.017951,0.000000,,,
+diff,flat->u50,flat->u50 - flat->flat,prop,5,-0.019485,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,prop,5,0.005358,0.000000,,,
+diff,u50->wide,u50->wide - u50->u50,prop,5,-0.129053,0.000000,,,
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,1,-0.009073,0.004831,,,
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,1,-0.011860,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,rec_z0,1,-0.002938,-0.003221,,,
+diff,u50->wide,u50->wide - u50->u50,rec_z0,1,-0.123179,0.000000,,,
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,2,-0.009978,0.000000,,,
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,2,-0.010071,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,rec_z0,2,0.000930,-0.000789,,,
+diff,u50->wide,u50->wide - u50->u50,rec_z0,2,-0.112815,0.000000,,,
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,3,-0.005945,0.003110,,,
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,3,-0.006896,-0.000778,,,
+diff,u50->flat,u50->flat - u50->u50,rec_z0,3,-0.000901,-0.001555,,,
+diff,u50->wide,u50->wide - u50->u50,rec_z0,3,-0.107298,-0.002333,,,
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,4,-0.003017,0.001638,,,
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,4,-0.005850,0.000819,,,
+diff,u50->flat,u50->flat - u50->u50,rec_z0,4,-0.001356,0.001638,,,
+diff,u50->wide,u50->wide - u50->u50,rec_z0,4,-0.112646,0.001638,,,
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,5,-0.003737,0.000789,,,
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,5,-0.006328,0.000000,,,
+diff,u50->flat,u50->flat - u50->u50,rec_z0,5,0.000674,0.000000,,,
+diff,u50->wide,u50->wide - u50->u50,rec_z0,5,-0.102284,0.000789,,,

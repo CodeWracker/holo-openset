@@ -1,0 +1,37 @@
+kind,trained,tested,flow,n_reps,f1_mean,f1_min,f1_max,rejection_mean,rejection_min,rejection_max,source
+copied,flat,flat,raw,5,0.938200,0.928300,0.945100,0.729900,0.622400,0.828800,pilot_five_reps_robustness.csv
+new,flat,u50,raw,5,0.938630,0.928784,0.946313,0.729857,0.621578,0.830467,robustness_depth_from_bench_1mm.csv
+copied,flat,wide,raw,5,0.938700,0.928800,0.945000,0.738400,0.629600,0.832900,pilot_five_reps_robustness.csv
+new,u50,flat,raw,5,0.936427,0.924740,0.946965,0.713654,0.611111,0.830467,robustness_depth_from_curve_u50_L008.csv
+own_eval,u50,u50,raw,5,0.936843,0.925067,0.946637,0.713955,0.613527,0.827191,eval/curve_u50_L008/raw_r1.json
+new,u50,wide,raw,5,0.936654,0.924736,0.947839,0.718288,0.615942,0.836200,robustness_depth_from_curve_u50_L008.csv
+copied,wide,flat,raw,1,0.923300,0.923300,0.923300,0.595000,0.595000,0.595000,depth_training.csv (r1)
+copied,wide,wide,raw,1,0.923900,0.923900,0.923900,0.604700,0.604700,0.604700,depth_training.csv (r1)
+copied,flat,flat,prop,5,0.976800,0.973600,0.980000,0.997500,0.993000,1.000000,pilot_five_reps_robustness.csv
+new,flat,u50,prop,5,0.957802,0.955305,0.964575,0.998098,0.995334,1.000000,robustness_depth_from_bench_1mm.csv
+copied,flat,wide,prop,5,0.784200,0.773200,0.799700,0.998600,0.996100,1.000000,pilot_five_reps_robustness.csv
+new,u50,flat,prop,5,0.979350,0.974934,0.981640,0.981625,0.933126,1.000000,robustness_depth_from_curve_u50_L008.csv
+own_eval,u50,u50,prop,5,0.974771,0.969347,0.977534,0.982886,0.937014,1.000000,eval/curve_u50_L008/prop_r1.json
+new,u50,wide,prop,5,0.858407,0.845723,0.863094,0.984102,0.947900,1.000000,robustness_depth_from_curve_u50_L008.csv
+copied,wide,flat,prop,1,0.983600,0.983600,0.983600,0.996800,0.996800,0.996800,depth_training.csv (r1)
+copied,wide,wide,prop,1,0.976700,0.976700,0.976700,0.997600,0.997600,0.997600,depth_training.csv (r1)
+copied,flat,flat,rec_z0,5,0.978900,0.976500,0.980600,0.998100,0.991400,1.000000,pilot_five_reps_robustness.csv
+new,flat,u50,rec_z0,5,0.970651,0.964650,0.973949,0.998134,0.990669,1.000000,robustness_depth_from_bench_1mm.csv
+copied,flat,wide,rec_z0,5,0.822500,0.801400,0.841000,0.999500,0.998400,1.000000,pilot_five_reps_robustness.csv
+new,u50,flat,rec_z0,5,0.976283,0.970785,0.979617,0.995275,0.986003,1.000000,robustness_depth_from_curve_u50_L008.csv
+own_eval,u50,u50,rec_z0,5,0.977001,0.973723,0.979614,0.996060,0.987558,1.000000,eval/curve_u50_L008/rec_z0_r1.json
+new,u50,wide,rec_z0,5,0.865357,0.850544,0.875402,0.996079,0.985226,1.000000,robustness_depth_from_curve_u50_L008.csv
+copied,wide,flat,rec_z0,1,0.976200,0.976200,0.976200,1.000000,1.000000,1.000000,depth_training.csv (r1)
+copied,wide,wide,rec_z0,1,0.975100,0.975100,0.975100,0.994400,0.994400,0.994400,depth_training.csv (r1)
+diff,flat->u50,flat->u50 - flat->flat,raw,5,0.000418,-0.000327,0.001202,-0.000001,-0.003946,0.003110,depth_tests_rows.csv
+diff,flat->u50,flat->u50 - u50->u50,raw,5,0.001787,-0.002521,0.004293,0.015902,-0.021773,0.060773,depth_tests_rows.csv
+diff,u50->flat,u50->flat - u50->u50,raw,5,-0.000416,-0.001286,0.000329,-0.000301,-0.002415,0.003276,depth_tests_rows.csv
+diff,u50->wide,u50->wide - u50->u50,raw,5,-0.000189,-0.002069,0.001465,0.004334,0.000778,0.009009,depth_tests_rows.csv
+diff,flat->u50,flat->u50 - flat->flat,prop,5,-0.018968,-0.021652,-0.015447,0.000628,0.000000,0.002333,depth_tests_rows.csv
+diff,flat->u50,flat->u50 - u50->u50,prop,5,-0.016969,-0.022098,-0.012470,0.015212,0.000000,0.058320,depth_tests_rows.csv
+diff,u50->flat,u50->flat - u50->u50,prop,5,0.004579,0.003581,0.005587,-0.001261,-0.003888,0.000000,depth_tests_rows.csv
+diff,u50->wide,u50->wide - u50->u50,prop,5,-0.116364,-0.129053,-0.107184,0.001217,-0.006441,0.010886,depth_tests_rows.csv
+diff,flat->u50,flat->u50 - flat->flat,rec_z0,5,-0.008201,-0.011860,-0.005850,0.000008,-0.000778,0.000819,depth_tests_rows.csv
+diff,flat->u50,flat->u50 - u50->u50,rec_z0,5,-0.006350,-0.009978,-0.003017,0.002074,0.000000,0.004831,depth_tests_rows.csv
+diff,u50->flat,u50->flat - u50->u50,rec_z0,5,-0.000718,-0.002938,0.000930,-0.000785,-0.003221,0.001638,depth_tests_rows.csv
+diff,u50->wide,u50->wide - u50->u50,rec_z0,5,-0.111645,-0.123179,-0.102284,0.000019,-0.002333,0.001638,depth_tests_rows.csv
