@@ -68,6 +68,9 @@ class Physics:
     phase_max: float = 2.5
     depth_std: float = 50e-6      # m, per object, around the distance of the session
     depth_max: float = 150e-6
+    # > 0: each object's depth is uniform in +-depth_uniform (the height of a channel) instead of the clipped normal of
+    # depth_std / depth_max (both then unused); the same single normal draw g per object, mapped by erf(g / sqrt(2))
+    depth_uniform: float = 0.0
     session_z_std: float = 0.005  # relative
     # the distance within a session and a tilted slide (off in the base set: 0 leaves every hologram as it was)
     frame_z_std: float = 0.0      # relative; each image at z_session (1 + N(0, frame_z_std)), independent per image
@@ -124,6 +127,8 @@ def physics_dict(phys):
     d = dataclasses.asdict(phys)
     if d['oversample'] == 1:
         del d['oversample']
+    if d['depth_uniform'] == 0:
+        del d['depth_uniform']
     return d
 
 

@@ -87,9 +87,16 @@ def letter_list(rng, classes, area_tiles, lay=Layout):
 
 
 def material(rng, phys):
-    return dict(absorption=clipped_normal(rng, phys.absorption_mean, phys.absorption_std, phys.absorption_min, 1.0),
-                phase=clipped_normal(rng, phys.phase_mean, phys.phase_std, 0.0, phys.phase_max),
-                depth=clipped_normal(rng, 0.0, phys.depth_std, -phys.depth_max, phys.depth_max))
+    """Absorption, phase and depth of an object: three normal draws, in this order. The depth is the clipped normal
+    of depth_std / depth_max, or, with phys.depth_uniform > 0, the same normal draw g mapped to a uniform law on
+    +-depth_uniform by erf(g / sqrt(2)) (= 2 Phi(g) - 1): the draws of the scene do not move."""
+    a = clipped_normal(rng, phys.absorption_mean, phys.absorption_std, phys.absorption_min, 1.0)
+    p = clipped_normal(rng, phys.phase_mean, phys.phase_std, 0.0, phys.phase_max)
+    if getattr(phys, 'depth_uniform', 0.0) > 0:
+        d = phys.depth_uniform * math.erf(rng.gauss(0.0, 1.0) / math.sqrt(2))
+    else:
+        d = clipped_normal(rng, 0.0, phys.depth_std, -phys.depth_max, phys.depth_max)
+    return dict(absorption=a, phase=p, depth=d)
 
 
 def dust_mask(rng):
