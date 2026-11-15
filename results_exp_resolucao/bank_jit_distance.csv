@@ -1,0 +1,38 @@
+kind,distance_mm,flow,condition,f1,rejection,closed_acc,known_acc,source,holds,note
+metric,1.000000,bank_jit,as_is,0.980798,0.999195,0.996296,0.967050,eval/curve_u50_L008/bank_jit_r1.json,,
+metric,1.000000,raw,as_is,0.925067,0.613527,0.977773,0.952427,eval/curve_u50_L008/raw_r1.json,,
+metric,1.000000,prop,as_is,0.974672,0.979871,0.996686,0.960811,eval/curve_u50_L008/prop_r1.json,,
+metric,1.000000,rec_z0,as_is,0.973723,0.995169,0.998050,0.955547,eval/curve_u50_L008/rec_z0_r1.json,,
+metric,0.900000,bank_jit,as_is,0.650315,0.993559,0.971924,0.505947,robustness_curve_u50_L008_bank_jit.csv,,
+metric,0.900000,raw,as_is,0.934316,0.608696,0.984012,0.966855,robustness_curve_u50_L008_dist.csv,,
+metric,0.900000,prop,as_is,0.398759,0.995169,0.949308,0.265939,robustness_curve_u50_L008_dist.csv,,
+metric,0.900000,rec_z0,as_is,0.226128,0.999195,0.834276,0.129460,robustness_curve_u50_L008_dist.csv,,
+metric,0.900000,rec_z0,recal_literal,0.971955,0.994364,0.998440,0.952817,robustness_curve_u50_L008_dist.csv,,
+metric,0.900000,prop,recal_ratio,0.926518,0.982287,0.995126,0.879704,robustness_curve_u50_L008_dist.csv,,
+metric,0.900000,rec_z0,recal_ratio,0.974618,0.994364,0.998440,0.957497,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,bank_jit,as_is,0.677932,0.996779,0.973094,0.529733,robustness_curve_u50_L008_bank_jit.csv,,
+metric,1.100000,raw,as_is,0.915017,0.640097,0.965880,0.931371,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,prop,as_is,0.300662,0.999195,0.865471,0.187366,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,rec_z0,as_is,0.267815,0.999195,0.865471,0.158510,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,rec_z0,recal_literal,0.969112,0.994364,0.998440,0.948138,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,prop,recal_ratio,0.926425,0.979066,0.994541,0.881068,robustness_curve_u50_L008_dist.csv,,
+metric,1.100000,rec_z0,recal_ratio,0.970071,0.995169,0.998440,0.949503,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,bank_jit,as_is,0.014831,1.000000,0.197309,0.000000,robustness_curve_u50_L008_bank_jit.csv,,
+metric,0.700000,raw,as_is,0.892083,0.615137,0.960811,0.891402,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,prop,as_is,0.014831,1.000000,0.206473,0.000000,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,rec_z0,as_is,0.014831,1.000000,0.197699,0.000000,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,rec_z0,recal_literal,0.961130,0.998390,0.998050,0.933905,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,prop,recal_ratio,0.916124,0.975040,0.994736,0.864496,robustness_curve_u50_L008_dist.csv,,
+metric,0.700000,rec_z0,recal_ratio,0.960914,0.998390,0.998050,0.933515,robustness_curve_u50_L008_dist.csv,,
+diff,1.000000,bank_jit - prop,price at 1.0 mm (as is),0.006126,0.019324,,,,,
+diff,1.000000,bank_jit - rec_z0,price at 1.0 mm (as is),0.007074,0.004026,,,,,
+diff,0.900000,bank_jit,as_is - bank_jit at 1.0 mm,-0.330483,-0.005636,,,,False,rule of Q2
+diff,0.900000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_ratio,-0.324304,-0.000805,,,,,
+diff,0.900000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_literal,-0.321640,-0.000805,,,,,
+diff,1.100000,bank_jit,as_is - bank_jit at 1.0 mm,-0.302865,-0.002415,,,,False,rule of Q2
+diff,1.100000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_ratio,-0.292139,0.001610,,,,,
+diff,1.100000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_literal,-0.291180,0.002415,,,,,
+diff,0.700000,bank_jit,as_is - bank_jit at 1.0 mm,-0.965967,0.000805,,,,False,"stress, outside the rule"
+diff,0.700000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_ratio,-0.946083,0.001610,,,,,"stress, outside the rule"
+diff,0.700000,bank_jit - rec_z0,bank_jit as_is - rec_z0 recal_literal,-0.946299,0.001610,,,,,"stress, outside the rule"
+rule,,bank_jit,holds the change of distance (holds at 0.9 AND at 1.1 mm),,,,,,False,r1 only: descriptive
