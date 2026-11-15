@@ -468,8 +468,9 @@ Banco como está − reconstrução recalibrada (F1 / rejeição): por razão �
    acerto em fechado também (0,972 / 0,973); o que cai é o acerto das conhecidas (0,51 / 0,53 contra 0,97): como na
    camada, os escores das conhecidas caem abaixo do limiar de 1,0 mm, sem que as classes se misturem.
 2. Os planos aprendidos (0,970–1,029 mm) não cobrem 0,9 mm, e cobrem 1,1 mm menos ainda; o treino estreitou o banco
-   (largura de 0,100 para 0,059 mm) e o deslocou para cima na ponta de fora (+4,4 %). Com o jitter de ±5 %, o treino
-   viu distâncias efetivas de ≈ 0,92 a 1,08 mm; 0,9 e 1,1 mm ficam logo fora dessa faixa, como o Q2 já dizia.
+   (largura de 0,100 para 0,059 mm) e o deslocou para cima na ponta de fora (+4,4 %). Com o jitter de ±5 %, os planos
+   do início do treino alcançavam 0,900–1,099 mm e os do fim 0,921–1,080 mm: 0,9 e 1,1 mm ficam na borda ou logo
+   fora do que o treino viu, como o Q2 já dizia.
 3. A 1,0 mm o banco é o melhor dos três em r1 (0,9808 contra 0,9747 e 0,9737). É uma repetição só.
 4. A 0,7 mm o banco rejeita tudo, como a camada e a reconstrução.
 
