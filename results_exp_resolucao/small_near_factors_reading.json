@@ -1,0 +1,90 @@
+{
+ "small_near_ctlN": {
+  "changed": "N_F range of the standard family (fonts x sqrt(2.0 / 19.25))",
+  "control": {
+   "f1": 0.9160208798713547,
+   "rej": 0.5297906602254429
+  },
+  "R_reg": {
+   "f1": 0.7993099681863058,
+   "rej": 0.11996779388083736
+  },
+  "R_curva": {
+   "f1": 0.9079150146736515,
+   "rej": 0.5162727424874691
+  },
+  "R_curva_from": {
+   "levels": [
+    15,
+    69
+   ],
+   "weight_upper": 0.09518018644899898
+  },
+  "geometry": {
+   "D_um": 164.57815265915573,
+   "D_axis": "D_rms_192",
+   "per_mm2": 7.057308941249238,
+   "pi_D2_sigma": 0.600528148178183,
+   "overlap": 0.4514781412423202
+  },
+  "distances": {
+   "f1": {
+    "to_R_reg": 0.11671091168504888,
+    "to_R_curva": 0.008105865197703177
+   },
+   "rej": {
+    "to_R_reg": 0.4098228663446055,
+    "to_R_curva": 0.013517917737973728
+   }
+  },
+  "nearer": {
+   "f1": "R_curva",
+   "rej": "R_curva"
+  },
+  "outcome": "the factor explains the deviation"
+ },
+ "small_near_ctlP": {
+  "changed": "depth law of the family (uniform +-25 um)",
+  "control": {
+   "f1": 0.8032324997072512,
+   "rej": 0.1360708534621578
+  },
+  "R_reg": {
+   "f1": 0.7993099681863058,
+   "rej": 0.11996779388083736
+  },
+  "R_curva": {
+   "f1": 0.907440476203036,
+   "rej": 0.51366729757847
+  },
+  "R_curva_from": {
+   "levels": [
+    15,
+    69
+   ],
+   "weight_upper": 0.1042955837984604
+  },
+  "geometry": {
+   "D_um": 165.72152148522952,
+   "D_axis": "D_rms_192",
+   "per_mm2": 7.057308941249238,
+   "pi_D2_sigma": 0.6089011945126905,
+   "overlap": 0.45605176587513274
+  },
+  "distances": {
+   "f1": {
+    "to_R_reg": 0.003922531520945349,
+    "to_R_curva": 0.10420797649578484
+   },
+   "rej": {
+    "to_R_reg": 0.01610305958132044,
+    "to_R_curva": 0.37759644411631216
+   }
+  },
+  "nearer": {
+   "f1": "R_reg",
+   "rej": "R_reg"
+  },
+  "outcome": "the factor does not explain it"
+ }
+}

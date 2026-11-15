@@ -1,0 +1,12 @@
+role,set,flow,rep,f1,rejection,closed_acc,threshold,D_um,D_axis,per_mm2,pi_D2_sigma,overlap
+R_reg (small_near_newrec),small_near_newrec,raw,1,0.79931,0.119968,0.899201,0.599408,165.722,D_rms_192,7.05731,0.608901,0.456052
+R_reg (small_near_newrec),small_near_newrec,prop,1,0.972818,0.977456,0.995516,0.987611,165.722,D_rms_192,7.05731,0.608901,0.456052
+R_reg (small_near_newrec),small_near_newrec,rec_z0,1,0.972819,0.954106,0.998245,0.988115,165.722,D_rms_192,7.05731,0.608901,0.456052
+control: N_F range of the standard family (fonts x sqrt(2.0 / 19.25)),small_near_ctlN,raw,1,0.916021,0.529791,0.973679,0.816001,164.578,D_rms_192,7.05731,0.600528,0.451478
+control: N_F range of the standard family (fonts x sqrt(2.0 / 19.25)),small_near_ctlN,prop,1,0.975901,0.989533,0.99688,0.990376,164.578,D_rms_192,7.05731,0.600528,0.451478
+control: N_F range of the standard family (fonts x sqrt(2.0 / 19.25)),small_near_ctlN,rec_z0,1,0.960686,0.849436,0.99883,0.989505,164.578,D_rms_192,7.05731,0.600528,0.451478
+"R_curva for small_near_ctlN (family u50, crops, r1)",levels 15-69,raw,1,0.907915,0.516273,0.969001,,,,,0.600528,0.451478
+control: depth law of the family (uniform +-25 um),small_near_ctlP,raw,1,0.803232,0.136071,0.90115,0.601412,165.722,D_rms_192,7.05731,0.608901,0.456052
+control: depth law of the family (uniform +-25 um),small_near_ctlP,prop,1,0.977783,0.996779,0.995906,0.990794,165.722,D_rms_192,7.05731,0.608901,0.456052
+control: depth law of the family (uniform +-25 um),small_near_ctlP,rec_z0,1,0.974262,0.99839,0.998245,0.990169,165.722,D_rms_192,7.05731,0.608901,0.456052
+"R_curva for small_near_ctlP (family u50, crops, r1)",levels 15-69,raw,1,0.90744,0.513667,0.968777,,,,,0.608901,0.456052
