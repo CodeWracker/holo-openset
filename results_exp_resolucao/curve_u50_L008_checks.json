@@ -1,0 +1,79 @@
+{
+ "set": "curve_u50_L008",
+ "ref": "bench_1mm",
+ "annotations": {
+  "rows": 40309,
+  "same_columns": true,
+  "equal_except_depth_z": true,
+  "columns_equal": {
+   "image_id": true,
+   "det_idx": true,
+   "classe": true,
+   "class_id": true,
+   "x0": true,
+   "y0": true,
+   "x1": true,
+   "y1": true,
+   "font_size": true,
+   "font_name": true,
+   "rotation": true,
+   "absorption": true,
+   "phase": true,
+   "depth": false,
+   "bx0": true,
+   "by0": true,
+   "bx1": true,
+   "by1": true,
+   "z": false,
+   "filename": true,
+   "split": true
+  },
+  "z_minus_depth_max_abs_diff": 9.952975943416931e-17,
+  "splits": {
+   "train": 28227,
+   "test": 6371,
+   "val": 5711
+  }
+ },
+ "depth": {
+  "depth_uniform": 2.5e-05,
+  "max_abs": 2.4999326188002064e-05,
+  "mean": -1.6155557921025765e-08,
+  "std": 1.4437481702272757e-05,
+  "std_expected": 1.4433756729740646e-05,
+  "ks_pvalue": 0.9013791441280654,
+  "pairing_rows": 40199,
+  "pairing_max_abs_diff": 1.0164395367051604e-20
+ },
+ "dust.csv": true,
+ "sessions.csv": true,
+ "backgrounds.npy": true,
+ "metadata.csv": true,
+ "labels": {
+  "files": 5000,
+  "all_equal": true
+ },
+ "objects": {
+  "files": 1600,
+  "all_equal": true
+ },
+ "physics_json_differences": {},
+ "physics_differences": {
+  "depth_uniform": [
+   2.5e-05,
+   null
+  ]
+ },
+ "rebuilt": [
+  {
+   "image_id": 100,
+   "equal": true,
+   "max_abs_dn": 0
+  },
+  {
+   "image_id": 0,
+   "equal": true,
+   "max_abs_dn": 0
+  }
+ ]
+}
