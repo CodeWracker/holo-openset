@@ -477,3 +477,44 @@ Banco como está − reconstrução recalibrada (F1 / rejeição): por razão �
 ### O que NÃO foi feito (como o Q2 manda)
 
 r2–r5, banco mais largo ou com mais jitter, recalibração do banco. Nada em `results/`, `models/` nem `expected/`.
+
+## 2026-11-15, 16:01 — D4: teste J2 preparado, antes de qualquer treino ou leitura de teste (execução)
+
+Pré-registro: `CADERNO_CURVA.md`, Q3, seção J2 (commit `b97121d`); pedido do responsável da Fase S. Código no commit
+`8262cae` (nada em `holo_openset/` mudou).
+
+### O que conferi no pacote antes
+
+- **Os bancos, como estão em `flows.FLOWS`:** `bank_jit` (`n_dist=5`, `alpha_jitter=0.05`, `alpha_spread` padrão
+  0,05), `bank_wide` (`n_dist=7`, `alpha_spread=0.12`, `alpha_jitter=0.12`), `bank_w2` (`n_dist=9`, 0,12, 0,12),
+  `bank_w3` (`n_dist=7`, `alpha_spread=0.12`, `alpha_jitter=0.05`). Os planos iniciais são α₀ (1 + linspace(−s, s,
+  n)).
+- **`--alpha-extend 12` e a calibração sem rótulo valem para os quatro igual ao `bank_jit`:** em `train.train`, os
+  modos `prop` e `bank` passam pelo mesmo ramo (`alpha_init='calib'`, `calibrate_alpha(..., extend=alpha_extend)` em
+  32 hologramas de treino); nenhum dos três bancos largos muda `alpha_init`. Com a mesma semente e as mesmas classes de
+  cada repetição, o α₀ deve sair igual ao da camada (`prop`) da mesma repetição.
+- **Recalibração por razão do banco sem mudar o pacote:** `experiments/robustness.py` já trata o banco: com
+  `--alpha-json` e `--alpha-mode ratio`, todo o vetor `fourier.alpha` (todos os planos) é multiplicado por
+  α / α_ref do json, só para os padrões de teste da distância nova; pesos, galeria (validação de 1,0 mm) e limiar não
+  mudam; o cache do filtro depende da versão dos parâmetros, então a troca de α vale. É o mesmo caminho da linha
+  `prop+recal_ratio` da d2. Os json são os da d2 (`recal_curve_u50_L008_z07/z09/z11.json`: 32 hologramas de
+  validação sem rótulo na distância nova contra os mesmos ids na validação de 1,0 mm), lidos, não refeitos.
+
+### Como vai rodar (`scripts/exp_resolucao/banks_distance.sh`)
+
+- Por banco e repetição, nesta ordem (passo `rep`): `train` (`--no-aux --alpha-extend 12`; pula o modelo que existe:
+  o `bank_jit` r1 é o do teste J), `evaluate` (1,0 mm → `eval/curve_u50_L008/<banco>_r<k>.json`; pula o que existe),
+  `shifted` (como está, z09 e z11), `stress` (como está, z07), `recal` (por razão, z09 e z11, um json por distância),
+  `recal_stress` (por razão, z07). O `bank_jit` r1 como está já foi lido no teste J
+  (`robustness_curve_u50_L008_bank_jit.csv`) e não é lido de novo; as linhas recalibradas dele são novas.
+- Linhas em `results_exp_resolucao/robustness_curve_u50_L008_banks_<banco>.csv`, **um arquivo por banco** (desvio de
+  nome do pedido, que sugeria um csv por banco ou um só): o `save` do `experiment robustness` lê, concatena e regrava
+  o csv inteiro, e duas filas escrevendo no mesmo arquivo ao mesmo tempo perderiam linhas. O csv do teste J não é
+  reescrito.
+- Quatro filas em tmux (`res_J2_<banco>`), uma por banco, r1 → r5: `bank_jit` e `bank_wide` na GPU 3, `bank_w2` e
+  `bank_w3` na GPU 5 (dois processos por GPU, 4 threads cada, subidos com 1–2 min de intervalo). Logs
+  `logs/exp_resolucao/J2_<banco>_<passo>_r<k>.log`.
+- Tabela: `scripts/exp_resolucao/banks_distance.py` → `banks_distance.csv` e `banks_distance_rows.csv`. Camada e
+  reconstrução (como estão e por razão, r1–r5) lidas de `distance_tests_u50_rows.csv` (6 casas, como estão
+  guardadas). "Reconstrução recalibrada" = por razão, a variante principal da d2. A regra do Q3-J2 é aplicada às
+  linhas como está.
