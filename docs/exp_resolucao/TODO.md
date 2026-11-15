@@ -291,12 +291,22 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       letra); sobreposição 0,24 / 0,40 / 0,905 / 0,995 / 1,000 nos cinco níveis.
 - [x] Q-c. **Lei de profundidade: o orientador escolheu "Uniforme nos 50 µm"** (≈ 08:45; Q1 do `CADERNO_CURVA.md`,
       `9315c0c`): ±25 µm, profundidade = 25 µm · erf(g/√2). A lei larga (`bench_1mm_depth50`) vira teste de estresse.
-- [~] Q-b. **Curva de densidade (fase 2 do "densidade", mandada às ≈ 08:55):** implementar a lei uniforme (testes,
-      pytest, reproduce check); gravar `curve_u50_L008` primeiro e rodar r1–r5 nele; escrever
-      `results_exp_resolucao/curve_u50_L008_ready.json`; gravar L015 / L069 / L154 / L343; r1 em todos; regra do Q0;
-      r2–r5 onde indicar; `density_curve.csv`; figura `img/density_curve.{png,pdf}` pelo eixo do Q1; D para a
-      geometria de 19,25 mm e para o conjunto pequeno a 2 mm (acréscimo descritivo do Q1). Estimativa dele: ≈ 2 h de
-      gravação + treinos.
+- [x] Q-b. (feita às 11:34 e conferida por mim: refiz a tabela e as regras do Q0 a partir dos 75 json; 0 diferenças
+      contra `density_curve.csv`; pytest 72, `reproduce check` 13/13) **Curva de densidade, família padrão, cinco
+      repetições em todos os níveis** (a regra "se separam" deu sim nos quatro níveis em r1). F1 / rejeição, média
+      de 5, níveis 7 / 13 / 60 / 135 / 300 por mm² (sobreposição 0,242 / 0,405 / 0,907 / 0,995 / 1,000):
+      crops 0,937/0,714; 0,922/0,612; 0,855/0,260; 0,789/0,089; 0,668/0,032 (acerto fechado 0,977 → 0,770);
+      camada 0,975/0,983; 0,974/0,993; 0,972/0,975; 0,957/0,864; 0,942/0,744;
+      reconstrução 0,977/0,996; 0,978/0,993; 0,973/0,967; 0,972/0,976; 0,960/0,895.
+      **Regra "caiu" (≥ 4 de 5):** crops em rejeição a partir de 60/mm² e em F1 a partir de 135/mm²; **camada e
+      reconstrução não caem em nenhum nível** (maior queda da camada, no 343: −0,033 F1, −0,239 rejeição; por
+      repetição 0,135–0,292). Descritivo: nos dois níveis mais densos a reconstrução rejeita mais que a camada em
+      5 de 5 (+0,111, +0,152). Pelo Q0: reportar que a camada não caiu e **não gravar nível novo sem perguntar**.
+      **Conjuntos antigos no eixo:** geometria de CBMS 2024 D = 447 µm, sobreposição 0,988 (π D² σ 4,43): cai na
+      curva; letras pequenas a 2 mm D = 157,5 µm, sobreposição 0,42, crops 0,793/0,153: **não cai na curva**
+      (previsão do Q1 falha ali; o executor atribuiu a cenas auxiliares, mas `pipeline.py:107` treina os conjuntos
+      pequenos com `--no-aux`: a explicação dele está errada e não há explicação). `curve_alpha.csv`: α calibrado
+      0,994–1,000 mm; o treino desloca −3,2 % no esparso e −1,6 % no mais denso.
 - [x] Q-d1. (feito e conferido) **Distância com os modelos do piloto** (`distance_tests.csv`): a 0,9 / 1,1 mm sem
       recalibrar a camada cai a 0,221 / 0,081 e a reconstrução a 0,138 / 0,160 de F1 (rejeitam tudo); crops 0,948 /
       0,925. Recalibrado por razão: camada 0,929 / 0,915; reconstrução 0,979 / 0,976. Reconstrução − camada
@@ -343,17 +353,13 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       executor da densidade um `curve_alpha.csv` (α calibrado e treinado por nível e repetição) e o gerador deve
       passar a usá-lo; a frase "training moved the scalar by …" saiu da 8.6 até lá; (2) Fresnel e fração fora do
       crop continuam medidos nas letras do piloto (mesmas letras; dizer se necessário).
-- [ ] Q-w5. **Terceira passada, parte 2 (depois da curva; a maior):** a seção de resultados (06) ainda é a do
-      rascunho antigo: centrada na "learned layer" real e no "base set", com um `\todo` grande na RQ2 pedindo a
-      prosa da camada de propagação. Encomenda: (a) RQ1 = conjunto fechado funciona, open-set falha, mecanismo,
-      curva de densidade (figura própria) e onde a camada cai; (b) RQ2 = a camada de propagação (o método proposto)
-      empata com a reconstrução calibrada; camadas real e complexa viram ablação; (c) RQ3 com os números da camada
-      de propagação; (d) RQ4 = uma propagação custa ≈ 1 ms, o detector é o custo, o argumento de tempo não se
-      sustenta; (e) RQ5 = distância (recalibrar; 8.6), profundidade (8.5), simulação conveniente (tabela e texto
-      vão para a 8.1, sem duplicar); "base set" → "geometry of CBMS 2024" em todo o 06; (f) 8.4 final e painel (d);
-      (g) abstract (os quatro pontos da tese; a seção da simulação visível), discussão coerente, conclusão.
-      **Mando quando a tabela de r1 da curva existir** (a forma da curva conhecida); os números entram por macro.
-- [ ] Q-rev. Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
+- [~] Q-w5. **Terceira passada, parte 2 (mandada às 11:37, com a curva completa):** gerador (denso = nível de
+      135/mm² da família padrão; α de `curve_alpha.csv`; tabela e figura da curva; conjuntos antigos no eixo);
+      8.4 final (figura e tabela da curva moram ali); resultados (06) reescritos para as cinco RQ novas (método
+      proposto = camada de propagação; camadas real/complexa = ablações; RQ4 em torno do argumento de tempo; RQ5
+      remete às 8.5/8.6; simulação conveniente só na 8.1); abstract e conclusão novos; discussão só no que
+      contradiz; frase "does as well" da introdução ajustada (empate até 60/mm²). Não mexe: título, 05, 09.
+- [~] Q-rev. (devoluções da densidade e da distância revisadas; falta a da parte 2 da escrita) Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
       dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
       Related Work no fim), compilar.
 - [ ] Q-fim. Depois da curva: abstract, resultados e conclusão (encomenda dele: "fica para depois da curva");
@@ -580,3 +586,10 @@ errado".
   Li a seção de resultados inteira para a encomenda da parte 2 (Q-w5). **Próximo passo ao voltar: esperar a
   devolução do executor da densidade (r1 em todos os níveis → mandar a parte 2 ao escritor; depois r2–r5, figura,
   D das geometrias que já existem, `curve_alpha.csv`); conferir contra os json e a regra do Q0; relatório e diff.**
+- **2026-11-15, 11:40 — curva completa e conferida; parte 2 da escrita em curso.** Nada mais roda na GPU. Falta:
+  (1) revisar a devolução do escritor (parte 2) lendo abstract, 06, 8.4, conclusão e o PDF; (2) terminar
+  `RELATORIO_CURVA.md` (seções 1, 3, 6, 7, 8) e commitar; (3) mandar ao orientador o relatório, o diff
+  `main..rewrite/inversion` e o PDF, sem merge nem push. **Perguntas para ele (no relatório):** nível mais denso
+  para a camada "cair" pela regra, ou basta o descritivo; o que fazer com as letras pequenas a 2 mm no eixo
+  (manter com a frase honesta, investigar com um controle, tirar); .RIS do Scopus/ScienceDirect e PDFs bloqueados;
+  lugar da seção e título do paper; push/merge.
