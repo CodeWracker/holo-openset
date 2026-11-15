@@ -767,3 +767,35 @@ crops do `small_near_newrec` em k; R_curva(k) = crops da família u50 em k, inte
 na sobreposição do controle, com o código do Q2-S / Q3-D; "volta para a curva" se mais perto de R_curva(k) nas duas
 métricas; ≥ 4 de 5 → explica; ≥ 4 de 5 mais perto de R_reg(k) nas duas → não explica; o resto inconclusivo). O
 `small_near_factors.csv` (r1) fica como está.
+
+## 2026-11-15, 17:15 — D14: Q4, os dois controles com cinco repetições (resultado)
+
+Filas (`res_S3_*`, 17:00–17:14): 24 treinos novos, todos com 3000 passos (conferido no log); r1 pulado. Teste lido uma
+vez por modelo. `python scripts/exp_resolucao/small_near_factors_five_reps.py` → `results_exp_resolucao/small_near_factors_five_reps.csv`,
+`_reading.json` (o `small_near_factors.csv` de r1 ficou como estava).
+
+| controle | rep | crops F1 / rej. | R_reg(k) | R_curva(k) | mais perto (F1; rej.) | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|---|---|---|---|
+| ctlN | 1 | 0,916 / 0,530 | 0,799 / 0,120 | 0,908 / 0,516 | R_curva; R_curva | 0,976 / 0,990 | 0,961 / 0,849 |
+| ctlN | 2 | 0,933 / 0,721 | 0,811 / 0,224 | 0,915 / 0,571 | R_curva; R_curva | 0,974 / 0,998 | 0,973 / 1,000 |
+| ctlN | 3 | 0,923 / 0,590 | 0,802 / 0,152 | 0,909 / 0,501 | R_curva; R_curva | 0,958 / 0,825 | 0,976 / 0,960 |
+| ctlN | 4 | 0,923 / 0,630 | 0,807 / 0,220 | 0,922 / 0,649 | R_curva; R_curva | 0,979 / 1,000 | 0,977 / 0,996 |
+| ctlN | 5 | 0,929 / 0,657 | 0,810 / 0,242 | 0,923 / 0,656 | R_curva; R_curva | 0,975 / 1,000 | 0,979 / 0,999 |
+| ctlN | média | **0,925 / 0,626** | 0,806 / 0,191 | 0,915 / 0,578 | | 0,972 / 0,963 | 0,973 / 0,961 |
+| ctlP | 1 | 0,803 / 0,136 | 0,799 / 0,120 | 0,907 / 0,514 | R_reg; R_reg | 0,978 / 0,997 | 0,974 / 0,998 |
+| ctlP | 2 | 0,812 / 0,218 | 0,811 / 0,224 | 0,915 / 0,568 | R_reg; R_reg | 0,970 / 1,000 | 0,971 / 1,000 |
+| ctlP | 3 | 0,804 / 0,176 | 0,802 / 0,152 | 0,909 / 0,498 | R_reg; R_reg | 0,974 / 0,977 | 0,980 / 1,000 |
+| ctlP | 4 | 0,822 / 0,316 | 0,807 / 0,220 | 0,921 / 0,646 | R_reg; R_reg | 0,974 / 1,000 | 0,967 / 0,980 |
+| ctlP | 5 | 0,808 / 0,193 | 0,810 / 0,242 | 0,922 / 0,651 | R_reg; R_reg | 0,972 / 0,998 | 0,973 / 1,000 |
+| ctlP | média | **0,810 / 0,208** | 0,806 / 0,191 | 0,915 / 0,575 | | 0,974 / 0,994 | 0,973 / 0,996 |
+
+`small_near_newrec` (cinco repetições): camada 0,973 / 0,985, reconstrução 0,974 / 0,985.
+
+**Leitura do Q4, aplicada mecanicamente:** ctlN volta para a curva em **5 de 5** → **a faixa de N_F explica o
+desvio**; ctlP fica mais perto de R_reg em **5 de 5** → **a lei de profundidade não explica**. Distâncias médias:
+ctlN F1 0,119 a R_reg contra 0,009 a R_curva, rejeição 0,434 contra 0,055; ctlP F1 0,005 contra 0,105, rejeição
+0,038 contra 0,367. As duas previsões registradas valeram.
+
+Ao lado, sem critério: a rejeição de 0,849 da reconstrução no ctlN em r1 não se repete (r2–r5: 0,960–1,000; média
+0,961, mín. 0,849, máx. 1,000, contra 0,985 no `small_near_newrec`); a camada no ctlN teve r3 em 0,825 de rejeição
+(média 0,963). No ctlP as duas rotas ficam em 0,994–0,996 de rejeição média.
