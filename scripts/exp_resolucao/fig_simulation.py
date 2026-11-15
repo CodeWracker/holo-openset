@@ -124,7 +124,7 @@ def diameter_mm(set_name=None):
     return None
 
 
-def curve_axes(ax, t, metric, ylabel, top=True):
+def curve_axes(ax, t, metric, ylabel, top=True, top_label='objects per mm$^2$'):
     """One panel of the density curve on the axis of Q1: x = pi D^2 sigma on a log scale (the mean number of
     overlapping neighbours), ticks labelled with the share of overlapping holograms, the density on the top axis;
     r1 at every level (open), the mean of five with its min-max where five exist (filled)."""
@@ -146,7 +146,7 @@ def curve_axes(ax, t, metric, ylabel, top=True):
     ax.set_xscale('log')
     ax.set_xticks(lv.pi_D2_sigma, [f'{100 * o:.0f}' if o < 0.995 else '>99' for o in lv.overlap])
     ax.minorticks_off()
-    ax.set_xlabel('overlapping holograms (%; axis: $\\pi D^2\\sigma$, log)')
+    ax.set_xlabel('overlapping holograms (%)')
     ax.set_ylabel(ylabel)
     if top and d_mm:
         k = np.pi * d_mm ** 2
@@ -154,23 +154,44 @@ def curve_axes(ax, t, metric, ylabel, top=True):
         sec.set_xticks(lv.per_mm2, [f'{v:.0f}' for v in lv.per_mm2])
         sec.minorticks_off()
         sec.tick_params(labelsize=6)
-        sec.set_xlabel('objects per mm$^2$', fontsize=6.5)
+        sec.set_xlabel(top_label, fontsize=6.5)
+
+
+def old_sets(metric):
+    """The sets that existed before the curve, on its axis with their own diameter: the geometry of CBMS 2024 (same
+    recipe as the curve, r1) and the small letters at 2 mm (mean of five, sets_by_fresnel.csv).
+    -> [(label, x, {flow: y}, marker, filled)]"""
+    out = []
+    cb, d_c, dens = pr.evals(pr.CBMS), diameter_mm(pr.CBMS), pr.density(pr.CBMS)[0]
+    if d_c and dens:
+        col = pr.F1 if metric == 'f1' else pr.REJ
+        out.append(('CBMS 2024 geometry (19.25 mm), r1', np.pi * d_c ** 2 * dens,
+                    {f: pr.value(cb, f, col, pr.reps_mode(cb)) for f in pr.FLOWS}, 'D', False))
+    d_s, sb = diameter_mm('small_near'), pr.csv('sets_by_fresnel')
+    r = sb[(sb.set == 'small_near') & (sb.repetitions == 'mean5')]
+    dens_s = pr.density('small_near')[0]
+    if d_s and len(r) and dens_s:
+        r = r.iloc[0]
+        k = 'f1' if metric == 'f1' else 'rejection'
+        out.append(('small letters at 2 mm, mean of five', np.pi * d_s ** 2 * dens_s,
+                    {f: r[f'{k}_{f}'] for f in pr.FLOWS}, 's', True))
+    return out
+
+
+def draw_old(ax, items):
+    for label, x, ys, mk, filled in items:
+        for f, y in ys.items():
+            if y is not None and np.isfinite(y):
+                ax.plot(x, y, mk, color=COLORS[f], mfc=COLORS[f] if filled else 'white', ms=4.5, zorder=5)
 
 
 def panel_d(ax):
     t = pr.csv('density_curve')
     if len(t):                                   # the axis of Q1, from the table of the curve
-        curve_axes(ax, t, 'rejection', 'rejection of never-seen patterns')
-        cb, d_c = pr.evals(pr.CBMS), diameter_mm(pr.CBMS)
-        dens = pr.density(pr.CBMS)[0]
-        if d_c and dens:                         # the CBMS geometry on the same axis, with its own diameter
-            x = np.pi * d_c ** 2 * dens
-            for f in pr.FLOWS:
-                y = pr.value(cb, f, pr.REJ, pr.reps_mode(cb))
-                if y is not None:
-                    ax.plot(x, y, 'D', color=COLORS[f], mfc='white', ms=4, zorder=3)
+        curve_axes(ax, t, 'rejection', 'rejection of never-seen patterns',
+                   top_label='the density: objects per mm$^2$')
+        draw_old(ax, [o for o in old_sets('rejection') if o[3] == 'D'])
         ax.set_ylim(-0.03, 1.05)
-        ax.set_title('the density', fontsize=7.5, pad=14)
         return
     fam = pr.family()
     groups = sorted({x['law'] for x in fam})

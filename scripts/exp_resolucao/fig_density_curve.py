@@ -7,6 +7,8 @@ nothing and says so.
 
     python scripts/exp_resolucao/fig_density_curve.py --out <paper>/figures/paper
     -> <out>/fig_density_curve.pdf, .png
+The sets that existed before (the geometry of CBMS 2024, r1 with the recipe of the curve; the small letters at 2 mm,
+mean of five) are drawn at their own pi D^2 sigma (hologram_diameter_<set>_summary.json).
 """
 import argparse
 from pathlib import Path
@@ -29,11 +31,14 @@ def main(out):
     for ax, (metric, label), letter in zip(axes, [('f1', 'open-set F1'), ('rejection', 'rejection of never-seen '
                                                                                          'patterns')], 'ab'):
         fs.curve_axes(ax, t, metric, label)
+        fs.draw_old(ax, fs.old_sets(metric))
         panel(ax, letter)
     h = [Line2D([], [], color=COLORS[f], lw=1.0, label=fs.NAME[f]) for f in pr.FLOWS]
     h += [Line2D([], [], color=MUTED, marker='o', mfc='white', lw=0, ms=4, label='one repetition (r1)'),
-          Line2D([], [], color=MUTED, marker='o', lw=0, ms=4, label='mean of five (min--max)')]
-    axes[1].legend(handles=h, loc='lower left', fontsize=6)
+          Line2D([], [], color=MUTED, marker='o', lw=0, ms=4, label='mean of five (min--max)'),
+          Line2D([], [], color=MUTED, marker='D', mfc='white', lw=0, ms=4.5, label='CBMS 2024 geometry, r1'),
+          Line2D([], [], color=MUTED, marker='s', lw=0, ms=4.5, label='small letters at 2 mm (off the curve)')]
+    axes[0].legend(handles=h, loc='lower left', fontsize=5.8)
     out = Path(out)
     out.mkdir(parents=True, exist_ok=True)
     fig.savefig(out / 'fig_density_curve.pdf', bbox_inches='tight', pad_inches=0.02)
