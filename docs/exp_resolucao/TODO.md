@@ -447,7 +447,7 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
   tabela ao lado da coluna do paper; conferência nativa contra convergida a 19,25 mm para as letras pequenas.
 - [x] **S-D (cinco repetições, Q4).** (17:18, conferido por mim contra `eval/small_near_ctl{N,P}/*_r[1-5].json`,
   refazendo R_curva(k) e as distâncias) **D-N volta para a curva em 5 de 5: a faixa de N_F explica. D-P fica com o
-  conjunto em 5 de 5: a profundidade não explica.** Crops, média de cinco: D-N 0,925 / 0,626 (curva 0,915 / 0,578;
+  conjunto em 5 de 5: a profundidade não explica.** Crops, média de cinco: D-N 0,925 / 0,625 (curva 0,915 / 0,578;
   conjunto 0,806 / 0,191); D-P 0,810 / 0,208. Camada / reconstrução: D-N 0,972 / 0,963 e 0,973 / 0,961; D-P 0,974 /
   0,994 e 0,973 / 0,996 (o 0,849 de rejeição da reconstrução no D-N em r1 não se repete: 0,96–1,00 em r2–r5).
   Arquivos: `small_near_factors_five_reps.csv`, `_reading.json`. Commits do executor: `f6a3f7c` (D13), `6a00346`,
@@ -483,10 +483,10 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
   `CADERNO_CURVA_DISTANCIA.md`. FALTA: texto (8.6, RQ5, "Which flow to use", limitação iii), por macro.
   (Texto original do item:) Banco focal: `bank_jit` r2–r5; `bank_wide`, `bank_w2`, `bank_w3` r1–r5; como
   estão a 0,9 / 1,1 mm (0,7 estresse); recalibração dos bancos por razão. Regra: aguenta em ≥ 4 de 5.
-- [ ] **S-txt.** (escritor, depois dos resultados) Tabela de tamanho com a coluna nova; números das letras pequenas
+- [x] **S-txt.** (feito em três partes e revisado por mim; paper `3924d18`) (escritor, depois dos resultados) Tabela de tamanho com a coluna nova; números das letras pequenas
   a 2 mm fora da tabela; 8.6 e limitação (iii) com o banco em cinco repetições; 8.4 e limitação (vii) com o
   diagnóstico; macros no `paper_resolucao.py`. NÃO mexer na frase-tese (o orientador ainda vai ler).
-- [ ] **S-rev.** Conferir cada devolução contra os arquivos; `pytest` + `reproduce check`; compilar; PDF + diff;
+- [x] **S-rev.** (feito; ver o diário) Conferir cada devolução contra os arquivos; `pytest` + `reproduce check`; compilar; PDF + diff;
   `git push origin exp/resolucao-fonte` (só GitHub, sem merge); mensagem final. Overleaf: NADA.
 
 Continuam esperando a palavra dele: revisão do PDF (→ Overleaf), nível mais denso (#3), frase-tese (#6), abstract
@@ -830,3 +830,28 @@ errado".
   viabilidade (450 por mm² é gravável; recomendo gravar agora que o custo não pesa), as frases de
   abstract/intro/conclusão que o escritor listar, e o que segue esperando (Overleaf, frase-tese, abstract,
   diagrama, arquivos dele).**
+- **2026-11-15, 17:20 — FASE S ENTREGUE. PARADO, à espera do orientador.** Paper `rewrite/inversion` em `3924d18`
+  (69 commits à frente do `main`, 46 páginas, 0 indefinidas, 0 overfull), sem merge, NADA no Overleaf. Código
+  `exp/resolucao-fonte` enviado ao GitHub (sem merge); `pytest` 78, `reproduce check` 13/13 (17:17); a fase não
+  tocou em `holo_openset/`, `tests/`, `results/`, `expected/` nem `models/`. Entregues:
+  `entrega/paper_inversao_3924d18.pdf`, `entrega/latex_7ca14f6..3924d18.diff`,
+  `entrega/latex_main..rewrite-inversion_3924d18.diff`.
+  O que entrou no texto: título novo; Tabela de tamanho com a coluna de 2 mm do conjunto regravado (cinco
+  repetições) e as citações desse conjunto; 8.6 com os quatro bancos em cinco repetições (Tabela `tab:banks`:
+  nenhum aguenta; recalibrado, o banco fica entre a camada e a reconstrução); 8.4 com os dois controles (a faixa de
+  N_F explica o conjunto de 2 mm fora da curva, 5 de 5; a profundidade não, 5 de 5), triângulo na figura da curva,
+  limitação (vii) e uma oração de limite na resposta da RQ1 e no parágrafo do mecanismo da seção 8.
+  **O que espera a palavra dele (não fazer sem ela):**
+  1. revisar o PDF → só então push para o Overleaf (merge de `rewrite/inversion` no `main` do paper);
+  2. nível de 450 por mm² (é gravável: 0,75 % do enchimento pulado, 34 % da área coberta; satura em ≈ 575 por mm²);
+     agora recomendo gravar; ≈ 2 h;
+  3. frase-tese (ele disse "calma já leio"); não mexi;
+  4. duas frases fora da seção 8 que o resultado dos controles pede para qualificar e que NÃO mudei: contribuição
+     (2) da introdução ("…not the spread of each pattern beyond it") e a frase da conclusão ("…because the fringes
+     of neighbouring patterns enter each crop"); proposta do escritor: acrescentar "within the Fresnel numbers of
+     our standard sets";
+  5. avisado: levantei a minha trava do Q3 e rodei r2–r5 dos dois controles (Q4);
+  6. não testado, se ele quiser: qual ponta da faixa de N_F pesa; a distância sozinha;
+  7. abstract de ≈ 450 palavras; os dois pontos do diagrama da bancada; os arquivos que ele vai mandar (PDF do
+     HoloAtt-UNet 2026, .RIS do Scopus e do ScienceDirect, três PDFs).
+  **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro; nada vai ao Overleaf sem o "pode".**
