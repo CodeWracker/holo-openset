@@ -397,6 +397,7 @@ def numbers():
     # ---- the distance of the sample changes (distance_tests_u50.csv when it exists, else distance_tests.csv)
     distance_macros()
     bank_macros()
+    small_near_macros()
 
     curve_macros()
 
@@ -524,6 +525,62 @@ def bank_macros():
             macro(f'BankRunBelowRecal{k}', -x.f1.iloc[0])
     rule = t[t.kind == 'rule']
     macro('BankRunHolds', None if not len(rule) else ('holds' if str(rule.holds.iloc[0]) == 'True' else 'does not hold'))
+
+
+def small_near_macros():
+    """The control of the small letters at 2 mm (small_near_control.csv and _reading.json, r1): the set of the paper
+    retrained with the recipe of the curve (reference), the same set recorded again on a grid twice finer than the
+    pixel with letters drawn from a finer raster (control), and the crops of the curve at the same overlap
+    (interpolated); the recording at the sampling of the sensor against the converged one
+    (oversampling_native_small_near.csv) and the (2, 4) check (oversampling_convergence_small_near.csv); the letter
+    sides and the depth law that still differ from the standard sets."""
+    t = csv('small_near_control')
+    if len(t):
+        for role, k in [('reference', 'Ref'), ('control', 'Ctl')]:
+            for f in FLOWS:
+                r = t[(t.role == role) & (t.flow == f)]
+                if len(r):
+                    macro(f'SnCtl{k}{FLOW_KEY[f]}Fone', r.f1.iloc[0])
+                    macro(f'SnCtl{k}{FLOW_KEY[f]}Rej', r.rejection.iloc[0])
+            r = t[t.role == role].iloc[0]
+            macro(f'SnCtl{k}HoloDiameterUm', r.D_um, '{:.0f}')
+            macro(f'SnCtl{k}OverlapPct', 100 * r.overlap, '{:.0f}')
+            macro(f'SnCtl{k}PiDSigma', r.pi_D2_sigma, '{:.2f}')
+        r = t[t.role.str.startswith('R_curva') & (t.flow == 'raw')]
+        if len(r):
+            macro('SnCtlCurveRawFone', r.f1.iloc[0])
+            macro('SnCtlCurveRawRej', r.rejection.iloc[0])
+        r = t[(t.role == 'control') & (t.flow == 'raw')].iloc[0]
+        for c, k in [('dist_f1_to_R_ant', 'ToRefFone'), ('dist_f1_to_R_curva', 'ToCurveFone'),
+                     ('dist_rejection_to_R_ant', 'ToRefRej'), ('dist_rejection_to_R_curva', 'ToCurveRej')]:
+            macro(f'SnCtl{k}', r[c])
+    rd = RES / 'small_near_control_reading.json'
+    if rd.exists():
+        macro('SnCtlOutcome', json.loads(rd.read_text()).get('outcome'))
+    nat = csv('oversampling_native_small_near')
+    if len(nat):
+        macro('SnNativeLoPct', 100 * nat.rel_total.min(), '{:.1f}')
+        macro('SnNativeHiPct', 100 * nat.rel_total.max(), '{:.1f}')
+        macro('SnNativeScenes', CARDINAL[len(nat)])
+    cv = csv('oversampling_convergence_small_near')
+    if len(cv):
+        c2 = cv[cv.s == 2]
+        macro('SnConvTwoLoPct', 100 * c2.rel_rms.min(), '{:.1f}')
+        macro('SnConvTwoHiPct', 100 * c2.rel_rms.max(), '{:.1f}')
+    for k, name in [('SnCtl', 'hologram_diameter_small_near_newrec_summary.json'),
+                    ('Bench', 'hologram_diameter_summary.json')]:
+        f = RES / name
+        if f.exists():
+            macro(f'{k}SideMedianPx', json.loads(f.read_text())['stats_px']['side_px']['median'], '{:.1f}')
+    ph = physics('small_near')
+    if ph:
+        macro('SnDepthStdUm', ph['physics']['depth_std'] * 1e6, '{:g}')
+        macro('SnDepthMaxUm', ph['physics']['depth_max'] * 1e6, '{:g}')
+    sb = csv('sets_by_fresnel')
+    r = sb[(sb.set == 'small_near')]
+    if len(r):
+        macro('SnFresnelLo', r.fresnel_p5.iloc[0], '{:.2f}')
+        macro('SnFresnelHi', r.fresnel_p95.iloc[0], '{:.2f}')
 
 
 def calib_step_pct():
