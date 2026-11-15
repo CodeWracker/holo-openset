@@ -598,3 +598,67 @@ Pré-registro: `CADERNO_CURVA.md`, Q3 (commit `b97121d`), seções C, D e L. GPU
 - **D, estratificada:** registro aqui que é **uma segunda passada no mesmo teste do `small_near_newrec`, com o mesmo
   modelo de crops de r1 e o mesmo limiar**; não escolhe nada.
 - **L:** o teste de `curve_feasibility_343.csv` a 514 e 771 letras por janela, nas mesmas 20 cenas (sem holograma).
+
+## 2026-11-15, 16:40 — D9: Q3-C (coluna de 2 mm, cinco repetições), letras pequenas a 19,25 mm, Q3-L
+
+### C. `small_near_newrec`, dez fluxos × r1–r5 (teste lido uma vez por modelo)
+
+- Caches (`phaseS.sh 0 caches`, 16:01–16:04, 190 s): `reconstruct --set small_near_newrec --methods af twin` →
+  `rec_af.npy`, `rec_twin.npy`; `autofocus.csv` reescrito com as distâncias do autofoco (cópia da versão só-z₀ em
+  `logs/exp_resolucao/S2_small_near_newrec_autofocus_z0only.csv`); `rec_z0.npy` intocado.
+- Filas (`phaseS.sh <GPU> queue`, `--no-aux`, `--threads 4`): A (GPU 1: raw, prop, rec_z0, learned, complex; 16:02–16:39),
+  B (GPU 2: wiener, bank_jit, bank_w3; 16:02–16:35), C (GPU 0: rec_af, rec_twin; 16:06–16:27). 47 treinos novos, todos
+  com 3000 passos (conferido no log); os 3 de r1 que existiam foram pulados (modelo e json).
+- Tabela: `python scripts/exp_resolucao/small_near_five_reps.py` → `results_exp_resolucao/small_near_newrec_five_reps.csv`
+  e `_reading.json` (coluna do paper lida de `results/eval/small_near`, nada escrito lá). Média (mín.–máx.) de 5:
+
+| fluxo | F1 novo | F1 paper | Δ F1 | rejeição nova | rejeição paper | Δ rej. | fechada nova / paper | conhecidas nova / paper |
+|---|---|---|---|---|---|---|---|---|
+| raw | 0,8060 (0,799–0,811) | 0,7929 | +0,013 | 0,191 (0,120–0,242) | 0,153 | +0,038 | 0,896 / 0,888 | 0,890 / 0,884 |
+| learned | 0,9508 (0,938–0,963) | 0,9445 | +0,006 | 0,818 (0,688–0,938) | 0,773 | +0,044 | 0,981 / 0,979 | 0,953 / 0,952 |
+| complex | 0,9493 (0,934–0,960) | 0,9554 | −0,006 | 0,795 (0,649–0,914) | 0,843 | −0,048 | 0,985 / 0,986 | 0,955 / 0,956 |
+| wiener | 0,9643 (0,956–0,975) | 0,9659 | −0,002 | 0,890 (0,761–0,980) | 0,906 | −0,016 | 0,992 / 0,991 | 0,959 / 0,960 |
+| prop | 0,9732 (0,972–0,976) | 0,9721 | +0,001 | 0,986 (0,974–1,000) | 0,963 | +0,022 | 0,995 / 0,996 | 0,957 / 0,959 |
+| bank_jit | 0,9697 (0,960–0,975) | 0,9769 | −0,007 | 0,950 (0,862–1,000) | 0,986 | −0,037 | 0,996 / 0,997 | 0,957 / 0,963 |
+| bank_w3 | 0,9740 (0,971–0,977) | 0,9720 | +0,002 | 0,968 (0,933–1,000) | 0,956 | +0,012 | 0,995 / 0,996 | 0,962 / 0,960 |
+| rec_z0 | 0,9744 (0,972–0,978) | 0,9741 | +0,000 | 0,985 (0,954–1,000) | 0,970 | +0,016 | 0,998 / 0,998 | 0,959 / 0,962 |
+| rec_af | 0,9749 (0,969–0,978) | 0,9765 | −0,002 | 0,982 (0,950–1,000) | 0,988 | −0,005 | 0,998 / 0,998 | 0,960 / 0,962 |
+| rec_twin | 0,9774 (0,973–0,981) | 0,9765 | +0,001 | 0,985 (0,939–1,000) | 0,979 | +0,006 | 0,997 / 0,998 | 0,964 / 0,964 |
+
+- **Previsão registrada:** "nenhum fluxo muda o F1 médio em mais de 0,02" → **vale** (maior mudança: raw, +0,013).
+  "A ordem das rotas não muda (crops muito abaixo; rotas com propagação juntas)" → **vale na forma registrada**: os
+  crops são os últimos nos dois (0,806 contra 0,793), e as sete rotas com propagação ficam juntas (F1 0,964–0,977
+  contra 0,966–0,977; a menor delas fica 0,158 acima dos crops, contra 0,173). **A ordem exata não é a mesma**: dentro
+  das rotas com propagação (diferenças ≤ 0,013) e entre `learned` e `complex` (0,951 / 0,949 contra 0,945 / 0,955) os
+  lugares trocam; as trocas estão dentro do espalhamento das repetições.
+
+### C, ao lado: letras pequenas a 19,25 mm (sem teste; `phaseS.sh 0 converge_z0`, `S_CONV=2 … native_z0`)
+
+Leis do `small_z0` (as do `small_near` com z₀ = 19,25 mm; o layout físico com os comprimentos dados, raster 16×),
+4 cenas, 50 µm, margem 1728, alcance 1024, sem ruído (`oversampling_convergence_small_z0.csv`,
+`oversampling_native_small_z0.csv`):
+
+| | cena 0 | 1250 | 2500 | 3750 | dif. máx. |
+|---|---|---|---|---|---|
+| (1, 2) = nativa × s = 2, total | 0,63 % | 0,79 % | 0,54 % | 0,73 % | 0,35 níveis |
+| (2, 4) | 0,053 % | 0,070 % | 0,042 % | 0,059 % | 0,05 níveis |
+| só a propagação (máscara no pixel, s = 1 × s = 2) | 0,50 % | 0,44 % | 0,27 % | 0,49 % | 0,23 níveis |
+| só o desenho (máscara no pixel × raster mestre, s = 2) | 0,87 % | 1,08 % | 0,75 % | 1,01 % | 0,52 níveis |
+
+**(1, 2) passa (máximo 0,79 %): pela regra do P0, a amostragem do sensor já é a convergida a 19,25 mm, e a gravação
+nativa do `small_z0` fica dentro da tolerância de 1 %.** Nada regravado. (Uma primeira chamada do `converge_z0` foi
+interrompida por mim no começo, antes de escrever qualquer arquivo, porque eu a lancei com um sexto processo ainda
+rodando; relançada logo depois, sem mudança.)
+
+### L. O gerador acima de 300 por mm² (`curve_feasibility.py --levels 514 771` → `curve_feasibility_dense.csv`; sem holograma)
+
+As 20 cenas do teste do 343 (imagens 0, 263, …, 4999), física do `bench_1mm` com 50 / 150 µm, layout do piloto.
+
+| nível pedido | por mm² | pedidas por janela (média) | colocadas por janela (média, mín.–máx.) | puladas na janela | puladas no total | área coberta | s por cena |
+|---|---|---|---|---|---|---|---|
+| 343 (D1) | 300 | — | 344,7 (294–389) | 0 | 0 | 23,2 % | 2,5 |
+| 514 | 450 | 516,2 | 512,3 (453–560) | 77 de 10 180 (0,76 %) | 199 de 30 203 (0,66 %) | 34,2 % (30,4–36,7) | 8,0 |
+| 771 | 675 | 773,5 | 656,0 (636–677) | 2350 de 15 326 (15,3 %) | 6924 de 45 537 (15,2 %) | 41,7 % (40,4–42,8) | 13,7 |
+
+A 514 o gerador coloca quase tudo (abaixo dos 5 % do Q0); a 771 ele satura em ≈ 650 letras por janela (≈ 575 por
+mm², ≈ 42 % de área), e o nível entraria com a densidade obtida.
