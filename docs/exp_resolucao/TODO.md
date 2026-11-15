@@ -574,7 +574,7 @@ errado".
   padrão. **Próximo passo ao voltar: ler a devolução do escritor (parte 1) e a do executor da densidade; conferir
   `density_curve.csv` contra os json e a regra do Q0; mandar a parte 2 da escrita; relatório curto e diff, sem
   merge.**
-- **2026-11-15, 10:25 — parte 1 da terceira passada revisada.** (As horas "10:15" e "10:20" que escrevi antes
+- **2026-11-15, 10:15 — parte 1 da terceira passada revisada.** (As horas "10:15" e "10:20" que escrevi antes
   estavam adiantadas: o executor da distância terminou às ≈ 09:58 e mandei a parte 1 às ≈ 10:03.) Rascunho do
   relatório em `RELATORIO_CURVA.md` (seções 2, 4 e 5 conferidas; 1, 3, 6–8 por escrever; ainda não commitado).
   Li a seção de resultados inteira para a encomenda da parte 2 (Q-w5). **Próximo passo ao voltar: esperar a
