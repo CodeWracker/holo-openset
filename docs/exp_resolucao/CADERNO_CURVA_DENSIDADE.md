@@ -424,3 +424,80 @@ paper faz). Não escrevi.
 | rec_z0 | não rodado (falta o cache) | | 0,9712 / 0,9622 |
 
 α da camada: calibrado 0,002100 (o log diz "the bench would be 0,002118", 2,0 mm), depois do treino 0,002079.
+
+## 2026-11-15, 13:51 — D7 (continuação): respostas do responsável; comprimentos dados no layout físico, cache de `rec_z0`, convergência a 2 mm, nativa × convergida, referência completa
+
+Respostas (mensagem do responsável): (1) implementar os quatro comprimentos opcionais; (2) pode escrever o cache
+`rec_z0` em `data/small_near` com o comando da pipeline, sem alterar o que existe.
+
+### Comprimentos dados (commit `64e9e94`; a única mudança no pacote)
+
+- `FresnelLayout` (`holo_openset/sim/scene.py`): `font_min`, `font_max`, `border`, `margin` (`LENGTHS`), dados,
+  substituem os derivados do `scale`; o `physics.json` guarda os dados em `layout_params['lengths_given']` (ausente se
+  nenhum), e só esses são lidos de volta (`generate.make_layout`): os comprimentos que o `physics.json` dos conjuntos
+  de antes já registra não viram "dados". `simulate fresnel --layout font_min=16 …` os converte (`cli.py`).
+- `tests/test_layout_lengths.py` (6 testes): sem comprimentos dados, os digests das quatro cenas de antes (para
+  `FresnelLayout()`, `lengths_given={}` e o layout relido de um `physics.json`), e um `physics.json` antigo não
+  gera `lengths_given`; dados (16, 48, 6, 4): os valores chegam à cena e são os do `SmallLayout`, voltam iguais pelo
+  `physics.json`, os tamanhos sorteados ficam em [16, 48], a caixa de tinta das anotadas respeita a borda de 6 px
+  (a 1/8 px), e o espaçamento de 4 px vale entre quaisquer duas letras; um conjunto gerado guarda e relê os quatro.
+- `pytest`: **78 passam** (72 + 6); `reproduce check`: **13/13** (`env -u HOLO_RESULTS -u HOLO_MODELS`).
+- **Diferenças de definição que ficam (as do controle B), e que entram na leitura:** fonte contínua em [16, 48] em
+  vez de inteira; posição contínua (a 1/16 px) em vez de inteira; espaçamento medido na caixa de pixels que contém a
+  tinta; glifo desenhado na grade mestra 16× e levado à grade de gravação por média de área (no `small_near`, o glifo
+  é desenhado a 1× pelo Pillow); poeira na grade mestra. **O controle troca duas peças ao mesmo tempo: a propagação
+  sobreamostrada e o desenho das letras.** As cenas não são as mesmas do `small_near` (sorteios contínuos), só as
+  mesmas leis, sementes e sessões.
+
+Leis escritas no caminho novo (`scripts/exp_resolucao/small_near_control.sh`): `--layout factor=16 scale=1 font_min=16
+font_max=48 border=6 margin=4 letters_mean=8 letters_std=3 letters_min=3 letters_max=18`, `--set-physics z0=2.0e-3
+oversample=<s>` (o resto é o padrão, como o `physics.json` do `small_near`), 5000 imagens, 100 por sessão, semente 17.
+
+### Cache `rec_z0` do `small_near` (`small_near_control.sh 5 ref_cache`, 13:47:37–13:48:16, código `64e9e94`)
+
+Disco antes: 2,0 TB livres. Comando: `python -m holo_openset reconstruct --set small_near --methods z0 --device
+cuda:5` (o da pipeline, `pipeline.py:54`, só com `z0`). Lista da pasta (tamanho, data) e sha256 de `holograms.npy`,
+`backgrounds.npy`, `annotations.csv`, `metadata.csv`, `physics.json`, `sessions.csv`, `dust.csv` e as contagens de
+`labels/` e `objects/` antes e depois (`logs/exp_resolucao/S_small_near_{before,after}.txt`): **iguais**; a única
+diferença são dois arquivos novos, `rec_z0.npy` (6 144 000 128 bytes) e `autofocus.csv` (158 329 bytes; o mesmo
+comando o escreve, como na pipeline). `holograms.npy` sha256 `4c62181a…d7776`.
+
+### Convergência a 2,0 mm (`small_near_control.sh 5 converge` → `results_exp_resolucao/oversampling_convergence_small_near.csv`)
+
+4 cenas (imagens 0, 1250, 2500, 3750), 50 µm, margem 1728, alcance 1024, layout acima, raster mestre 16×, sem ruído.
+
+| par | rel_rms por cena | dif. máx. (níveis) | passa (≤ 1 %) |
+|---|---|---|---|
+| (1, 2) | 5,82 / 4,96 / 4,84 / 4,76 % | 3,78 | não |
+| (2, 4) | 0,80 / 0,73 / 0,67 / 0,59 % | 0,60 | sim |
+
+**Pela regra do P0: s = 2.** Raster mestre: 16× (o do piloto, múltiplo de 2; sem desvio de raster como o do controle B).
+(2, 4) passa com folga menor que a 1 mm (0,80 % contra 1 %).
+
+### Nativa × convergida, separando as duas peças (`oversampling_convergence.py native`, `S_CONV=2` → `oversampling_native_small_near.csv`; e s = 4 → `_s4.csv`)
+
+Mesmas 4 cenas físicas; normalizado pelo rms do padrão da gravação convergida (s = 2, raster mestre). (i) só a
+propagação: a mesma máscara no pixel (a média de área do raster mestre em 1 px, o que o caminho nativo lê) com s = 1 e
+com s = 2; (ii) só o desenho: a máscara no pixel contra o raster mestre, as duas com s = 2; total: nativa (s = 1,
+máscara no pixel) contra convergida.
+
+| cena | total | (i) propagação | (ii) desenho | dif. máx. total / (i) / (ii) (níveis) |
+|---|---|---|---|---|
+| 0 | 5,82 % | 5,15 % | 7,18 % | 1,93 / 2,02 / 2,83 |
+| 1250 | 4,96 % | 3,79 % | 6,32 % | 2,26 / 1,47 / 3,11 |
+| 2500 | 4,84 % | 3,44 % | 6,55 % | 3,78 / 3,27 / 6,07 |
+| 3750 | 4,76 % | 3,57 % | 6,25 % | 2,76 / 1,81 / 3,29 |
+
+Com s = 4 no lugar de 2: total 4,77–5,77 %, (i) 3,55–5,25 %, (ii) 6,92–7,65 %. As duas peças se compensam em parte
+(o desenho sozinho erra mais que o total). Nota: aqui a "máscara no pixel" é a média do raster mestre; no `small_near`
+o glifo foi desenhado a 1× pelo Pillow, o que é ainda outra máscara (não medida).
+
+### Referência completa (`small_near` em disco, r1, `--no-aux`, grade padrão de α; teste lido uma vez)
+
+| fluxo | F1 | rejeição | fechada | limiar | paper r1 (F1 / rej.) |
+|---|---|---|---|---|---|
+| raw | 0,7909 | 0,1176 | — | — | 0,7939 / 0,0974 |
+| prop | 0,9633 | 0,8953 | — | — | 0,9710 / 0,9420 |
+| rec_z0 | 0,9778 | 0,9871 | — | — | 0,9712 / 0,9622 |
+
+(rec_z0: `small_near_control.sh 5 ref_train` e `ref_evaluate`, 13:48–13:49; raw e prop do D7 anterior.)
