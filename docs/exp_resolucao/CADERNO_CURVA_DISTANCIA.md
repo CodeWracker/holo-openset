@@ -187,3 +187,40 @@ Em rejeição a mesma diferença fica entre −0,0031 e +0,0064.
    perto do verdadeiro) em 14 das 15 comparações (−0,0009 em r5 a 0,7 mm; as outras de +0,0010 a +0,0039). Pode ser que o modelo de `rec_z0` tenha sido treinado
    na reconstrução a 1,0 mm nominal com as sessões a ±0,5 %, e a razão reproduza essa relação; é uma diferença
    pequena.
+
+## 2026-11-15, 08:55 — D2-prep: fase 2 preparada (rodada d2 e linhas de profundidade), esperando o `curve_u50_L008`
+
+Pedido do responsável (mensagem da fase 2) e Q1 do `CADERNO_CURVA.md` (lido): lei padrão uniforme nos 50 µm do
+canal (±25 µm; campo `depth_uniform`, implementado pelo executor "densidade", commit `777f68e`); nível esparso
+`curve_u50_L008` com r1–r5. Um laço em segundo plano espera `results_exp_resolucao/curve_u50_L008_ready.json`. Eu só
+leio o conjunto e os modelos dele.
+
+### Código (nada em `holo_openset/` mudou; commits `8477d7d`, `c6b0a50`)
+
+- `distance_tests.sh` ganhou `FAM=pilot|u50` (padrão `pilot` = d1, sem mudança: com `FAM=pilot` os nomes, os comandos
+  e os logs são os mesmos, e a tabela da d1 sai igual byte a byte; conferido numa cópia no scratchpad).
+  `FAM=u50 ZROB=07|09|11`: `--like curve_u50_L008` → `data/curve_u50_robust/z<ZZ>[_val]`, linhas em
+  `robustness_curve_u50_L008_dist.csv`, `recal_curve_u50_L008_z<ZZ>.json`, `distance_checks_u50_z<ZZ>.json`, logs
+  `dist_u50_*`. Na família padrão o 0,7 mm é gravado (não existe).
+- `distance_checks.py` passou a escrever a lei de profundidade (todos os campos com `depth` no nome) do conjunto e se
+  ela é igual à do `--ref`. Os json da d1 não foram refeitos.
+- `distance_tests.py --family u50` → `distance_tests_u50.csv` e `_rows.csv`; a linha de 1,0 mm vem dos json de
+  `eval/curve_u50_L008/`. Exercitado com entradas falsas no scratchpad (os números da d1 no lugar dos da família):
+  sai igual à tabela da d1.
+- `depth_tests.sh` (novo): `flat_on_u50` (i), `u50_on_flat` (ii), `u50_on_wide` (iii), `rep`, `table`; o mesmo
+  `experiment robustness --variants-root . --variants <conjunto>` que o `depth_training.sh cross` do piloto usou.
+  Linhas em `robustness_depth_from_bench_1mm.csv` (i) e `robustness_depth_from_curve_u50_L008.csv` (ii, iii).
+- `depth_tests.py` → `depth_tests.csv` / `_rows.csv`: as linhas novas, a avaliação própria do `curve_u50_L008`
+  (u50 → u50), e as que existem copiadas como estão: plano → plano e plano → lei larga de
+  `pilot_five_reps_robustness.csv` (5 repetições, 4 casas), lei larga → lei larga e lei larga → plano de
+  `depth_training.csv` (r1, 4 casas). Diferenças pareadas por repetição: plano → u50 − u50 → u50, plano → u50 −
+  plano → plano, u50 → plano − u50 → u50, u50 → lei larga − u50 → u50.
+
+### Escolhas declaradas antes de rodar
+
+1. **Teste da lei larga em (iii):** `bench_1mm_robust/depth50`. Conferi que os 800 hologramas e as anotações são
+   idênticos aos do split de teste de `bench_1mm_depth50` (os dois são "o mesmo teste"), e ele já tem o `rec_z0.npy`
+   a 1,0 mm.
+2. **Validação regravada:** como na d1 (e no `record_07`), o split de validação inteiro (700) é regravado em cada
+   distância; a recalibração usa 32 deles (semente 0). O pedido fala em "os 32 hologramas"; gravar o split inteiro é
+   o que o `simulate like` faz e mantém a d2 igual à d1. Só os 32 entram em algum número.
