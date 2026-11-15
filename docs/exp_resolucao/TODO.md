@@ -387,7 +387,7 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   Overleaf: NADA (o remoto do paper é só o Overleaf, ligado ao `main`); só depois de o orientador revisar o PDF.
 - [ ] **R-S.** Controle das letras pequenas a 2 mm (`small_near_newrec`, r1, três fluxos; referência retreinada).
   Executor "densidade".
-- [x] **R-J.** (13:55, conferido por mim contra `eval/curve_u50_L008/bank_jit_r1.json` e
+- [x] **R-J.** (13:46, conferido por mim contra `eval/curve_u50_L008/bank_jit_r1.json` e
   `robustness_curve_u50_L008_bank_jit.csv`) Banco focal, r1: **não aguenta** pela regra do Q2. F1 0,981 a 1,0 mm;
   0,650 a 0,9 mm (−0,331) e 0,678 a 1,1 mm (−0,303); rejeição 0,994 / 0,997; acerto em fechado 0,972 / 0,973;
   acerto das conhecidas 0,506 / 0,530 (o que cai é o limiar, não a separação). Sem recalibrar ele cai menos que a
@@ -407,7 +407,7 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   (d) nota do Related Work vira lista do que o orientador vai mandar (.RIS do Scopus e do ScienceDirect; PDFs do
   HoloAtt-UNet 2026, Cotter 2021, Delli Priscoli 2021, JBO 26:036001);
   (e) figura do quadro inteiro com a camada de propagação (muda `expected/`: autorizado para isso).
-- [x] **R-viz.** (13:50, conferido: placar e quedas refeitos por mim a partir de `density_curve_reps.csv`)
+- [x] **R-viz.** (13:45, conferido: placar e quedas refeitos por mim a partir de `density_curve_reps.csv`)
   `docs/exp_resolucao/img/explica_regra_caiu.png` (+ `.pdf`), script `scripts/exp_resolucao/explain_fall_rule.py`,
   commit `231e53e`. Enviada ao orientador com a explicação.
 - [ ] **R-titulo.** Responder: o título atual ainda fala em "Learnable Fourier Layer"; dar opinião e opções, não
@@ -657,7 +657,7 @@ errado".
   ao voltar: esperar as devoluções, conferir cada uma contra os arquivos; depois mandar ao executor da escrita os
   resultados de R-S e R-J para o texto; compilar; PDF + diff ao orientador; push final só do código.** Resposta do
   título (R-titulo): o trecho "with a Learnable Fourier Layer" é o que envelhece; propor opções, não mudar sozinho.
-- **2026-11-15, 13:58 — R-viz e R-J prontos e conferidos; R-S e R-txt em curso.** Erro meu: mandei os executores
+- **2026-11-15, 13:47 — R-viz e R-J prontos e conferidos; R-S e R-txt em curso.** Erro meu: mandei os executores
   para as GPUs 6 e 7, que não existem (o container tem 0–5); o da distância usou a 3, sem efeito em número. O
   executor da densidade parou com duas perguntas (parâmetros opcionais no `FresnelLayout` para escrever as leis do
   `SmallLayout`; cache `rec_z0` em `data/small_near`): respondi sim às duas, com condições (padrão inalterado
