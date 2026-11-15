@@ -632,6 +632,8 @@ def curve_macros():
                 r = r.iloc[0]
                 macro(f'{L}{K}Fone', r.f1_mean, '{:+.3f}')
                 macro(f'{L}{K}Rej', r.rejection_mean, '{:+.3f}')
+                macro(f'{L}{K}FoneAbs', abs(r.f1_mean))          # unsigned, for sentences that say "more"
+                macro(f'{L}{K}RejAbs', abs(r.rejection_mean))
                 if fl == 'prop - raw' and not pd.isna(r.get('p0_both_count')):
                     macro(f'{L}MarginBoth', int(r.p0_both_count), '{}')
             if len(reps):
@@ -654,6 +656,14 @@ def curve_macros():
                     macro(f'{L}{FLOW_KEY[f]}DropRejRepHi', -q.d_rej.min(), '{:.3f}')
                     macro(f'{L}{FLOW_KEY[f]}FellRejCount', int(q.fell_rej.astype(str).eq('True').sum()), '{}')
                     macro(f'{L}{FLOW_KEY[f]}FellFoneCount', int(q.fell_f1.astype(str).eq('True').sum()), '{}')
+    # the reconstruction above the layer in rejection at the two densest levels: how many repetitions, as words
+    if len(reps):
+        top2 = sorted(t.level.unique())[-2:]
+        pos = [int(((reps.level == lv) & (reps.flow == 'rec_z0 - prop') & (reps.rejection > 0)).sum()) for lv in top2]
+        n = [int(((reps.level == lv) & (reps.flow == 'rec_z0 - prop')).sum()) for lv in top2]
+        macro('CurveDenseRecAboveText', f'in {CARDINAL[pos[0]]} of {CARDINAL[n[0]]} repetitions at both levels'
+              if pos[0] == pos[1] and n[0] == n[1] else
+              f'in {CARDINAL[pos[0]]} of {CARDINAL[n[0]]} and {CARDINAL[pos[1]]} of {CARDINAL[n[1]]} repetitions')
     # where each flow falls first (rule of Q0, from the five repetitions), as a density
     for f in FLOWS:
         for m_, M_ in [('f1', 'Fone'), ('rej', 'Rej')]:
