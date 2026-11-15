@@ -146,9 +146,9 @@ O que a literatura que já estava salva no projeto diz:
 **Seo 2009 já relata o efeito que os nossos controles mostraram:** o reconhecimento sobre o holograma cru perde
 acurácia quando os hologramas se sobrepõem. É precedente, e precisa ser citado no texto.
 
-Ressalva da escolha: as células de Seo têm hologramas de cerca de 50 µm, menores que os das nossas letras. Na mesma
-contagem por mm², a nossa sobreposição é maior. A comparação justa é pela razão de sobreposição deles, que pede o
-diâmetro efetivo do nosso holograma. Não medi esse diâmetro.
+Ressalva da escolha: Seo dá cerca de 50 µm para o diâmetro efetivo do holograma das células deles. Não medi o das
+nossas letras, que têm de 22 a 39 µm de lado. Sem essa medida não sei se, na mesma contagem por mm², a nossa
+sobreposição é igual à deles. A comparação justa é pela razão de sobreposição, e não pela contagem.
 
 ## 9. Decisões que preciso de você
 

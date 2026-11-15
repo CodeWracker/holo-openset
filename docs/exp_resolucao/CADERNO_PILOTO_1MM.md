@@ -1087,9 +1087,9 @@ não lembra a densidade típica das amostras, e a escolha fica conosco. Nada foi
 
 ### Ressalvas da escolha
 
-- As células de Seo têm hologramas de ≈ 50 µm; as nossas letras têm 22 a 39 µm de lado e o holograma é maior. Na
-  mesma contagem por mm², a nossa sobreposição é maior que a deles. A comparação justa é pela razão de sobreposição
-  de Seo, que pede o diâmetro efetivo do nosso holograma. Não medi esse diâmetro.
+- Seo dá ≈ 50 µm para o diâmetro efetivo (RMS) do holograma das células deles. Não medi o das nossas letras, que
+  têm 22 a 39 µm de lado. Sem essa medida não sei se, na mesma contagem por mm², a nossa sobreposição é igual à
+  deles. A comparação justa é pela razão de sobreposição de Seo, e não pela contagem.
 - A faixa da literatura é mais larga que a nossa: de 13 a cerca de 6250 objetos por mm².
 - **Seo 2009 já relata o efeito que os controles mostraram:** o reconhecimento sobre o holograma cru perde acurácia
   quando os hologramas se sobrepõem. É precedente e precisa ser citado no Related Work (parte C) e na parte B.
