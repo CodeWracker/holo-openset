@@ -1,0 +1,256 @@
+kind,distance_mm,flow,condition,rep,f1,rejection,closed_acc,known_acc,source
+metric,0.700000,prop,as_is,1,0.014831,1.000000,0.206473,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,as_is,2,0.015090,1.000000,0.192240,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,as_is,3,0.015268,1.000000,0.234415,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,as_is,4,0.014621,1.000000,0.187184,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,as_is,5,0.015080,1.000000,0.158307,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_literal,1,0.754299,0.971820,0.987717,0.632482,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_literal,2,0.751032,1.000000,0.989222,0.620811,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_literal,3,0.763467,0.968896,0.986234,0.642478,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_literal,4,0.699541,0.998362,0.976893,0.565243,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_literal,5,0.698906,1.000000,0.980212,0.565439,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_ratio,1,0.916124,0.975040,0.994736,0.864496,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_ratio,2,0.927124,1.000000,0.995885,0.876543,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_ratio,3,0.932632,0.921462,0.994297,0.900492,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_ratio,4,0.913475,0.996724,0.993786,0.856505,robustness_curve_u50_L008_dist.csv
+metric,0.700000,prop,recal_ratio,5,0.905668,1.000000,0.990008,0.844828,robustness_curve_u50_L008_dist.csv
+metric,0.700000,raw,as_is,1,0.892083,0.615137,0.960811,0.891402,robustness_curve_u50_L008_dist.csv
+metric,0.700000,raw,as_is,2,0.918033,0.800473,0.963551,0.908289,robustness_curve_u50_L008_dist.csv
+metric,0.700000,raw,as_is,3,0.900035,0.643079,0.963422,0.886136,robustness_curve_u50_L008_dist.csv
+metric,0.700000,raw,as_is,4,0.925974,0.867322,0.972621,0.902136,robustness_curve_u50_L008_dist.csv
+metric,0.700000,raw,as_is,5,0.917582,0.758485,0.966105,0.910266,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,as_is,1,0.014831,1.000000,0.197699,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,as_is,2,0.015090,1.000000,0.184989,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,as_is,3,0.015268,1.000000,0.214749,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,as_is,4,0.014621,1.000000,0.183689,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,as_is,5,0.015080,1.000000,0.184169,0.000000,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_literal,1,0.961130,0.998390,0.998050,0.933905,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_literal,2,0.961933,1.000000,0.997844,0.935332,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_literal,3,0.973653,0.986781,0.998230,0.957522,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_literal,4,0.961078,1.000000,0.998447,0.934563,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_literal,5,0.964525,1.000000,0.998041,0.938871,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_ratio,1,0.960914,0.998390,0.998050,0.933515,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_ratio,2,0.960922,1.000000,0.997648,0.933764,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_ratio,3,0.974653,0.988336,0.998230,0.958899,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_ratio,4,0.960619,1.000000,0.998447,0.933981,robustness_curve_u50_L008_dist.csv
+metric,0.700000,rec_z0,recal_ratio,5,0.963624,1.000000,0.998237,0.937500,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,as_is,1,0.398759,0.995169,0.949308,0.265939,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,as_is,2,0.494573,1.000000,0.974133,0.348031,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,as_is,3,0.466729,0.997667,0.964405,0.322517,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,as_is,4,0.457125,0.990172,0.959806,0.320583,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,as_is,5,0.313479,1.000000,0.942398,0.202782,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_literal,1,0.739628,0.974235,0.984792,0.614350,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_literal,2,0.746805,1.000000,0.992357,0.615716,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_literal,3,0.758780,0.986003,0.988397,0.633038,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_literal,4,0.726563,0.994267,0.982913,0.596699,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_literal,5,0.683055,1.000000,0.988636,0.540165,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_ratio,1,0.926518,0.982287,0.995126,0.879704,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_ratio,2,0.940513,1.000000,0.996473,0.898295,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_ratio,3,0.933290,0.933126,0.996853,0.899312,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_ratio,4,0.935520,0.993448,0.996311,0.893398,robustness_curve_u50_L008_dist.csv
+metric,0.900000,prop,recal_ratio,5,0.926551,1.000000,0.995102,0.877547,robustness_curve_u50_L008_dist.csv
+metric,0.900000,raw,as_is,1,0.934316,0.608696,0.984012,0.966855,robustness_curve_u50_L008_dist.csv
+metric,0.900000,raw,as_is,2,0.950462,0.753155,0.984323,0.971781,robustness_curve_u50_L008_dist.csv
+metric,0.900000,raw,as_is,3,0.942624,0.692846,0.982301,0.960865,robustness_curve_u50_L008_dist.csv
+metric,0.900000,raw,as_is,4,0.956243,0.832105,0.984660,0.963495,robustness_curve_u50_L008_dist.csv
+metric,0.900000,raw,as_is,5,0.945686,0.706393,0.982367,0.967281,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,as_is,1,0.226128,0.999195,0.834276,0.129460,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,as_is,2,0.261571,1.000000,0.825985,0.158730,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,as_is,3,0.265047,1.000000,0.822419,0.156539,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,as_is,4,0.227009,1.000000,0.844272,0.129709,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,as_is,5,0.265209,1.000000,0.818966,0.155172,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_literal,1,0.971955,0.994364,0.998440,0.952817,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_literal,2,0.979045,1.000000,0.998432,0.963943,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_literal,3,0.980969,0.989891,0.998623,0.969125,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_literal,4,0.974918,0.999181,0.998641,0.957476,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_literal,5,0.978982,1.000000,0.998629,0.963754,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_ratio,1,0.974618,0.994364,0.998440,0.957497,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_ratio,2,0.980402,1.000000,0.998432,0.966294,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_ratio,3,0.981439,0.987558,0.998623,0.970501,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_ratio,4,0.975323,0.999181,0.998447,0.958058,robustness_curve_u50_L008_dist.csv
+metric,0.900000,rec_z0,recal_ratio,5,0.979914,1.000000,0.998433,0.965321,robustness_curve_u50_L008_dist.csv
+metric,1.000000,prop,as_is,1,0.974672,0.979871,0.996686,0.960811,eval/curve_u50_L008/prop_r1.json
+metric,1.000000,prop,as_is,2,0.977529,1.000000,0.998040,0.961199,eval/curve_u50_L008/prop_r2.json
+metric,1.000000,prop,as_is,3,0.969347,0.937014,0.997443,0.960079,eval/curve_u50_L008/prop_r3.json
+metric,1.000000,prop,as_is,4,0.977534,0.997543,0.996893,0.962524,eval/curve_u50_L008/prop_r4.json
+metric,1.000000,prop,as_is,5,0.974776,1.000000,0.997257,0.956897,eval/curve_u50_L008/prop_r5.json
+metric,1.000000,raw,as_is,1,0.925067,0.613527,0.977773,0.952427,eval/curve_u50_L008/raw_r1.json
+metric,1.000000,raw,as_is,2,0.938405,0.714511,0.975897,0.958848,eval/curve_u50_L008/raw_r2.json
+metric,1.000000,raw,as_is,3,0.936674,0.724728,0.975615,0.948476,eval/curve_u50_L008/raw_r3.json
+metric,1.000000,raw,as_is,4,0.946637,0.827191,0.978058,0.948738,eval/curve_u50_L008/raw_r4.json
+metric,1.000000,raw,as_is,5,0.937433,0.689818,0.974922,0.957288,eval/curve_u50_L008/raw_r5.json
+metric,1.000000,rec_z0,as_is,1,0.973723,0.995169,0.998050,0.955547,eval/curve_u50_L008/rec_z0_r1.json
+metric,1.000000,rec_z0,as_is,2,0.978687,1.000000,0.998628,0.963355,eval/curve_u50_L008/rec_z0_r2.json
+metric,1.000000,rec_z0,as_is,3,0.979614,0.987558,0.998623,0.967355,eval/curve_u50_L008/rec_z0_r3.json
+metric,1.000000,rec_z0,as_is,4,0.975296,0.998362,0.998058,0.958252,eval/curve_u50_L008/rec_z0_r4.json
+metric,1.000000,rec_z0,as_is,5,0.977686,0.999211,0.998824,0.961795,eval/curve_u50_L008/rec_z0_r5.json
+metric,1.100000,prop,as_is,1,0.300662,0.999195,0.865471,0.187366,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,as_is,2,0.283957,1.000000,0.858907,0.172252,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,as_is,3,0.280571,0.968118,0.859587,0.169125,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,as_is,4,0.325907,1.000000,0.862136,0.206408,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,as_is,5,0.255414,1.000000,0.857955,0.151254,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_literal,1,0.671473,0.975845,0.971534,0.527978,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_literal,2,0.709679,1.000000,0.985499,0.568293,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_literal,3,0.677072,0.947123,0.975025,0.535103,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_literal,4,0.651895,0.995905,0.972816,0.507573,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_literal,5,0.638430,1.000000,0.979036,0.490204,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_ratio,1,0.926425,0.979066,0.994541,0.881068,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_ratio,2,0.940580,1.000000,0.996669,0.899079,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_ratio,3,0.928086,0.916019,0.997247,0.893805,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_ratio,4,0.929732,0.994267,0.996311,0.884660,robustness_curve_u50_L008_dist.csv
+metric,1.100000,prop,recal_ratio,5,0.926802,1.000000,0.996277,0.877351,robustness_curve_u50_L008_dist.csv
+metric,1.100000,raw,as_is,1,0.915017,0.640097,0.965880,0.931371,robustness_curve_u50_L008_dist.csv
+metric,1.100000,raw,as_is,2,0.923188,0.690852,0.963747,0.938664,robustness_curve_u50_L008_dist.csv
+metric,1.100000,raw,as_is,3,0.923012,0.750389,0.964208,0.923894,robustness_curve_u50_L008_dist.csv
+metric,1.100000,raw,as_is,4,0.935005,0.846028,0.969126,0.925049,robustness_curve_u50_L008_dist.csv
+metric,1.100000,raw,as_is,5,0.920226,0.678769,0.960619,0.931230,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,as_is,1,0.267815,0.999195,0.865471,0.158510,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,as_is,2,0.290868,1.000000,0.856751,0.177347,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,as_is,3,0.320233,0.993779,0.866470,0.197443,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,as_is,4,0.281669,1.000000,0.878058,0.166990,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,as_is,5,0.353838,1.000000,0.881074,0.221983,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_literal,1,0.969112,0.994364,0.998440,0.948138,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_literal,2,0.975984,0.999211,0.998628,0.958848,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_literal,3,0.978116,0.990669,0.999017,0.964012,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_literal,4,0.969847,1.000000,0.998447,0.948738,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_literal,5,0.972691,0.998421,0.998629,0.953762,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_ratio,1,0.970071,0.995169,0.998440,0.949503,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_ratio,2,0.978274,0.999211,0.998824,0.962767,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_ratio,3,0.979092,0.989891,0.999017,0.965978,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_ratio,4,0.971690,1.000000,0.998447,0.951845,robustness_curve_u50_L008_dist.csv
+metric,1.100000,rec_z0,recal_ratio,5,0.974877,0.998421,0.998824,0.957484,robustness_curve_u50_L008_dist.csv
+loss_as_is,0.700000,prop,as_is - 1.0 mm,1,-0.959841,0.020129,,,
+loss_as_is,0.700000,prop,as_is - 1.0 mm,2,-0.962439,0.000000,,,
+loss_as_is,0.700000,prop,as_is - 1.0 mm,3,-0.954078,0.062986,,,
+loss_as_is,0.700000,prop,as_is - 1.0 mm,4,-0.962913,0.002457,,,
+loss_as_is,0.700000,prop,as_is - 1.0 mm,5,-0.959696,0.000000,,,
+loss_as_is,0.700000,raw,as_is - 1.0 mm,1,-0.032983,0.001610,,,
+loss_as_is,0.700000,raw,as_is - 1.0 mm,2,-0.020372,0.085962,,,
+loss_as_is,0.700000,raw,as_is - 1.0 mm,3,-0.036639,-0.081649,,,
+loss_as_is,0.700000,raw,as_is - 1.0 mm,4,-0.020663,0.040131,,,
+loss_as_is,0.700000,raw,as_is - 1.0 mm,5,-0.019851,0.068666,,,
+loss_as_is,0.700000,rec_z0,as_is - 1.0 mm,1,-0.958892,0.004831,,,
+loss_as_is,0.700000,rec_z0,as_is - 1.0 mm,2,-0.963597,0.000000,,,
+loss_as_is,0.700000,rec_z0,as_is - 1.0 mm,3,-0.964346,0.012442,,,
+loss_as_is,0.700000,rec_z0,as_is - 1.0 mm,4,-0.960675,0.001638,,,
+loss_as_is,0.700000,rec_z0,as_is - 1.0 mm,5,-0.962606,0.000789,,,
+loss_as_is,0.900000,prop,as_is - 1.0 mm,1,-0.575913,0.015298,,,
+loss_as_is,0.900000,prop,as_is - 1.0 mm,2,-0.482956,0.000000,,,
+loss_as_is,0.900000,prop,as_is - 1.0 mm,3,-0.502618,0.060653,,,
+loss_as_is,0.900000,prop,as_is - 1.0 mm,4,-0.520408,-0.007371,,,
+loss_as_is,0.900000,prop,as_is - 1.0 mm,5,-0.661297,0.000000,,,
+loss_as_is,0.900000,raw,as_is - 1.0 mm,1,0.009250,-0.004831,,,
+loss_as_is,0.900000,raw,as_is - 1.0 mm,2,0.012057,0.038644,,,
+loss_as_is,0.900000,raw,as_is - 1.0 mm,3,0.005950,-0.031882,,,
+loss_as_is,0.900000,raw,as_is - 1.0 mm,4,0.009607,0.004914,,,
+loss_as_is,0.900000,raw,as_is - 1.0 mm,5,0.008253,0.016575,,,
+loss_as_is,0.900000,rec_z0,as_is - 1.0 mm,1,-0.747595,0.004026,,,
+loss_as_is,0.900000,rec_z0,as_is - 1.0 mm,2,-0.717116,0.000000,,,
+loss_as_is,0.900000,rec_z0,as_is - 1.0 mm,3,-0.714567,0.012442,,,
+loss_as_is,0.900000,rec_z0,as_is - 1.0 mm,4,-0.748287,0.001638,,,
+loss_as_is,0.900000,rec_z0,as_is - 1.0 mm,5,-0.712477,0.000789,,,
+loss_as_is,1.100000,prop,as_is - 1.0 mm,1,-0.674010,0.019324,,,
+loss_as_is,1.100000,prop,as_is - 1.0 mm,2,-0.693572,0.000000,,,
+loss_as_is,1.100000,prop,as_is - 1.0 mm,3,-0.688776,0.031104,,,
+loss_as_is,1.100000,prop,as_is - 1.0 mm,4,-0.651627,0.002457,,,
+loss_as_is,1.100000,prop,as_is - 1.0 mm,5,-0.719362,0.000000,,,
+loss_as_is,1.100000,raw,as_is - 1.0 mm,1,-0.010050,0.026570,,,
+loss_as_is,1.100000,raw,as_is - 1.0 mm,2,-0.015216,-0.023659,,,
+loss_as_is,1.100000,raw,as_is - 1.0 mm,3,-0.013662,0.025661,,,
+loss_as_is,1.100000,raw,as_is - 1.0 mm,4,-0.011631,0.018837,,,
+loss_as_is,1.100000,raw,as_is - 1.0 mm,5,-0.017207,-0.011050,,,
+loss_as_is,1.100000,rec_z0,as_is - 1.0 mm,1,-0.705908,0.004026,,,
+loss_as_is,1.100000,rec_z0,as_is - 1.0 mm,2,-0.687819,0.000000,,,
+loss_as_is,1.100000,rec_z0,as_is - 1.0 mm,3,-0.659381,0.006221,,,
+loss_as_is,1.100000,rec_z0,as_is - 1.0 mm,4,-0.693627,0.001638,,,
+loss_as_is,1.100000,rec_z0,as_is - 1.0 mm,5,-0.623848,0.000789,,,
+recovered,0.700000,prop,recal_literal - as_is,1,0.739468,-0.028180,,,
+recovered,0.700000,prop,recal_literal - as_is,2,0.735942,0.000000,,,
+recovered,0.700000,prop,recal_literal - as_is,3,0.748198,-0.031104,,,
+recovered,0.700000,prop,recal_literal - as_is,4,0.684920,-0.001638,,,
+recovered,0.700000,prop,recal_literal - as_is,5,0.683826,0.000000,,,
+recovered,0.700000,prop,recal_ratio - as_is,1,0.901293,-0.024960,,,
+recovered,0.700000,prop,recal_ratio - as_is,2,0.912034,0.000000,,,
+recovered,0.700000,prop,recal_ratio - as_is,3,0.917363,-0.078538,,,
+recovered,0.700000,prop,recal_ratio - as_is,4,0.898854,-0.003276,,,
+recovered,0.700000,prop,recal_ratio - as_is,5,0.890588,0.000000,,,
+recovered,0.700000,rec_z0,recal_literal - as_is,1,0.946299,-0.001610,,,
+recovered,0.700000,rec_z0,recal_literal - as_is,2,0.946843,0.000000,,,
+recovered,0.700000,rec_z0,recal_literal - as_is,3,0.958384,-0.013219,,,
+recovered,0.700000,rec_z0,recal_literal - as_is,4,0.946458,0.000000,,,
+recovered,0.700000,rec_z0,recal_literal - as_is,5,0.949445,0.000000,,,
+recovered,0.700000,rec_z0,recal_ratio - as_is,1,0.946083,-0.001610,,,
+recovered,0.700000,rec_z0,recal_ratio - as_is,2,0.945832,0.000000,,,
+recovered,0.700000,rec_z0,recal_ratio - as_is,3,0.959385,-0.011664,,,
+recovered,0.700000,rec_z0,recal_ratio - as_is,4,0.945998,0.000000,,,
+recovered,0.700000,rec_z0,recal_ratio - as_is,5,0.948544,0.000000,,,
+recovered,0.900000,prop,recal_literal - as_is,1,0.340870,-0.020934,,,
+recovered,0.900000,prop,recal_literal - as_is,2,0.252232,0.000000,,,
+recovered,0.900000,prop,recal_literal - as_is,3,0.292051,-0.011664,,,
+recovered,0.900000,prop,recal_literal - as_is,4,0.269437,0.004095,,,
+recovered,0.900000,prop,recal_literal - as_is,5,0.369576,0.000000,,,
+recovered,0.900000,prop,recal_ratio - as_is,1,0.527759,-0.012882,,,
+recovered,0.900000,prop,recal_ratio - as_is,2,0.445940,0.000000,,,
+recovered,0.900000,prop,recal_ratio - as_is,3,0.466561,-0.064541,,,
+recovered,0.900000,prop,recal_ratio - as_is,4,0.478395,0.003276,,,
+recovered,0.900000,prop,recal_ratio - as_is,5,0.613072,0.000000,,,
+recovered,0.900000,rec_z0,recal_literal - as_is,1,0.745826,-0.004831,,,
+recovered,0.900000,rec_z0,recal_literal - as_is,2,0.717474,0.000000,,,
+recovered,0.900000,rec_z0,recal_literal - as_is,3,0.715923,-0.010109,,,
+recovered,0.900000,rec_z0,recal_literal - as_is,4,0.747909,-0.000819,,,
+recovered,0.900000,rec_z0,recal_literal - as_is,5,0.713773,0.000000,,,
+recovered,0.900000,rec_z0,recal_ratio - as_is,1,0.748490,-0.004831,,,
+recovered,0.900000,rec_z0,recal_ratio - as_is,2,0.718831,0.000000,,,
+recovered,0.900000,rec_z0,recal_ratio - as_is,3,0.716392,-0.012442,,,
+recovered,0.900000,rec_z0,recal_ratio - as_is,4,0.748314,-0.000819,,,
+recovered,0.900000,rec_z0,recal_ratio - as_is,5,0.714705,0.000000,,,
+recovered,1.100000,prop,recal_literal - as_is,1,0.370810,-0.023349,,,
+recovered,1.100000,prop,recal_literal - as_is,2,0.425722,0.000000,,,
+recovered,1.100000,prop,recal_literal - as_is,3,0.396502,-0.020995,,,
+recovered,1.100000,prop,recal_literal - as_is,4,0.325988,-0.004095,,,
+recovered,1.100000,prop,recal_literal - as_is,5,0.383016,0.000000,,,
+recovered,1.100000,prop,recal_ratio - as_is,1,0.625762,-0.020129,,,
+recovered,1.100000,prop,recal_ratio - as_is,2,0.656623,0.000000,,,
+recovered,1.100000,prop,recal_ratio - as_is,3,0.647515,-0.052100,,,
+recovered,1.100000,prop,recal_ratio - as_is,4,0.603826,-0.005733,,,
+recovered,1.100000,prop,recal_ratio - as_is,5,0.671388,0.000000,,,
+recovered,1.100000,rec_z0,recal_literal - as_is,1,0.701297,-0.004831,,,
+recovered,1.100000,rec_z0,recal_literal - as_is,2,0.685116,-0.000789,,,
+recovered,1.100000,rec_z0,recal_literal - as_is,3,0.657883,-0.003110,,,
+recovered,1.100000,rec_z0,recal_literal - as_is,4,0.688178,0.000000,,,
+recovered,1.100000,rec_z0,recal_literal - as_is,5,0.618852,-0.001579,,,
+recovered,1.100000,rec_z0,recal_ratio - as_is,1,0.702256,-0.004026,,,
+recovered,1.100000,rec_z0,recal_ratio - as_is,2,0.687406,-0.000789,,,
+recovered,1.100000,rec_z0,recal_ratio - as_is,3,0.658859,-0.003888,,,
+recovered,1.100000,rec_z0,recal_ratio - as_is,4,0.690021,0.000000,,,
+recovered,1.100000,rec_z0,recal_ratio - as_is,5,0.621039,-0.001579,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,1,0.045007,0.023349,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,2,0.034809,0.000000,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,3,0.041021,0.065319,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,4,0.047604,0.003276,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,5,0.058857,0.000000,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,1,0.044791,0.023349,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,2,0.033798,0.000000,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,3,0.042022,0.066874,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,4,0.047144,0.003276,,,
+rec_minus_prop,0.700000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,5,0.057956,0.000000,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,1,0.045437,0.012077,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,2,0.038532,0.000000,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,3,0.047680,0.056765,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,4,0.039398,0.005733,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,5,0.052431,0.000000,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,1,0.048101,0.012077,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,2,0.039889,0.000000,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,3,0.048149,0.054432,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,4,0.039802,0.005733,,,
+rec_minus_prop,0.900000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,5,0.053363,0.000000,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,1,0.042687,0.015298,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,2,0.035403,-0.000789,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,3,0.050030,0.074650,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,4,0.040115,0.005733,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_literal - prop recal_ratio,5,0.045889,-0.001579,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,1,0.043647,0.016103,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,2,0.037694,-0.000789,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,3,0.051006,0.073872,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,4,0.041957,0.005733,,,
+rec_minus_prop,1.100000,rec_z0 - prop,rec_z0 recal_ratio - prop recal_ratio,5,0.048075,-0.001579,,,
