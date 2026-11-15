@@ -136,3 +136,35 @@ Limiares do P0 para camada − crops, descritivo: F1 ≥ 0,10 em **5 de 5**; rej
    treina e avalia nele, sem regravar; os arquivos de r1 dele não são tocados.)
 3. O `controls_checks.py dense` reporta como diferença de `physics.json` o campo `like` (o `bench_1mm_depth50` foi
    feito com `simulate like`; os da curva com `simulate fresnel`): esperado, não é física.
+
+## 2026-11-15, 09:02 — D2: fase 2, a lei uniforme no simulador e o começo das gravações
+
+Respostas do responsável (mensagem da fase 2 e Q1): lei padrão uniforme em ±25 µm; o nível esparso é novo
+(`curve_u50_L008`) e é meu; o `bench_1mm_depth50` sai da curva; eixo fixado no Q1 (π D² σ em escala log, D =
+111,8 µm).
+
+### A lei uniforme (commit `a25df48`)
+
+- `Physics.depth_uniform` (padrão 0; ausente do `physics.json` enquanto 0, como `oversample`). Em
+  `scene.material`, o mesmo único `rng.gauss` g da profundidade vira `depth_uniform · erf(g/√2)` quando o campo é
+  > 0; senão, a normal cortada de sempre (a mesma expressão). Vale para tudo que passa por `material`: letras
+  anotadas, de fora da janela e de enchimento (e as letras dos layouts do paper). A poeira não passa por `material`
+  (planos fixos). Com a lei ligada, `depth_std` e `depth_max` não são lidos; nos conjuntos da curva ficam os valores
+  do piloto (2,6 / 7,8 µm), para que a única diferença de física contra o `bench_1mm` seja `depth_uniform`.
+- `tests/test_depth_uniform.py` (8 testes, 3,5 s): desligado, os digests das quatro cenas de antes do enchimento;
+  ligado (layout físico com enchimento e layout do paper), as mesmas linhas a menos de `depth`, os mesmos objetos
+  a menos da profundidade, |depth| ≤ 25 µm, a profundidade = 25 µm · erf(g/√2) com o g da lei normal (onde ela não
+  é cortada), a poeira igual; 5000 sorteios uniformes pelo teste de Kolmogorov–Smirnov (p > 0,01) com desvio
+  25/√3 = 14,4 µm (±3 %); `generate()` com e sem a lei: anotações iguais a menos de `depth` e `z`, poeira,
+  sessões e quadros em branco idênticos, `physics.json` diferindo só em `depth_uniform`. A referência nativa
+  (`test_oversample`) continua bit a bit.
+- `pytest`: **72 passam** (64 + 8). `reproduce check`: **13/13**.
+- `density_curve.sh`: `LAW=u50` → `depth_std=2.6e-6 depth_max=7.8e-6 depth_uniform=25e-6`; o nível 8 é gravado
+  sem enchimento (`curve_u50_L008`) e conferido por `controls_checks.py sparse` contra o `bench_1mm`.
+
+### Gravações (GPU 5, tmux `res_curve_rec_L<nível>`, 8 construtores cada)
+
+- 08:54 `LAW=u50 LEVEL=8 bash scripts/exp_resolucao/density_curve.sh 5 record`.
+- 08:56 `LAW=u50 LEVEL=343 WORKERS=8 ... record`, em paralelo. Dois processos de GPU rendem quase a soma: L008
+  0,15 → 0,20 s por imagem, L343 0,58 → 0,60 s por imagem (GPU a 86–97 %); threads prontas 3–19,
+  `cpu.pressure` some avg10 = 0,00. Fico com dois processos de GPU no máximo.
