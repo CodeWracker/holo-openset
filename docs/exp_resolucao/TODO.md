@@ -330,11 +330,29 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       article)"); ajustes da minha revisão; subseção 8.6 da distância com macros `\ResDist…`. Pontos que ficaram
       para a terceira passada: `07-discussion` limitação (i) ainda chama 19,25 mm de distância da bancada; macro do
       acerto das conhecidas na 8.6; `05-protocol` diz "bit by bit on the same build" (não mexi; avisar).
-- [~] Q-w4. **Terceira passada, parte 1 (não depende da curva; mandada às ≈ 10:15):** o gerador passa a tomar a
-      família padrão (`curve_u50_L*`) como a família de 1 mm do paper (esparso = `curve_u50_L008`; denso =
-      `curve_u50_L154` quando existir); 8.5 (profundidade) final com `depth_tests.csv`; 8.6 (distância) com os
-      modelos da família padrão; limitação (i) da discussão; código do painel (d) e da figura da curva pronto para
-      ler `density_curve.csv`. **Parte 2 (depois da curva):** 8.4, painel (d), abstract, resultados, conclusão.
+- [x] Q-w4. (feita ≈ 10:13 e revisada por mim: li 8.4–8.6, a introdução, a limitação (i), a tabela de profundidade
+      e a figura) **Terceira passada, parte 1 (o que não depende da curva):** o gerador toma a família padrão
+      (`curve_u50_L*`) como a família de 1 mm do paper (esparso = `curve_u50_L008`; denso = `curve_u50_L154` quando
+      existir; até lá o denso do piloto com `\ResDenseFallback`, um `\todo` visível); `\ResPilot…` para a margem
+      registrada; 8.5 (profundidade) final com `depth_tests.csv` e Tabela 14 gerada (`tab_depth.tex`); 8.6
+      (distância) com os modelos padrão, acerto das conhecidas, 15 de 15, empate a 1,0 mm; limitação (i) com as
+      duas geometrias; painel (e) com as três leis; macros `\ResCurve…`, painel (d) no eixo do Q1 e
+      `fig_density_curve.py` prontos para quando `density_curve.csv` existir. Código `9294972`, `78feeb1`; LaTeX
+      `9867457`, `0a297fa`, `93ded85`, `18e289e` (40 páginas, sem referência indefinida).
+      Pendências dela: (1) `\ResAlphaZCalibMm` sai por ora do `z_ref` dos json de recalibração (validação); pedi ao
+      executor da densidade um `curve_alpha.csv` (α calibrado e treinado por nível e repetição) e o gerador deve
+      passar a usá-lo; a frase "training moved the scalar by …" saiu da 8.6 até lá; (2) Fresnel e fração fora do
+      crop continuam medidos nas letras do piloto (mesmas letras; dizer se necessário).
+- [ ] Q-w5. **Terceira passada, parte 2 (depois da curva; a maior):** a seção de resultados (06) ainda é a do
+      rascunho antigo: centrada na "learned layer" real e no "base set", com um `\todo` grande na RQ2 pedindo a
+      prosa da camada de propagação. Encomenda: (a) RQ1 = conjunto fechado funciona, open-set falha, mecanismo,
+      curva de densidade (figura própria) e onde a camada cai; (b) RQ2 = a camada de propagação (o método proposto)
+      empata com a reconstrução calibrada; camadas real e complexa viram ablação; (c) RQ3 com os números da camada
+      de propagação; (d) RQ4 = uma propagação custa ≈ 1 ms, o detector é o custo, o argumento de tempo não se
+      sustenta; (e) RQ5 = distância (recalibrar; 8.6), profundidade (8.5), simulação conveniente (tabela e texto
+      vão para a 8.1, sem duplicar); "base set" → "geometry of CBMS 2024" em todo o 06; (f) 8.4 final e painel (d);
+      (g) abstract (os quatro pontos da tese; a seção da simulação visível), discussão coerente, conclusão.
+      **Mando quando a tabela de r1 da curva existir** (a forma da curva conhecida); os números entram por macro.
 - [ ] Q-rev. Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
       dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
       Related Work no fim), compilar.
@@ -547,7 +565,7 @@ errado".
   ler as devoluções; conferir `density_curve.csv` contra os json e as regras do Q0; terceira passada da escrita
   (painel d no eixo do Q1, parágrafos de densidade, profundidade e distância, depois abstract, resultados e
   conclusão); relatório curto e diff para o orientador, sem merge.**
-- **2026-11-15, 10:15 — d2 e profundidade conferidas; curva gravando.** O executor da distância terminou (commits
+- **2026-11-15, 10:02 — d2 e profundidade conferidas; curva gravando.** O executor da distância terminou (commits
   até `940fc78`); refiz as médias e as diferenças pareadas a partir de `robustness_curve_u50_L008_dist.csv`,
   `robustness_depth_from_*.csv` e dos json de `eval/curve_u50_L008`: tudo bate com a tabela dele. O da densidade
   ainda grava (às 10:00: L343 em 4000/5000, L154 em 3750/5000; L015 e L069 por gravar; depois r1 em todos, regra do
@@ -556,3 +574,9 @@ errado".
   padrão. **Próximo passo ao voltar: ler a devolução do escritor (parte 1) e a do executor da densidade; conferir
   `density_curve.csv` contra os json e a regra do Q0; mandar a parte 2 da escrita; relatório curto e diff, sem
   merge.**
+- **2026-11-15, 10:25 — parte 1 da terceira passada revisada.** (As horas "10:15" e "10:20" que escrevi antes
+  estavam adiantadas: o executor da distância terminou às ≈ 09:58 e mandei a parte 1 às ≈ 10:03.) Rascunho do
+  relatório em `RELATORIO_CURVA.md` (seções 2, 4 e 5 conferidas; 1, 3, 6–8 por escrever; ainda não commitado).
+  Li a seção de resultados inteira para a encomenda da parte 2 (Q-w5). **Próximo passo ao voltar: esperar a
+  devolução do executor da densidade (r1 em todos os níveis → mandar a parte 2 ao escritor; depois r2–r5, figura,
+  D das geometrias que já existem, `curve_alpha.csv`); conferir contra os json e a regra do Q0; relatório e diff.**
