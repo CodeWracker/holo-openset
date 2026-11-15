@@ -440,7 +440,19 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
 - [ ] **S-D.** (executor da densidade) Dois controles em r1 para o conjunto fora da curva: D-N (faixa de N_F da
   família padrão) e D-P (lei de profundidade padrão); leitura estratificada do modelo de crops que já existe.
 - [ ] **S-L.** (executor da densidade) Quanto o gerador coloca a 450 e 675 por mm² (sem holograma, sem treino).
-- [ ] **S-J.** (executor da distância) Banco focal: `bank_jit` r2–r5; `bank_wide`, `bank_w2`, `bank_w3` r1–r5; como
+- [x] **S-J.** (16:40, conferido por mim: médias, veredito e diferenças refeitos a partir de `eval/curve_u50_L008/
+  bank*_r*.json`, `robustness_curve_u50_L008_banks_*.csv` e `distance_tests_u50_rows.csv`; batem com
+  `banks_distance.csv`) **Nenhum banco aguenta a mudança de 10 % pela regra** (≥ 4 de 5): `bank_jit` 0 de 5,
+  `bank_wide` 0 de 5 (falha só a 0,9 mm, quedas de 0,104–0,131; passa a 1,1 mm nas cinco), `bank_w2` 2 de 5,
+  `bank_w3` 0 de 5. F1 médio de cinco, 1,0 / 0,9 / 1,1 mm como está: `bank_jit` 0,979 / 0,575 / 0,579; `bank_wide`
+  0,977 / 0,860 / 0,909; `bank_w2` 0,976 / 0,867 / 0,892; `bank_w3` 0,979 / 0,609 / 0,703 (o jitter pesa mais que a
+  largura). Rejeição ≥ 0,987 em tudo (o que cai é o acerto das conhecidas: o limiar). Como estão, os bancos de
+  jitter 12 % ficam 0,09–0,10 abaixo da reconstrução recalibrada (0 de 10). Recalibrados por razão: 0,955–0,965;
+  0,013–0,019 abaixo da reconstrução recalibrada (0–1 de 10) e 0,026–0,032 acima da camada recalibrada (10 de 10).
+  Preço a 1,0 mm: nenhum (±0,004). Frase pré-fixada que vale: (i) "o banco focal não dispensa a recalibração".
+  Commits do executor: `8262cae`, `ad8b6d7`, `dc9c62c`, `1ae4b79`, `64a821f`. Caderno: D4, D5 de
+  `CADERNO_CURVA_DISTANCIA.md`. FALTA: texto (8.6, RQ5, "Which flow to use", limitação iii), por macro.
+  (Texto original do item:) Banco focal: `bank_jit` r2–r5; `bank_wide`, `bank_w2`, `bank_w3` r1–r5; como
   estão a 0,9 / 1,1 mm (0,7 estresse); recalibração dos bancos por razão. Regra: aguenta em ≥ 4 de 5.
 - [ ] **S-txt.** (escritor, depois dos resultados) Tabela de tamanho com a coluna nova; números das letras pequenas
   a 2 mm fora da tabela; 8.6 e limitação (iii) com o banco em cinco repetições; 8.4 e limitação (vii) com o
@@ -764,3 +776,10 @@ errado".
   2 mm fora da curva; a medida de quanto o gerador coloca acima de 300 por mm². **Próximo passo ao voltar: ver a
   seção "Fase S" acima; conferir as devoluções dos dois executores contra `results_exp_resolucao/`; depois o
   escritor; nada no Overleaf.**
+- **2026-11-15, 16:41 — S-J conferido (banco focal, cinco repetições): nenhum banco aguenta; números no item
+  S-J.** Título já trocado (paper `0bc6e5a`). Executor da densidade ainda rodando (S-C, S-D, S-L; já commitou a
+  conferência a 19,25 mm: a amostragem nativa do `small_z0` está dentro da tolerância, máx. 0,79 %). Escritor
+  acionado só para a parte do banco focal. **Próximo passo ao voltar: devolução do executor da densidade →
+  conferir contra `eval/small_near_newrec/`, `small_near_newrec_five_reps.csv`, `small_near_factors*.{csv,json}`,
+  `small_near_newrec_strata.csv`, `curve_feasibility_dense.csv`; depois mandar ao escritor a coluna de 2 mm e o
+  diagnóstico; revisar; compilar; PDF + diff; push do código (GitHub, sem merge); mensagem final.**
