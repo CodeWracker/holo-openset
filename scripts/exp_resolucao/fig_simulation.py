@@ -171,14 +171,14 @@ def old_sets(metric):
         col = pr.F1 if metric == 'f1' else pr.REJ
         out.append(('CBMS 2024 geometry (19.25 mm), r1', np.pi * d_c ** 2 * dens,
                     {f: pr.value(cb, f, col, pr.reps_mode(cb)) for f in pr.FLOWS}, 'D', False))
-    d_s, sb = diameter_mm('small_near'), pr.csv('sets_by_fresnel')
-    r = sb[(sb.set == 'small_near') & (sb.repetitions == 'mean5')]
-    dens_s = pr.density('small_near')[0]
-    if d_s and len(r) and dens_s:
-        r = r.iloc[0]
+    # the small letters at 2 mm of the paper: the set recorded on a grid twice finer than the pixel, five repetitions
+    d_s, five = diameter_mm('small_near_newrec'), pr.csv('small_near_newrec_five_reps')
+    dens_s = pr.density('small_near_newrec')[0]
+    if d_s and len(five) and dens_s:
+        st = five[(five.kind == 'stat') & (five.rep == 'mean')].set_index('flow')
         k = 'f1' if metric == 'f1' else 'rejection'
         out.append(('small letters at 2 mm, mean of five', np.pi * d_s ** 2 * dens_s,
-                    {f: r[f'{k}_{f}'] for f in pr.FLOWS}, 's', True))
+                    {f: st.loc[f, k] for f in pr.FLOWS if f in st.index}, 's', True))
     return out
 
 

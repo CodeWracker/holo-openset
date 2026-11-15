@@ -52,6 +52,7 @@ CARDINAL = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eigh
 DIGITS = dict(zip('0123456789', ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine']))
 
 M = {}
+SMALL_FIVE = None   # the small letters at 2 mm on the finer grid, five repetitions (set by numbers())
 
 
 def macro(name, value, fmt='{:.3f}'):
@@ -399,6 +400,8 @@ def numbers():
     bank_macros()
     banks_macros()
     small_near_macros()
+    global SMALL_FIVE
+    SMALL_FIVE = small_near_five()
 
     curve_macros()
 
@@ -693,6 +696,76 @@ def banks_table():
                 r = um[(um.flow == f) & np.isclose(um.distance_mm, d) & (um.condition == c)]
                 cells.append(f'{r.f1_mean.iloc[0]:.3f}' if len(r) else '--')
             lines.append(f'{name} & ' + ' & '.join(cells) + ' & -- \\\\')
+    return lines
+
+
+SCALE_FLOWS = [('raw', 'Raw', 'hologram crops'), ('learned', 'Learned', 'learned layer'),
+               ('complex', 'Complex', 'complex layer'), ('wiener', 'Wiener', 'Wiener filter'),
+               ('prop', 'Prop', 'propagation layer'), ('bank_jit', 'BankFive', 'focal stack (5)'),
+               ('bank_w3', 'BankSevenNarrow', 'focal stack (7)'), ('rec_z0', 'Rec', 'reconstruction at $z_0$'),
+               ('rec_af', 'RecAf', 'blind autofocus'), ('rec_twin', 'RecTwin', 'blind autofocus + twin removal')]
+
+
+def small_near_five():
+    """The small letters at 2 mm recorded on a grid twice finer than the pixel, five repetitions of every flow of
+    Table tab:scale (small_near_newrec_five_reps.csv and _reading.json), against the set recorded at the sampling of
+    the sensor (the columns *_paper); the check of the sampling at 19.25 mm (oversampling_native_small_z0.csv); D and
+    overlap of the set (hologram_diameter_small_near_newrec_summary.json)."""
+    t = csv('small_near_newrec_five_reps')
+    if not len(t):
+        print('WARNING: small_near_newrec_five_reps.csv missing')
+        return None
+    st = t[(t.kind == 'stat') & (t.rep == 'mean')].set_index('flow')
+    for f, K, _ in SCALE_FLOWS:
+        if f in st.index:
+            r = st.loc[f]
+            macro(f'SnFive{K}Fone', r.f1)
+            macro(f'SnFive{K}Rej', r.rejection)
+            macro(f'SnFive{K}Closed', r.closed_acc)
+            macro(f'SnPaper{K}Fone', r.f1_paper)
+            macro(f'SnPaper{K}Rej', r.rejection_paper)
+            macro(f'SnPaper{K}Closed', r.closed_acc_paper)
+    rd = RES / 'small_near_newrec_five_reps_reading.json'
+    if rd.exists():
+        j = json.loads(rd.read_text())
+        macro('SnFiveMaxChange', abs(j['max_abs_mean_f1_change']))
+        name = {f: n for f, _, n in SCALE_FLOWS}
+        macro('SnFiveMaxChangeFlow', name.get(j['flow_of_max'], None))
+        lo, hi = j['propagation_routes_f1_range_new']
+        macro('SnFivePropRoutesLo', lo)
+        macro('SnFivePropRoutesHi', hi)
+    nz = csv('oversampling_native_small_z0')
+    if len(nz):
+        macro('SnZzeroNativeLoPct', 100 * nz.rel_total.min(), '{:.1f}')
+        macro('SnZzeroNativeHiPct', 100 * nz.rel_total.max(), '{:.1f}')
+        macro('SnZzeroNativeScenes', CARDINAL[len(nz)])
+    f = RES / 'hologram_diameter_small_near_newrec_summary.json'
+    if f.exists():
+        j = json.loads(f.read_text())
+        macro('SnFiveHoloDiameterUm', j['D_ef_um'][j['axis']], '{:.0f}')
+        macro('SnFiveOverlapPct', 100 * j['density']['overlap_window'], '{:.0f}')
+        macro('SnFivePiDSigma', j['density']['pi_D2_sigma_window'], '{:.2f}')
+    ph = physics('small_near_newrec')
+    if ph:
+        macro('SnFiveOversample', CARDINAL[ph['physics'].get('oversample', 1)])
+    return st
+
+
+def scale_table(st):
+    """tab_scale_resolucao: open-set F1 (mean of five) of every flow for the letters of the geometry of CBMS 2024 and
+    the small letters at 19.25 mm (results/eval of the paper, read only, as tables.tab_scale reads them) and the small
+    letters at 2 mm recorded on a grid twice finer than the pixel (small_near_newrec_five_reps.csv)."""
+    if st is None:
+        return None
+    cols = [evals('realistic', PAPER_RESULTS), evals('small_z0', PAPER_RESULTS)]
+    lines = []
+    for f, _, name in SCALE_FLOWS:
+        cells = []
+        for df in cols:
+            d = df[df.flow == f] if len(df) else df
+            cells.append(f'{d.novel_open_macro_f1.mean():.3f}' if len(d) else '--')
+        cells.append(f'{st.loc[f, "f1"]:.3f}' if f in st.index else '--')
+        lines.append(f'{name} & ' + ' & '.join(cells) + ' \\\\')
     return lines
 
 
@@ -1003,7 +1076,9 @@ def parameter_table(fam, cite):
                                          .split('(')[1].rstrip(')')), '--'),
     }
     extra = {   # rows of the 1.0 mm sets only, inserted after the row named
-        'propagation model': ('recording grid', '1 (pixel)', f'{b.get("oversample", 1)}$\\times$ finer than the '
+        'propagation model': ('recording grid', '1 (pixel)' + (
+            f'; {physics("small_near_newrec")["physics"]["oversample"]}$\\times$ finer for the small letters at 2\\,mm'
+            if physics('small_near_newrec') else ''), f'{b.get("oversample", 1)}$\\times$ finer than the '
                               'pixel', 'our assumption (numerical; convergence test)'),
         'letter size (base)': ('object density', f'{density(CBMS)[0]:.0f}/mm$^2$',
                                (f'{dens[0]:.0f} to {dens[-1]:.0f}/mm$^2$ (an axis)' if dens else '--'),
@@ -1064,6 +1139,12 @@ def write(out, cite):
              'physics.json of the sets -- do not edit'] + parameter_table(fam, cite)
     (out / 'tables' / 'tab_parameters.tex').write_text('\n'.join(lines) + '\n')
     print('wrote', out / 'tables' / 'tab_parameters.tex', f'({len(lines) - 1} rows)')
+    sc = scale_table(SMALL_FIVE)
+    if sc:
+        (out / 'tables' / 'tab_scale_resolucao.tex').write_text('\n'.join(
+            ['% generated by scripts/exp_resolucao/paper_resolucao.py from results/eval (columns 1-2, read only) and '
+             'small_near_newrec_five_reps.csv (column 3) -- do not edit'] + sc) + '\n')
+        print('wrote', out / 'tables' / 'tab_scale_resolucao.tex')
     bt = banks_table()
     if bt:
         (out / 'tables' / 'tab_banks.tex').write_text('\n'.join(
