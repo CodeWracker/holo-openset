@@ -110,9 +110,9 @@ def main():
     lay = layout_of(cfg)
     p0 = physics_from_dict(cfg['physics'])
     # the radii scale with the size of the pattern, sqrt(z) at the same Fresnel numbers: k = 1 at 1.0 mm
-    k = math.sqrt(p0.z0 / 1.0e-3)
-    win = WINDOW if k == 1 else 64 * math.ceil((2 * round(R_OUT * k) + 64) / 64)
-    margin = MARGIN if k == 1 else p0.margin
+    ks = math.sqrt(p0.z0 / 1.0e-3)
+    win = WINDOW if ks == 1 else 64 * math.ceil((2 * round(R_OUT * ks) + 64) / 64)
+    margin = MARGIN if ks == 1 else p0.margin
     phys = p0.replace(window=(win, win), margin=margin, reach=0, depth_std=0.0, depth_max=0.0, depth_uniform=0.0,
                       dust_density=0.0, sensor_dust_density=0.0, full_well=0.0, read_noise=0.0, prnu=0.0, bits=0)
     ses = dict(z=p0.z0)
@@ -144,7 +144,7 @@ def main():
                          kind='letter', classe=letter, **mat)
             inten = sensor_intensity(dict(objects=[o], dust=[], sensor_dust=[]), ses, phys, dev).cpu().numpy()
             e = (inten / blank - 1) ** 2
-            m, prof = measures(e, k)
+            m, prof = measures(e, ks)
             side = max(master.shape) / f
             rows.append(dict(classe=letter, k=k, font=font.stem, font_size=size, rotation=angle,
                              absorption=mat['absorption'], phase=mat['phase'], side_px=side, **m))
@@ -166,8 +166,8 @@ def main():
                for c in ['D_rms_192', 'D_vis', 'D_86', 'D_rms_256']}
     summary = dict(
         seed=SEED, letters=len(t), per_class=PER_CLASS, laws_from=a.set, z_mm=p0.z0 * 1e3, oversample=phys.oversample,
-        layout=type(lay).__name__, radius_scale_k=k, radii_px={str(R): round(R * k) for R in RADII},
-        window=win, margin=margin, noise_level=NOISE, r_out=round(R_OUT * k), pixel_um=um, stats_px=stats,
+        layout=lay.__name__ if isinstance(lay, type) else type(lay).__name__, radius_scale_k=ks, radii_px={str(R): round(R * ks) for R in RADII},
+        window=win, margin=margin, noise_level=NOISE, r_out=round(R_OUT * ks), pixel_um=um, stats_px=stats,
         D_ef_px=d_ef, D_ef_um={c: v * um for c, v in d_ef.items()},
         convergence=dict(rule='D_rms(256) within 5 % of D_rms(192), on D_ef', rel_diff_D_ef=conv_set,
                          rel_diff_letters_median=float(conv_letters.median()),
@@ -200,7 +200,7 @@ def main():
                           f"D_vis {t.D_vis[i]:.0f}, D_86 {t.D_86[i]:.0f}")
     ax.axhline(NOISE, color='k', ls='--', lw=0.8, label='noise of the set (2.1 / 101.5)')
     for R in RADII:
-        ax.axvline(round(R * k), color='0.8', lw=0.6, zorder=0)
+        ax.axvline(round(R * ks), color='0.8', lw=0.6, zorder=0)
     ax.set_xlabel('radius from the energy centroid (px of 1.67 um)')
     ax.set_ylabel('azimuthal mean of |I / B - 1|')
     ax.set_ylim(1e-4, 2)
