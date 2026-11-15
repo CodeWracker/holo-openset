@@ -267,6 +267,51 @@ base.
       código); a descrição do conjunto público em `03b-bench.tex` não se confere pelo texto do artigo, só pelo
       código do gerador. Tom: trabalho nosso, corrigido por medição.
 
+### Fase Q: enquadramento novo, curva de densidade, distância e escrita (instrução de 2026-11-15, `PROTOCOLO_CURVA.md`)
+
+**Se você perdeu o contexto: leia `PROTOCOLO_CURVA.md` e `CADERNO_CURVA.md` (Q0, Q1, …) antes de qualquer coisa.**
+Tudo desta fase foi aprovado para começar. Não há checkpoint entre "r1 em todos os níveis" e "cinco repetições onde
+as curvas se separam": a regra está no Q0 e é aplicada mecanicamente. Entrega final: relatório da curva + diff do
+LaTeX (branch `rewrite/inversion`), sem merge e sem push.
+
+Enquadramento (palavras dele, resumidas): a tese é uma **inversão da tese do CBMS 2024**, contada com medição:
+(1) open-set em holografia sem lente, protocolo estrito; (2) o caminho sem reconstrução funciona em conjunto fechado
+e falha no open-set (esparso: rejeição 0,730 contra 0,997, critério não cumprido ali; denso: 0,08); **mecanismo = o
+padrão das vizinhas entrando no crop, não o vazamento do padrão da própria letra** (corrigir em todo o texto,
+inclusive na hipótese); Seo 2009 é precedente; (3) o que resolve é uma etapa de propagação (a camada ou a
+reconstrução calibrada), ≈ 1 ms; o argumento de tempo não se sustenta, começando pelo nosso de 2024; (4) **a
+simulação idealizada esconde tudo isso**: seção dedicada, que aparece no abstract e nas contribuições.
+
+Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/agentes.md`, fora do git):
+
+- [~] Q-a. **"densidade"** (o executor dos controles, retomado), fase 1: r2–r5 no `bench_1mm_dense`
+      (`dense_five_reps.csv`); diâmetro efetivo do holograma (`hologram_diameter.py`, `.csv`, `_summary.json`);
+      preparar `density_curve.sh` SEM gravar e testar a viabilidade do nível 343. Para e me devolve. Caderno dele:
+      `CADERNO_CURVA_DENSIDADE.md`.
+- [!] Q-b. Curva de densidade (fase 2 do "densidade"): níveis 8 / 15 / 69 / 154 / 343 letras por janela (7 / 13 /
+      60 / 135 / 300 por mm²), r1 em todos, depois r2–r5 pela regra do Q0; tabela e figura (F1 e rejeição contra a
+      razão de sobreposição; crops, camada, reconstrução). **Espera a lei de profundidade (Q1).**
+- [!] Q-c. Lei de profundidade padrão da família de 1 mm: **pergunta ao orientador** (o "50 µm" do
+      `bench_1mm_depth50` é normal com desvio de 50 µm cortada em ±150 µm; o canal de 2015 tem 50 µm de altura
+      total). A resposta vira a entrada Q1 do `CADERNO_CURVA.md`, antes de gravar. Depois: r2–r5 do nível esparso da
+      família padrão.
+- [~] Q-d1. **"distância"** (novo): 0,9 e 1,1 mm com os cinco modelos do piloto (como está; recalibrado literal e
+      por razão); `distance_tests.csv`. Para e me devolve. Caderno dele: `CADERNO_CURVA_DISTANCIA.md`.
+- [ ] Q-d2. A mesma coisa com os cinco modelos da família padrão (0,7 como estresse; 0,9; 1,1), depois de Q-c.
+- [~] Q-w1. **"seção da simulação"** (novo): worktree `../latex-wt-sim`, branch `rewrite/sim-section`: seção
+      dedicada "a simulação muda a resposta" com figura-resumo e tabela de parâmetros geradas, macros
+      `numbers_resolucao.tex` geradas de `results_exp_resolucao/`, introdução e contribuições, correção do mecanismo
+      em todo o texto (em `06-results` só as frases do mecanismo).
+- [~] Q-w2. **"Related Work"** (novo): worktree `../latex-wt-related`, branch `rewrite/related-work`: complemento do
+      levantamento C em índices abertos (Scopus/ScienceDirect continuam sem credencial), `02-related.tex` inteiro com
+      o parágrafo "The speed argument", Seo 2009 como precedente, [11] descrito como detecção; frases propostas para
+      Introdução e Discussion em `TEXTO_C_PROPOSTAS.md`.
+- [ ] Q-rev. Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
+      dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
+      Related Work no fim), compilar.
+- [ ] Q-fim. Depois da curva: abstract, resultados e conclusão (encomenda dele: "fica para depois da curva");
+      relatório curto da curva; diff do LaTeX para ele, sem merge.
+
 ### Fase A: experimento da resolução
 
 - [x] A0. (feito, `88b5ed9`; `results_exp_resolucao/enroll_paired.csv`) Teste pareado de enrollment (`prop` − reconstruções, por repetição).
@@ -456,3 +501,10 @@ errado".
   caderno do piloto): eixo de 7 a 135 objetos/mm², níveis intermediários de Seo 2009 (15 e 69 letras por janela),
   ainda não gravados. Relatório atualizado e reenviado. **Continua PARADO: as decisões 1 a 4 da seção 9 do relatório
   (tese, cinco repetições no denso, níveis intermediários, parte B) não foram respondidas.**
+- **2026-11-15, ≈ 08:00 — o orientador respondeu ao relatório do piloto** (`PROTOCOLO_CURVA.md`, na íntegra):
+  enquadramento novo (inversão da tese do CBMS 2024), experimentos a–d aprovados para começar hoje, escrita em
+  paralelo. Feito por mim até 08:15: protocolo salvo (`3a3c80e`), pré-registro Q0 no caderno novo `CADERNO_CURVA.md`
+  (`15c7107`), branches `rewrite/{inversion,sim-section,related-work}` e dois worktrees no repositório LaTeX,
+  quatro executores lançados (Fase Q). **Próximo passo ao voltar: (1) ver se o orientador respondeu a pergunta da lei
+  de profundidade e escrever o Q1 antes de qualquer gravação da curva; (2) ler as devoluções dos executores e
+  revisar; (3) mandar a fase 2 ao "densidade" e ao "distância".**
