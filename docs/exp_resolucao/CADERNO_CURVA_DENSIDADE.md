@@ -187,3 +187,53 @@ Respostas do responsável (mensagem da fase 2 e Q1): lei padrão uniforme em ±2
   - Sanidade (treino): lados de tinta 12,81 / 17,38 / 23,29 px (os do piloto), nível médio 101,49 (piloto 101,49),
     brancos 101,51, ruído refeito das sementes média 0,002–0,007, rms 2,091–2,102.
 - 09:11 `reconstruct` (47 s) e, em sequência, `train` + `evaluate` de r1 a r5 (tmux `res_curve_L008_run`).
+
+## 2026-11-15, 10:21 — D4: L008 r1–r5 prontos (arquivo para o executor "distância"); L154 e L343 gravados e conferidos
+
+### `curve_u50_L008`, r1–r5 (09:12–09:25; teste lido uma vez)
+
+Treino dos três fluxos 138–160 s por repetição, avaliação ≈ 18 s; todos os modelos com 3000 passos.
+
+| rep | raw F1 / rej. | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|
+| 1 | 0,9251 / 0,6135 | 0,9747 / 0,9799 | 0,9737 / 0,9952 |
+| 2 | 0,9384 / 0,7145 | 0,9775 / 1,0000 | 0,9787 / 1,0000 |
+| 3 | 0,9367 / 0,7247 | 0,9693 / 0,9370 | 0,9796 / 0,9876 |
+| 4 | 0,9466 / 0,8272 | 0,9775 / 0,9975 | 0,9753 / 0,9984 |
+| 5 | 0,9374 / 0,6898 | 0,9748 / 1,0000 | 0,9777 / 0,9992 |
+
+`results_exp_resolucao/curve_u50_L008_ready.json` escrito às 09:26 (conjunto, os 15 modelos, as 15 avaliações, o
+commit das avaliações e o da lei de profundidade). Os modelos e o conjunto não serão regravados nem apagados.
+
+### Gravações
+
+| nível | início | parede | observação |
+|---|---|---|---|
+| 343 | 08:56 | 4588 s | em paralelo com L008, L154 e o executor "distância" na GPU 5 (0,6 → ~2 s por imagem quando eram três) |
+| 154 | 09:25 | 2565 s | |
+| 69 → 15 | 10:08 | em curso | em sequência no mesmo tmux |
+
+### Conferências (`density_curve.sh verify`, contra `curve_u50_L008`)
+
+| | L154 | L343 |
+|---|---|---|
+| `annotations.csv` idêntico byte a byte | sim (40 309) | sim |
+| rótulos, mapas, poeira, sessões, brancos, metadata comum | idênticos | idênticos |
+| `physics.json` | só `fill_mean` = 154 | só `fill_mean` = 343 |
+| sem enchimento = L008 (imagens 100 e 0) / com = o conjunto | 0 / 0 níveis | 0 / 0 níveis |
+| enchimento muda o holograma (rms) | 15,8–16,9 níveis | 23,0–24,4 níveis |
+| letras por janela (média, dp, p5–p95, mín.–máx.) | 154,10, 12,36, 134–175, 116–205 | 343,15, 18,42, 313–374, 287–418 |
+| na faixa, por 640² | 153,84 | 342,76 |
+| área coberta (caixas de tinta, 100 cenas) | 10,54 % | 23,35 % |
+| letras de enchimento puladas | 0 | 2 (em 2 imagens, de ≈ 5 milhões) |
+| nível médio de cinza (treino) | — | 97,16 |
+
+O L154 da lei uniforme tem as mesmas posições, classes e contagens do `bench_1mm_dense` (só as profundidades mudam),
+por isso os números de densidade coincidem.
+
+### α da família (pedido do responsável): `scripts/exp_resolucao/curve_alpha.py` → `results_exp_resolucao/curve_alpha.csv`
+
+Mesmo código do `pilot_five_reps.py`: α calibrado recalculado na CPU por `train.calibrate_alpha` nos mesmos 32
+hologramas de treino que o `train()` sorteou (RandomState(0)), grade estendida 12 passos; α treinado do checkpoint
+(`fourier.alpha`); distância pela mesma conversão (`pilot_five_reps.mm`). Conferido: o calibrado recalculado do L008
+bate, nas cinco repetições, com o que o log do treino imprimiu (6 casas). Rodo de novo no fim, com todos os níveis.
