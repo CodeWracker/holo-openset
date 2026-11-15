@@ -662,3 +662,29 @@ As 20 cenas do teste do 343 (imagens 0, 263, …, 4999), física do `bench_1mm` 
 
 A 514 o gerador coloca quase tudo (abaixo dos 5 % do Q0); a 771 ele satura em ≈ 650 letras por janela (≈ 575 por
 mm², ≈ 42 % de área), e o nível entraria com a densidade obtida.
+
+## 2026-11-15, 16:46 — D10: Q3-D, `small_near_ctlN` gravado e conferido, ANTES do treino
+
+`phaseS.sh 0 record_ctlN` (tmux `res_S2_recN`, 16:04:06–16:42:46, 2320 s, 6 construtores): `simulate fresnel --name
+small_near_ctlN --n-images 5000 --workers 6 --set-physics z0=2.0e-3 oversample=2 --layout factor=16
+scale=0.3223291856101521 border=6 margin=4 letters_mean=8 letters_std=3 letters_min=3 letters_max=18`.
+`physics.json`: `scale` 0,32233 (fontes 22,563–38,035 px, a lei da família padrão), `lengths_given` = borda 6 e
+espaçamento 4 (os do `small_near_newrec`); física idêntica à do `small_near_newrec` (z₀ 2,0 mm, normal 50 / 150 µm,
+s = 2).
+
+`phaseS.sh 0 prep_ctlN` (191 s; `small_near_ctlN_sanity.json` contra o `small_near_newrec`, só treino;
+`hologram_diameter_small_near_ctlN*`; `reconstruct --methods z0`):
+
+| | `small_near_ctlN` | `small_near_newrec` | família padrão (`curve_u50_L008`, 1,0 mm) |
+|---|---|---|---|
+| lado da caixa inteira p5 / p50 / p95 | 19 / 25 / 34 px | 15 / 27 / 40,6 px | 14 / 18 / 24 px |
+| N_F (caixa inteira) | 0,327 / 0,566 / 1,047 | 0,204 / 0,660 / 1,493 | 0,355 / 0,587 / 1,043 |
+| lado da tinta | 18,1 / 24,5 / 32,9 px | 14,1 / 25,8 / 39,6 px | 12,8 / 17,4 / 23,3 px |
+| N_F (tinta) | **0,295 / 0,544 / 0,979** | 0,179 / 0,603 / 1,417 | **0,297 / 0,547 / 0,982** |
+| D_rms(192·k) | 164,6 µm | 165,7 µm | 111,8 µm |
+| π D² σ / sobreposição | 0,601 / 0,451 | 0,609 / 0,456 | 0,277 / 0,242 |
+
+Contagens (3500 / 700 / 800, 8,06 letras por imagem, 3–18), nível médio (101,40 contra 101,36) e ruído (rms
+2,091–2,101) iguais. **Só a faixa de tamanhos (e com ela a de N_F) mudou; a de N_F agora é a da família padrão.** D e
+a sobreposição quase não mudaram (164,6 contra 165,7 µm): o padrão a 2 mm é dominado pelo alcance da franja, não pelo
+tamanho da letra. A seguir: r1, `raw`, `prop`, `rec_z0`, `--no-aux` (GPU 0).
