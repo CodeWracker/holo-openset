@@ -46,3 +46,15 @@ Fica para depois da curva: abstract, resultados e conclusão. Manda o diff do La
   rodar, nada em `results/` nem `expected/`, números no texto só por macro, diff do LaTeX num branch, sem merge e
   sem push.
 - Tom: o gerador original foi "evoluído"; o CBMS 2024 é trabalho nosso, corrigido com medição.
+
+## Resposta do orientador à pergunta da lei de profundidade (2026-11-15, ≈ 08:45, pelo diálogo de perguntas)
+
+Pergunta: "O "50 µm" que treinamos no piloto não é a altura do canal: é o padrão do simulador, uma normal com desvio
+de 50 µm cortada em ±150 µm (faixa total de 300 µm). O artigo de 2015 dá 50 µm de altura TOTAL do canal ("DSA, 50 µm
+for microchannel height"). Qual lei de profundidade vira o padrão de todos os conjuntos de 1 mm (a curva de densidade
+só é gravada depois desta resposta)?"
+
+Opções: "Uniforme nos 50 µm (Recomendado)" e "Normal, desvio 50 µm (±150 µm)".
+
+Resposta: **"Uniforme nos 50 µm (Recomendado)"**. Registrada na entrada Q1 de `CADERNO_CURVA.md`.
+

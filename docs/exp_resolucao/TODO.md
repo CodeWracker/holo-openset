@@ -284,28 +284,37 @@ simulação idealizada esconde tudo isso**: seção dedicada, que aparece no abs
 
 Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/agentes.md`, fora do git):
 
-- [~] Q-a. **"densidade"** (o executor dos controles, retomado), fase 1: r2–r5 no `bench_1mm_dense`
-      (`dense_five_reps.csv`); diâmetro efetivo do holograma (`hologram_diameter.py`, `.csv`, `_summary.json`);
-      preparar `density_curve.sh` SEM gravar e testar a viabilidade do nível 343. Para e me devolve. Caderno dele:
-      `CADERNO_CURVA_DENSIDADE.md`.
-- [!] Q-b. Curva de densidade (fase 2 do "densidade"): níveis 8 / 15 / 69 / 154 / 343 letras por janela (7 / 13 /
-      60 / 135 / 300 por mm²), r1 em todos, depois r2–r5 pela regra do Q0; tabela e figura (F1 e rejeição contra a
-      razão de sobreposição; crops, camada, reconstrução). **Espera a lei de profundidade (Q1).**
-- [!] Q-c. Lei de profundidade padrão da família de 1 mm: **pergunta ao orientador** (o "50 µm" do
-      `bench_1mm_depth50` é normal com desvio de 50 µm cortada em ±150 µm; o canal de 2015 tem 50 µm de altura
-      total). A resposta vira a entrada Q1 do `CADERNO_CURVA.md`, antes de gravar. Depois: r2–r5 do nível esparso da
-      família padrão.
-- [~] Q-d1. **"distância"** (novo): 0,9 e 1,1 mm com os cinco modelos do piloto (como está; recalibrado literal e
-      por razão); `distance_tests.csv`. Para e me devolve. Caderno dele: `CADERNO_CURVA_DISTANCIA.md`.
-- [ ] Q-d2. A mesma coisa com os cinco modelos da família padrão (0,7 como estresse; 0,9; 1,1), depois de Q-c.
-- [~] Q-w1. **"seção da simulação"** (novo): worktree `../latex-wt-sim`, branch `rewrite/sim-section`: seção
-      dedicada "a simulação muda a resposta" com figura-resumo e tabela de parâmetros geradas, macros
-      `numbers_resolucao.tex` geradas de `results_exp_resolucao/`, introdução e contribuições, correção do mecanismo
-      em todo o texto (em `06-results` só as frases do mecanismo).
-- [~] Q-w2. **"Related Work"** (novo): worktree `../latex-wt-related`, branch `rewrite/related-work`: complemento do
-      levantamento C em índices abertos (Scopus/ScienceDirect continuam sem credencial), `02-related.tex` inteiro com
-      o parágrafo "The speed argument", Seo 2009 como precedente, [11] descrito como detecção; frases propostas para
-      Introdução e Discussion em `TEXTO_C_PROPOSTAS.md`.
+- [x] Q-a. (feito e conferido por mim nos json) **Cinco repetições no denso do piloto** (`dense_five_reps.csv`): crops
+      0,793 / 0,096; camada 0,965 / 0,934; reconstrução 0,970 / 0,967 (F1 / rejeição, média de 5). Camada − crops
+      +0,173 / +0,838; limiares do P0: **5 de 5** nos dois. Reconstrução − camada +0,005 / +0,032.
+      **Diâmetro efetivo** (`hologram_diameter_summary.json`): D_rms convergiu; D = 111,8 µm (3,8 × o lado da
+      letra); sobreposição 0,24 / 0,40 / 0,905 / 0,995 / 1,000 nos cinco níveis.
+- [x] Q-c. **Lei de profundidade: o orientador escolheu "Uniforme nos 50 µm"** (≈ 08:45; Q1 do `CADERNO_CURVA.md`,
+      `9315c0c`): ±25 µm, profundidade = 25 µm · erf(g/√2). A lei larga (`bench_1mm_depth50`) vira teste de estresse.
+- [~] Q-b. **Curva de densidade (fase 2 do "densidade", mandada às ≈ 08:55):** implementar a lei uniforme (testes,
+      pytest, reproduce check); gravar `curve_u50_L008` primeiro e rodar r1–r5 nele; escrever
+      `results_exp_resolucao/curve_u50_L008_ready.json`; gravar L015 / L069 / L154 / L343; r1 em todos; regra do Q0;
+      r2–r5 onde indicar; `density_curve.csv`; figura `img/density_curve.{png,pdf}` pelo eixo do Q1; D para a
+      geometria de 19,25 mm e para o conjunto pequeno a 2 mm (acréscimo descritivo do Q1). Estimativa dele: ≈ 2 h de
+      gravação + treinos.
+- [x] Q-d1. (feito e conferido) **Distância com os modelos do piloto** (`distance_tests.csv`): a 0,9 / 1,1 mm sem
+      recalibrar a camada cai a 0,221 / 0,081 e a reconstrução a 0,138 / 0,160 de F1 (rejeitam tudo); crops 0,948 /
+      0,925. Recalibrado por razão: camada 0,929 / 0,915; reconstrução 0,979 / 0,976. Reconstrução − camada
+      recalibradas: +0,050 / +0,051 / +0,061 a 0,7 / 0,9 / 1,1 mm (15 de 15 positivas). Distância achada a menos de
+      0,35 %.
+- [~] Q-d2. **Fase 2 do "distância" (mandada às ≈ 08:55):** espera `curve_u50_L008_ready.json`; depois regrava teste
+      e validação do nível 8 a 0,7 / 0,9 / 1,1 mm (`data/curve_u50_robust/`), `distance_tests_u50.csv`, e as linhas
+      de profundidade (`depth_tests.csv`: modelos planos no teste padrão; modelos padrão no teste plano e no da lei
+      larga).
+- [x] Q-w1 / Q-w2, primeira passada (feita): seção `06b-simulation.tex` (figura de 5 painéis, tabela de 49 linhas,
+      228 macros `\Res…` por `scripts/exp_resolucao/paper_resolucao.py` e `fig_simulation.py`), introdução nova,
+      mecanismo corrigido em 03/04/06; `02-related.tex` inteiro, 25 entradas novas no bib, complemento do
+      levantamento em OpenAlex e Semantic Scholar (918 trabalhos, 56 incluídos; Scopus/ScienceDirect NÃO rodados),
+      `TEXTO_C_PROPOSTAS.md`. **Juntei os dois em `rewrite/inversion`** (worktree `../latex-wt-inversion`, `24f1303`;
+      compila, 39 páginas). Li os três textos.
+- [~] Q-w3. **Segunda passada do escritor da simulação, no worktree de integração (mandada às ≈ 09:05):** coerência
+      das duas geometrias em 03b/03; frase do mecanismo em 07/08/abstract; Sobieranski é coautor (sai "personal
+      communication"); ajustes da minha revisão; parágrafo da distância com macros de `distance_tests.csv`.
 - [ ] Q-rev. Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
       dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
       Related Work no fim), compilar.
@@ -508,3 +517,13 @@ errado".
   quatro executores lançados (Fase Q). **Próximo passo ao voltar: (1) ver se o orientador respondeu a pergunta da lei
   de profundidade e escrever o Q1 antes de qualquer gravação da curva; (2) ler as devoluções dos executores e
   revisar; (3) mandar a fase 2 ao "densidade" e ao "distância".**
+- **2026-11-15, 08:53 — fase 1 conferida, lei de profundidade respondida, fase 2 em curso.** Denso 5 de 5; D = 112 µm;
+  d1 feita; primeira passada da escrita junta em `rewrite/inversion`. Rodando: "densidade" (lei uniforme, família
+  `curve_u50_*`, curva), "distância" (espera o nível 8, depois d2 e profundidade), escritor da simulação (segunda
+  passada). **Pendências para o orientador (dizer no próximo relato):** .RIS do Scopus/ScienceDirect; PDF do
+  HoloAtt-UNet (Optica Open, bloqueado) e de Cotter 2021, Delli Priscoli 2021, JBO 2021; se as strings de busca
+  entram no paper; o conjunto de letras pequenas a 2 mm (crops 0,793 / 0,153 com densidade só ≈ 2,6 × a do esparso:
+  ver o acréscimo do Q1); lugar da seção nova (depois dos resultados ou depois de 03b). **Próximo passo ao voltar:
+  ler as devoluções; conferir `density_curve.csv` contra os json e as regras do Q0; terceira passada da escrita
+  (painel d no eixo do Q1, parágrafos de densidade, profundidade e distância, depois abstract, resultados e
+  conclusão); relatório curto e diff para o orientador, sem merge.**
