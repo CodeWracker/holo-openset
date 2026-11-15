@@ -664,3 +664,14 @@ errado".
   provado por testes; nenhum arquivo existente alterado). Referência parcial do controle S (r1): crops 0,791 / 0,118,
   camada 0,963 / 0,895. **Próximo passo ao voltar: devolução da escrita (revisar; depois mandar R-J e R-S para o
   texto), devolução do controle S (conferir, aplicar a leitura do Q2), compilar, PDF + diff, push do código.**
+- **2026-11-15, 13:50 — R-txt (a–e) revisado e aprovado; paper em `dfd2d42`, 44 páginas, 0 indefinidas, 0 overfull.**
+  O escritor fez: abstract e conclusão com a reconstrução como a melhor rota no denso e quando z muda; as três
+  frases sem suavizar (a tese virou "fails in the open set, and holds in the closed set only when the sample is
+  sparse": avisar o orientador); seção 8 com cinco parâmetros e painel (f) do erro de distância; profundidade 0,02
+  no canal; nota do Related Work como lista do que ele manda; figura do quadro inteiro com a camada de propagação
+  (**nenhum arquivo de `expected/` mudou**; `reproduce check` 13/13 e `pytest` 72 segundo ele: REFAZER eu mesmo no
+  fim, depois que o executor da densidade terminar de mexer em `scene.py`). Ajuste meu: "by a tenth or more" nas
+  três frases da comparação recalibrada (as 15 incluem 0,7 mm). O abstract tem ≈ 420 palavras: avisar.
+  Em curso: escritor pondo R-J no texto (8.6, RQ2 "The focal stack", limitação iii); executor da densidade em R-S.
+  **Próximo passo ao voltar: revisar a devolução do escritor (R-J); esperar R-S, conferir, aplicar a leitura do Q2,
+  mandar ao escritor; testes; compilar; PDF + diff; push do código (só GitHub).**
