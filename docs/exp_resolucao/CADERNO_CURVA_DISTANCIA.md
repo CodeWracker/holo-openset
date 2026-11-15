@@ -224,3 +224,171 @@ leio o conjunto e os modelos dele.
 2. **Validação regravada:** como na d1 (e no `record_07`), o split de validação inteiro (700) é regravado em cada
    distância; a recalibração usa 32 deles (semente 0). O pedido fala em "os 32 hologramas"; gravar o split inteiro é
    o que o `simulate like` faz e mantém a d2 igual à d1. Só os 32 entram em algum número.
+
+## 2026-11-15, 09:58 — D2: rodada d2 e linhas de profundidade rodadas (execução)
+
+`curve_u50_L008_ready.json` apareceu às 09:25:43 (commits do executor "densidade": lei `a25df48`, avaliações
+`a35c1e3`). O `physics.json` do `curve_u50_L008` difere do de `bench_1mm` só em `depth_uniform = 2,5e-5` (o
+`depth_std`/`depth_max` de 2,6/7,8 µm ficam lá, sem uso); o `rec_z0` dele é a 1,0 mm (`autofocus.csv`, `z_af`
+0,001). Antes de rodar, guardei md5 (csv, json, pt) e tamanho/mtime (npy) do `curve_u50_L008`, dos seus modelos e
+avaliações, e de tudo da d1 e do piloto que entra nas tabelas.
+
+GPU 5 (o executor "densidade" gravava L154 e L343 ao mesmo tempo; 9,9–10,9 GB usados na GPU 5), um processo meu por
+vez, 4 threads; `some avg10` 0,00 em todas as leituras; 4–20 threads prontas no container (as minhas ≈ 4).
+
+| passo | comando | início–fim | parede |
+|---|---|---|---|
+| record | `for Z in 07 09 11; do FAM=u50 ZROB=$Z bash scripts/exp_resolucao/distance_tests.sh 5 record; done` (tmux `res_dist_u50_rec`) | 09:26:08–09:39:56 | 275 + 276 + 277 s |
+| checks | `FAM=u50 ZROB=07/09/11 ... checks` | 09:40:23–09:40:37 | 4–5 s cada |
+| rep | `for Z in 07 09 11; do for R in 1..5; do FAM=u50 ZROB=$Z REP=$R ... rep; done; done` (tmux `res_dist_u50_eval`) | 09:40:46–09:53:36 | 770 s |
+| profundidade | `for R in 1..5; do REP=$R bash scripts/exp_resolucao/depth_tests.sh 5 rep; done` (tmux `res_dist_depth`) | 09:54:17–09:57:26 | 189 s |
+| tabelas | `FAM=u50 ... distance_tests.sh 5 table`; `depth_tests.sh 5 table` (CPU) | 09:57 | — |
+
+Cada passo rodou uma vez (uma linha `start` por log), sem erro nem "missing". Commits `89740c0` (conferências),
+`31181c6` (d2), `a4e80ab` (profundidade). Depois de rodar: md5 e mtime de tudo o que foi guardado continuam iguais
+(nada do `curve_u50_L008`, dos seus modelos, da d1 nem do piloto foi tocado).
+
+### Conferência dos conjuntos (`distance_checks_u50_z07.json`, `_z09.json`, `_z11.json`)
+
+Os seis (`curve_u50_robust/z07`, `z07_val`, `z09`, `z09_val`, `z11`, `z11_val`) passam em tudo, como na d1:
+`physics.json` difere do `curve_u50_L008` só em `z0` (e `like`/`split`); **a lei de profundidade é a do conjunto**
+(`depth_uniform = 2,5e-5` nos seis; `depth_law_equal_ref` verdadeiro); anotações (6371 / 5711), metadata, sessions
+e poeira (3772 / 3374) iguais a menos de z, z na razão exata (desvio ≤ 1,4 × 10⁻¹³); câmera igual; quadros em branco
+até 1,375–1,875 níveis diferentes, como na d1; a imagem refeita da semente (0 e 2900) é idêntica à armazenada
+(diferença 0) e difere da mesma imagem a 1,0 mm (rms 2,63–6,35 níveis). Distâncias das sessões iguais às da d1 (os
+sorteios são os mesmos).
+
+### Recalibração (`recal_curve_u50_L008_z07.json`, `_z09.json`, `_z11.json`; os mesmos 32 ids da d1)
+
+| distância | z verdadeiro | achado (literal) | literal − verdadeiro | por razão | razão − verdadeiro |
+|---|---|---|---|---|---|
+| 0,7 mm | 0,70260 mm | 0,69893 mm | −0,00367 mm (−0,52 %) | 0,69710 mm | −0,00551 mm |
+| 0,9 mm | 0,90335 mm | 0,90231 mm | −0,00104 mm | 0,89994 mm | −0,00341 mm |
+| 1,1 mm | 1,10409 mm | 1,10479 mm | +0,00070 mm | 1,10189 mm | −0,00220 mm |
+| (1,0 mm, referência) | 1,00372 mm | 1,00263 mm | −0,00109 mm | — | — |
+
+A 0,9 e 1,1 mm e na referência a 1,0 mm, o α achado é **idêntico, bit a bit, ao da d1** (amostra plana). Conferi a
+explicação: `calibrate_alpha` devolve um ponto de uma grade discreta (o refino tem passo de 0,27 % de α), e os
+cinco valores estão exatamente nela; com a lei uniforme o ponto mais nítido caiu no mesmo ponto da grade, menos a
+0,7 mm, onde caiu um passo abaixo (0,0007400 contra 0,0007421). α treinado dos cinco modelos `prop` do
+`curve_u50_L008`: 0,0010248 / 0,0010195 / 0,0010196 / 0,0010198 / 0,0010236 (r1…r5) = 0,968 / 0,963 / 0,963 /
+0,963 / 0,967 mm (os do piloto: 0,972–0,976 mm).
+
+### d2: resultados (`results_exp_resolucao/distance_tests_u50.csv`, por repetição em `distance_tests_u50_rows.csv`;
+linhas cruas em `robustness_curve_u50_L008_dist.csv`; 1,0 mm copiado de `eval/curve_u50_L008/<fluxo>_r<n>.json`)
+
+F1 open-set, média / mín. / máx.:
+
+| fluxo, condição | 0,7 mm | 0,9 mm | 1,0 mm | 1,1 mm |
+|---|---|---|---|---|
+| crops, como está | 0,9107 / 0,8921 / 0,9260 | 0,9459 / 0,9343 / 0,9562 | 0,9368 / 0,9251 / 0,9466 | 0,9233 / 0,9150 / 0,9350 |
+| camada, como está | 0,0150 / 0,0146 / 0,0153 | 0,4261 / 0,3135 / 0,4946 | 0,9748 / 0,9693 / 0,9775 | 0,2893 / 0,2554 / 0,3259 |
+| camada, recal. literal | 0,7334 / 0,6989 / 0,7635 | 0,7310 / 0,6831 / 0,7588 | — | 0,6697 / 0,6384 / 0,7097 |
+| camada, recal. razão | 0,9190 / 0,9057 / 0,9326 | 0,9325 / 0,9265 / 0,9405 | — | 0,9303 / 0,9264 / 0,9406 |
+| reconstrução, como está | 0,0150 / 0,0146 / 0,0153 | 0,2490 / 0,2261 / 0,2652 | 0,9770 / 0,9737 / 0,9796 | 0,3029 / 0,2678 / 0,3538 |
+| reconstrução, recal. literal | 0,9645 / 0,9611 / 0,9737 | 0,9772 / 0,9720 / 0,9810 | — | 0,9731 / 0,9691 / 0,9781 |
+| reconstrução, recal. razão | 0,9641 / 0,9606 / 0,9747 | 0,9783 / 0,9746 / 0,9814 | — | 0,9748 / 0,9701 / 0,9791 |
+
+Rejeição das não vistas, média / mín. / máx.:
+
+| fluxo, condição | 0,7 mm | 0,9 mm | 1,0 mm | 1,1 mm |
+|---|---|---|---|---|
+| crops, como está | 0,7369 / 0,6151 / 0,8673 | 0,7186 / 0,6087 / 0,8321 | 0,7140 / 0,6135 / 0,8272 | 0,7212 / 0,6401 / 0,8460 |
+| camada, como está | 1,0000 (todas) | 0,9966 / 0,9902 / 1,0000 | 0,9829 / 0,9370 / 1,0000 | 0,9935 / 0,9681 / 1,0000 |
+| camada, recal. literal | 0,9878 / 0,9689 / 1,0000 | 0,9909 / 0,9742 / 1,0000 | — | 0,9838 / 0,9471 / 1,0000 |
+| camada, recal. razão | 0,9786 / 0,9215 / 1,0000 | 0,9818 / 0,9331 / 1,0000 | — | 0,9779 / 0,9160 / 1,0000 |
+| reconstrução, como está | 1,0000 (todas) | 0,9998 / 0,9992 / 1,0000 | 0,9961 / 0,9876 / 1,0000 | 0,9986 / 0,9938 / 1,0000 |
+| reconstrução, recal. literal | 0,9970 / 0,9868 / 1,0000 | 0,9967 / 0,9899 / 1,0000 | — | 0,9965 / 0,9907 / 1,0000 |
+| reconstrução, recal. razão | 0,9973 / 0,9883 / 1,0000 | 0,9962 / 0,9876 / 1,0000 | — | 0,9965 / 0,9899 / 1,0000 |
+
+Perda sem recalibrar (como está − 1,0 mm, F1), por repetição r1…r5:
+
+| distância | crops | camada | reconstrução |
+|---|---|---|---|
+| 0,7 mm | −0,0330 / −0,0204 / −0,0366 / −0,0207 / −0,0199 | −0,9598 / −0,9624 / −0,9541 / −0,9629 / −0,9597 | −0,9589 / −0,9636 / −0,9643 / −0,9607 / −0,9626 |
+| 0,9 mm | +0,0092 / +0,0121 / +0,0060 / +0,0096 / +0,0083 | −0,5759 / −0,4830 / −0,5026 / −0,5204 / −0,6613 | −0,7476 / −0,7171 / −0,7146 / −0,7483 / −0,7125 |
+| 1,1 mm | −0,0100 / −0,0152 / −0,0137 / −0,0116 / −0,0172 | −0,6740 / −0,6936 / −0,6888 / −0,6516 / −0,7194 | −0,7059 / −0,6878 / −0,6594 / −0,6936 / −0,6238 |
+
+Médias: crops −0,0261 / +0,0090 / −0,0136; camada −0,9598 / −0,5486 / −0,6855; reconstrução −0,9620 / −0,7280 /
+−0,6741 (0,7 / 0,9 / 1,1 mm). O que a recalibração por razão recupera (F1, média): camada +0,9040 / +0,5063 /
++0,6410; reconstrução +0,9492 / +0,7293 / +0,6719.
+
+Reconstrução recalibrada − camada recalibrada por razão, F1, r1…r5:
+
+| distância | reconstrução por razão − camada por razão | reconstrução literal − camada por razão |
+|---|---|---|
+| 0,7 mm | 0,0448 / 0,0338 / 0,0420 / 0,0471 / 0,0580 (média 0,0451) | 0,0450 / 0,0348 / 0,0410 / 0,0476 / 0,0589 (0,0455) |
+| 0,9 mm | 0,0481 / 0,0399 / 0,0481 / 0,0398 / 0,0534 (0,0459) | 0,0454 / 0,0385 / 0,0477 / 0,0394 / 0,0524 (0,0447) |
+| 1,1 mm | 0,0436 / 0,0377 / 0,0510 / 0,0420 / 0,0481 (0,0445) | 0,0427 / 0,0354 / 0,0500 / 0,0401 / 0,0459 (0,0428) |
+
+Em rejeição (reconstrução por razão − camada por razão): 0,0233 / 0 / 0,0669 / 0,0033 / 0 a 0,7 mm; 0,0121 / 0 /
+0,0544 / 0,0057 / 0 a 0,9 mm; 0,0161 / −0,0008 / 0,0739 / 0,0057 / −0,0016 a 1,1 mm (r3 sempre a maior).
+
+### Linhas de profundidade (`results_exp_resolucao/depth_tests.csv`, por repetição em `depth_tests_rows.csv`)
+
+Plano = `bench_1mm` (2,6 µm); u50 = `curve_u50_L008` (uniforme ±25 µm); larga = normal 50 µm cortada em 150 µm
+(`bench_1mm_robust/depth50`). Modelos, galeria e limiar do conjunto de treino. F1, média / mín. / máx. (n
+repetições):
+
+| treinado → testado | n | crops | camada | reconstrução | origem |
+|---|---|---|---|---|---|
+| plano → plano | 5 | 0,9382 / 0,9283 / 0,9451 | 0,9768 / 0,9736 / 0,9800 | 0,9789 / 0,9765 / 0,9806 | copiado, `pilot_five_reps_robustness.csv` |
+| plano → u50 (i) | 5 | 0,9386 / 0,9288 / 0,9463 | 0,9578 / 0,9553 / 0,9646 | 0,9707 / 0,9647 / 0,9739 | novo |
+| plano → larga | 5 | 0,9387 / 0,9288 / 0,9450 | 0,7842 / 0,7732 / 0,7997 | 0,8225 / 0,8014 / 0,8410 | copiado, `pilot_five_reps_robustness.csv` |
+| u50 → plano (ii) | 5 | 0,9364 / 0,9247 / 0,9470 | 0,9794 / 0,9749 / 0,9816 | 0,9763 / 0,9708 / 0,9796 | novo |
+| u50 → u50 | 5 | 0,9368 / 0,9251 / 0,9466 | 0,9748 / 0,9693 / 0,9775 | 0,9770 / 0,9737 / 0,9796 | copiado, `eval/curve_u50_L008` |
+| u50 → larga (iii) | 5 | 0,9367 / 0,9247 / 0,9478 | 0,8584 / 0,8457 / 0,8631 | 0,8654 / 0,8505 / 0,8754 | novo |
+| larga → plano | 1 | 0,9233 | 0,9836 | 0,9762 | copiado, `depth_training.csv` (r1) |
+| larga → larga | 1 | 0,9239 | 0,9767 | 0,9751 | copiado, `depth_training.csv` (r1) |
+
+Rejeição, média / mín. / máx.:
+
+| treinado → testado | n | crops | camada | reconstrução |
+|---|---|---|---|---|
+| plano → plano | 5 | 0,7299 / 0,6224 / 0,8288 | 0,9975 / 0,9930 / 1,0000 | 0,9981 / 0,9914 / 1,0000 |
+| plano → u50 (i) | 5 | 0,7299 / 0,6216 / 0,8305 | 0,9981 / 0,9953 / 1,0000 | 0,9981 / 0,9907 / 1,0000 |
+| plano → larga | 5 | 0,7384 / 0,6296 / 0,8329 | 0,9986 / 0,9961 / 1,0000 | 0,9995 / 0,9984 / 1,0000 |
+| u50 → plano (ii) | 5 | 0,7137 / 0,6111 / 0,8305 | 0,9816 / 0,9331 / 1,0000 | 0,9953 / 0,9860 / 1,0000 |
+| u50 → u50 | 5 | 0,7140 / 0,6135 / 0,8272 | 0,9829 / 0,9370 / 1,0000 | 0,9961 / 0,9876 / 1,0000 |
+| u50 → larga (iii) | 5 | 0,7183 / 0,6159 / 0,8362 | 0,9841 / 0,9479 / 1,0000 | 0,9961 / 0,9852 / 1,0000 |
+| larga → plano | 1 | 0,5950 | 0,9968 | 1,0000 |
+| larga → larga | 1 | 0,6047 | 0,9976 | 0,9944 |
+
+Diferenças pareadas (mesma repetição e fluxo; F1, r1…r5):
+- plano → u50 − plano → plano: camada −0,0217 / −0,0182 / −0,0201 / −0,0154 / −0,0195 (média −0,0190);
+  reconstrução −0,0119 / −0,0101 / −0,0069 / −0,0058 / −0,0063 (−0,0082); crops −0,0003 a +0,0012.
+- plano → u50 − u50 → u50 (treinar plano contra treinar na lei, no mesmo teste): camada −0,0194 / −0,0221 /
+  −0,0125 / −0,0130 / −0,0180 (−0,0170); reconstrução −0,0091 / −0,0100 / −0,0059 / −0,0030 / −0,0037 (−0,0064).
+- u50 → plano − u50 → u50: camada +0,0036 a +0,0056; reconstrução −0,0029 a +0,0009.
+- u50 → larga − u50 → u50: camada −0,1166 / −0,1144 / −0,1072 / −0,1145 / −0,1291 (−0,1164); reconstrução
+  −0,1232 / −0,1128 / −0,1073 / −0,1126 / −0,1023 (−0,1116).
+
+### Desvios
+
+1. Validação regravada inteira (700) em cada distância, como na d1; só os 32 da recalibração entram (D2-prep).
+2. As linhas copiadas de `pilot_five_reps_robustness.csv` e `depth_training.csv` estão com as 4 casas desses
+   arquivos (pedido: copiar sem recalcular); as linhas novas e a u50 → u50 têm precisão completa.
+3. Nada além do pedido foi rodado.
+
+### O que parece estranho ou merece olhar (leitura minha, depois dos números)
+
+1. **Com a lei uniforme, a camada aguenta mais a distância errada sem recalibrar** (como está, a 0,9 / 1,1 mm:
+   0,426 / 0,289 contra 0,221 / 0,081 na d1; a reconstrução 0,249 / 0,303 contra 0,138 / 0,160). Continua sendo uma
+   queda de 0,5–0,7. A 0,7 mm as duas famílias rejeitam tudo (0,015).
+2. **A camada literal fica bem melhor que na d1** (0,67–0,73 contra 0,51–0,56): o treino deslocou o α um pouco mais
+   (−3,2 a −3,7 % contra −2,1 a −2,8 %), mas o modelo treinado com 50 µm parece menos sensível a esse deslocamento.
+   É leitura, não teste.
+3. **A diferença reconstrução recalibrada − camada por razão continua ≈ 0,045 de F1 nas três distâncias** (15 de 15
+   positivas, de +0,034 a +0,058), um pouco menor que na d1 (0,050–0,061). A 1,0 mm as duas empatam (u50 → u50:
+   0,9770 − 0,9748 = +0,0022). Como na d1, a reconstrução recalibrada volta ao nível de 1,0 mm (0,978 / 0,975 contra
+   0,977) e a camada não (0,933 / 0,930 contra 0,975).
+4. **Rejeição da camada mais baixa e variável nesta família**, já a 1,0 mm (0,9829, mín. 0,9370 em r3, na avaliação
+   do executor "densidade"), e na camada recalibrada (mín. 0,916–0,933, sempre r3). Na d1 a rejeição recalibrada
+   ficava ≥ 0,982. A diferença de rejeição reconstrução − camada chega a 0,07 em r3.
+5. **A recalibração a 0,7 mm caiu um passo da grade abaixo** com a lei uniforme (0,69893 mm, −0,52 % do
+   verdadeiro, contra −0,24 % na d1); a 0,9, 1,1 e 1,0 mm achou exatamente o mesmo ponto da grade da d1. A resolução
+   da grade (0,27 %) é do mesmo tamanho dos erros da recalibração, então a "distância achada" está quantizada.
+6. **A perda do treino plano na lei padrão é pequena**: −0,019 (camada) e −0,008 (reconstrução) de F1, contra −0,19
+   e −0,16 na lei larga. Os modelos treinados na lei padrão perdem −0,116 / −0,112 na lei larga, e não perdem nada no
+   plano (camada +0,005). Os crops não mudam com a profundidade em nenhuma combinação (|Δ| ≤ 0,004).
+7. Crops a 0,9 mm de novo melhores que a 1,0 mm, nas cinco repetições (+0,006 a +0,012), como na d1.
