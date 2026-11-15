@@ -302,19 +302,39 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       0,925. Recalibrado por razão: camada 0,929 / 0,915; reconstrução 0,979 / 0,976. Reconstrução − camada
       recalibradas: +0,050 / +0,051 / +0,061 a 0,7 / 0,9 / 1,1 mm (15 de 15 positivas). Distância achada a menos de
       0,35 %.
-- [~] Q-d2. **Fase 2 do "distância" (mandada às ≈ 08:55):** espera `curve_u50_L008_ready.json`; depois regrava teste
-      e validação do nível 8 a 0,7 / 0,9 / 1,1 mm (`data/curve_u50_robust/`), `distance_tests_u50.csv`, e as linhas
-      de profundidade (`depth_tests.csv`: modelos planos no teste padrão; modelos padrão no teste plano e no da lei
-      larga).
+- [x] Q-d2. (feito às 10:00 e conferido por mim nas linhas por repetição) **Distância e profundidade com os cinco
+      modelos do nível 8 da família padrão** (`distance_tests_u50.csv`, `depth_tests.csv`; caderno do executor, D2).
+      Nível 8 da família padrão a 1,0 mm (F1 / rejeição, média de 5): crops 0,937 / 0,714; camada 0,975 / 0,983
+      (mínimo de rejeição 0,937, em r3); reconstrução 0,977 / 0,996. Camada − crops: +0,038 F1, +0,269 rejeição.
+      **Distância, sem recalibrar**, 0,9 / 1,1 mm: camada 0,426 / 0,289; reconstrução 0,249 / 0,303 (rejeição
+      ≥ 0,993; acerto das conhecidas 0,15–0,29); crops 0,946 / 0,923. **Recalibrado por razão**: camada 0,919 /
+      0,932 / 0,930 e reconstrução 0,964 / 0,978 / 0,975 a 0,7 / 0,9 / 1,1 mm; reconstrução − camada +0,045 /
+      +0,046 / +0,044 (15 de 15 positivas, 0,034–0,058); a 1,0 mm empatam (+0,002). Literal: camada 0,67–0,73.
+      Distância achada por razão a −0,78 % / −0,38 % / −0,20 % da verdadeira (grade com passo de 0,27 %).
+      **Profundidade (F1 da camada / reconstrução):** treino plano → teste padrão 0,958 / 0,971, isto é, −0,019 /
+      −0,008 contra o teste plano (5 de 5 negativas); treino padrão → teste plano 0,979 / 0,976 (nada perde);
+      treino padrão → lei larga 0,858 / 0,865 (−0,116 / −0,112); treino plano → lei larga 0,784 / 0,823 (o −0,19
+      do piloto). Crops não mudam com a profundidade (|Δ| ≤ 0,004). **Consequência para o texto: na lei padrão
+      (canal de 50 µm) treinar com amostra plana custa 0,02, não 0,2; o 0,2 é da lei larga (teste de estresse).
+      Dizer isso ao orientador: a frase dele "treino com amostra plana perde 0,2 de F1 em amostra com 50 µm"
+      vale para a lei larga, não para a que ele escolheu.**
 - [x] Q-w1 / Q-w2, primeira passada (feita): seção `06b-simulation.tex` (figura de 5 painéis, tabela de 49 linhas,
       228 macros `\Res…` por `scripts/exp_resolucao/paper_resolucao.py` e `fig_simulation.py`), introdução nova,
       mecanismo corrigido em 03/04/06; `02-related.tex` inteiro, 25 entradas novas no bib, complemento do
       levantamento em OpenAlex e Semantic Scholar (918 trabalhos, 56 incluídos; Scopus/ScienceDirect NÃO rodados),
       `TEXTO_C_PROPOSTAS.md`. **Juntei os dois em `rewrite/inversion`** (worktree `../latex-wt-inversion`, `24f1303`;
       compila, 39 páginas). Li os três textos.
-- [~] Q-w3. **Segunda passada do escritor da simulação, no worktree de integração (mandada às ≈ 09:05):** coerência
-      das duas geometrias em 03b/03; frase do mecanismo em 07/08/abstract; Sobieranski é coautor (sai "personal
-      communication"); ajustes da minha revisão; parágrafo da distância com macros de `distance_tests.csv`.
+- [x] Q-w3. (feito ≈ 09:35 e revisado; `rewrite/inversion` em `192eca5`, código `6734984`) **Segunda passada do
+      escritor da simulação, no worktree de integração:** as duas geometrias coerentes em 03b/03; frase do mecanismo
+      em 07/08/abstract; Sobieranski é coautor (saiu "personal communication"; virou "the bench (not reported in the
+      article)"); ajustes da minha revisão; subseção 8.6 da distância com macros `\ResDist…`. Pontos que ficaram
+      para a terceira passada: `07-discussion` limitação (i) ainda chama 19,25 mm de distância da bancada; macro do
+      acerto das conhecidas na 8.6; `05-protocol` diz "bit by bit on the same build" (não mexi; avisar).
+- [~] Q-w4. **Terceira passada, parte 1 (não depende da curva; mandada às ≈ 10:15):** o gerador passa a tomar a
+      família padrão (`curve_u50_L*`) como a família de 1 mm do paper (esparso = `curve_u50_L008`; denso =
+      `curve_u50_L154` quando existir); 8.5 (profundidade) final com `depth_tests.csv`; 8.6 (distância) com os
+      modelos da família padrão; limitação (i) da discussão; código do painel (d) e da figura da curva pronto para
+      ler `density_curve.csv`. **Parte 2 (depois da curva):** 8.4, painel (d), abstract, resultados, conclusão.
 - [ ] Q-rev. Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
       dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
       Related Work no fim), compilar.
@@ -527,3 +547,12 @@ errado".
   ler as devoluções; conferir `density_curve.csv` contra os json e as regras do Q0; terceira passada da escrita
   (painel d no eixo do Q1, parágrafos de densidade, profundidade e distância, depois abstract, resultados e
   conclusão); relatório curto e diff para o orientador, sem merge.**
+- **2026-11-15, 10:15 — d2 e profundidade conferidas; curva gravando.** O executor da distância terminou (commits
+  até `940fc78`); refiz as médias e as diferenças pareadas a partir de `robustness_curve_u50_L008_dist.csv`,
+  `robustness_depth_from_*.csv` e dos json de `eval/curve_u50_L008`: tudo bate com a tabela dele. O da densidade
+  ainda grava (às 10:00: L343 em 4000/5000, L154 em 3750/5000; L015 e L069 por gravar; depois r1 em todos, regra do
+  Q0, r2–r5). Achado a dizer ao orientador: na lei padrão o treino plano perde 0,02, não 0,2 (ver Q-d2). O gerador
+  de macros ainda toma o piloto plano (`bench_1mm`) como "o esparso": a terceira passada troca para a família
+  padrão. **Próximo passo ao voltar: ler a devolução do escritor (parte 1) e a do executor da densidade; conferir
+  `density_curve.csv` contra os json e a regra do Q0; mandar a parte 2 da escrita; relatório curto e diff, sem
+  merge.**
