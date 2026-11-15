@@ -1,6 +1,6 @@
 # Levantamento C.1: o argumento de velocidade da literatura
 
-Levantamento feito em 2026-11-14 para a parte C do `PROTOCOLO.md` (item C.1). É uma revisão narrativa, sem fluxo PRISMA. Toda frase atribuída a um trabalho foi copiada do texto, com a página. Onde o texto não estava acessível, o item aparece como "somente resumo" e não é citado entre aspas.
+Levantamento feito em 2026-11-14 para a parte C do `PROTOCOLO.md` (item C.1), com o complemento em índices abertos de 2026-11-15 (seção 1b; **Scopus e ScienceDirect não foram rodados**). É uma revisão narrativa, sem fluxo PRISMA. Toda frase atribuída a um trabalho foi copiada do texto, com a página. Onde o texto não estava acessível, o item aparece como "somente resumo" e não é citado entre aspas.
 
 Convenções:
 
@@ -65,6 +65,104 @@ python3 -I scripts/exp_resolucao/refs_merge.py /home/jovyan/compartilhado/ralph/
 - Carrega as decisões de triagem de `merged/screening.csv` quando a chave coincide.
 - Exporte cada string do Scopus e da ScienceDirect uma vez só, **sem** o filtro de ano. O script conta o recorte ≥ 2020 sozinho.
 - Testei com um RIS falso do Scopus (CRLF, DOI em URL e maiúsculas). O registro duplicado foi fundido.
+
+---
+
+## 1b. Complemento em índices abertos (2026-11-15)
+
+> **Scopus e ScienceDirect NÃO foram rodados.** Não temos credencial nem chave da Elsevier, e os `.RIS` pedidos ao
+> orientador não chegaram: em 2026-11-15 as pastas `referencias/c/scopus/` e `referencias/c/sciencedirect/` estão
+> vazias. O que segue é um **complemento declarado**, não um substituto: as mesmas strings em dois índices abertos
+> que não pedem chave nem identificação. Quando os `.RIS` chegarem, basta colocá-los nessas pastas (`S<n>` no nome,
+> sem filtro de ano) e rodar `refs_merge.py` de novo; as decisões de triagem já tomadas são mantidas.
+
+**Serviços e data (2026-11-15, ≈ 08:20–08:30 UTC):**
+
+- **OpenAlex**, `GET /works?filter=title_and_abstract.search:<string>`, paginação por cursor, 200 por página.
+  Usei a **forma ScienceDirect** de cada string (palavras sem curinga). O OpenAlex aplica radicalização (stemming)
+  por conta própria e aceita AND/OR e frases entre aspas; a tradução que ele fez de cada consulta está na resposta
+  (`meta.x_query`), salva nas páginas.
+- **Semantic Scholar**, `GET /graph/v1/paper/search/bulk` (título e resumo). Usei a **forma Scopus** de cada string,
+  com AND como `+` e OR como `|`, e mantive os curingas de palavra única (`hologra*`, `classif*`...). Este índice não
+  expande curinga dentro de frase (testei: `"digital holograph*"` devolve o mesmo que `"digital holographic"`), então
+  troquei cada frase com curinga pelas suas formas explícitas (`"raw hologram" | "raw holograms"`, `"digital
+  holography" | "digital holographic"`, `"neural network" | "neural networks"`, `"unknown class" | "unknown
+  classes"`, `"Fourier layer" | "Fourier layers"`, `"in-line holography" | "in-line holographic" | "in-line
+  hologram" | "in-line holograms"`). As strings exatas estão no script.
+- **Crossref** não tem busca booleana; não rodei as strings nele. Usei-o só para conferir os metadados (DOI, ano,
+  volume, páginas) das entradas novas do `main.bib` (`referencias/c/crossref_meta_2026-11-15/`).
+- **Nada identificador foi enviado:** User-Agent genérico (`Mozilla/5.0 (X11; Linux x86_64)`), sem e-mail, sem
+  `mailto`, sem chave. A resposta do OpenAlex sugere que um agente peça uma chave enviando o e-mail do usuário; não fiz
+  isso (a cota anônima bastou: 16 requisições).
+- Uma requisição por vez, com 3 s de pausa; um 504 do OpenAlex na S3 foi repetido (a pasta vazia foi apagada antes).
+
+**Script:** `holo-openset/scripts/exp_resolucao/refs_open_search.py` (só biblioteca padrão), rodado de fora das pastas
+de download com `python3 -I`:
+
+```bash
+python3 -I scripts/exp_resolucao/refs_open_search.py fetch openalex S1 ../referencias/c/openalex/S1
+python3 -I scripts/exp_resolucao/refs_open_search.py to-ris openalex ../referencias/c/openalex/S1
+# idem com s2 -> ../referencias/c/semanticscholar/S<n>; depois:
+python3 -I scripts/exp_resolucao/refs_merge.py ../referencias/c
+```
+
+**Arquivos:** `referencias/c/openalex/S<n>/` e `referencias/c/semanticscholar/S<n>/`, cada um com `page_*.json`
+(resposta bruta), `query.json` (string, URLs, data, total informado), `records.ris` e `records.csv` (com resumo, para
+a triagem). `refs_merge.py` passou a ler as duas pastas novas.
+
+| String | OpenAlex (todos / ≥ 2020) | Semantic Scholar (todos / ≥ 2020) | PubMed (todos / ≥ 2020) | Trabalhos após deduplicação nas três fontes (todos / ≥ 2020) |
+|---|---:|---:|---:|---:|
+| S1 | 27 / 22 | 28 / 19 | 2 / 0 | 35 / 25 |
+| S2 | 142 / 122 | 223 / 178 | 70 / 61 | 259 / 212 |
+| S3 | 26 / 22 | 54 / 43 | 8 / 8 | 62 / 50 |
+| S4 | 37 / 33 | 61 / 39 | 13 / 12 | 79 / 54 |
+| S5 | 20 / 18 | 18 / 15 | 2 / 1 | 23 / 21 |
+| S6 | 97 / 84 | 183 / 153 | 41 / 37 | 204 / 172 |
+| S7 | 194 / 122 | 236 / 128 | 77 / 49 | 291 / 168 |
+| *S8 (extra)* | *4 / 4* | *21 / 10* | *8 / 4* | *22 / 11* |
+| **Registros** | **547** | **824** | **221** | **1592 registros → 918 trabalhos (668 a partir de 2020)** |
+
+Nenhuma consulta foi truncada (o total informado bateu com o salvo em todas). Pela fonte (`merged/merged.csv`): 711
+trabalhos novos em relação ao PubMed; 301 só no Semantic Scholar, 132 só no OpenAlex, 278 nos dois.
+
+**Verificação de recuperação (a mesma da nota de `02-related.tex`):**
+
+- Rockembach 2024 (CBMS/IEEE): **recuperado** (OpenAlex e Semantic Scholar, S1 e S2). O PubMed não o recuperava.
+- Delli Priscoli 2021 (IEEE JSTQE), Cotter 2021 e Guo 2021 (L&O Methods): recuperados.
+- Bravo-Frank 2024, Liu 2021 e Sedaghat 2025: **continuam fora**, pelos mesmos motivos de vocabulário já descritos na
+  seção 1 (as strings, não os índices). A sugestão de ajuste das strings continua valendo e não foi aplicada.
+
+**Triagem (2026-11-15).** Li os 711 títulos novos. Para os 60 sinalizados li o resumo (de `records.csv`). Incluí 37
+(decisão, motivo e acesso em `merged/screening.csv`); os outros 674 ficaram "não-incluído" (fora do escopo de C.1:
+holografia de exibição, segurança, IoT, metrologia, física de altas energias, microscopia não holográfica...). Total
+na triagem conjunta: 56 incluídos em 918.
+
+**Textos completos baixados (cada um numa pasta nova, `provenance.json` com URL e data):**
+
+| Pasta | Trabalho | Resultado |
+|---|---|---|
+| `hifcrepr2026/` | Pirone et al. 2026, J. Phys. Photonics 8:025040 | PDF (IOP, CC BY), lido inteiro |
+| `microplastic2021/` | Zhu et al. 2021, J. Phys. Photonics 3:024013 | PDF (IOP, CC BY), lido por busca de termos e nas passagens citadas |
+| `planktonraw2022_archimer/`, `planktonraw2022_pdf/` | Scherrer et al. 2022, LNCS 13483:25–39 | página e PDF da versão do autor (Archimer, Ifremer), lido inteiro |
+| `seo2010_pmc/` | Seo et al. 2010, Anal. Chem. 82:4621–4627 (ref. [37] de Isikman 2012) | JATS do PMC (manuscrito NIH), lido nas seções de resultados e métodos |
+| `holoattunet2026/` | Song et al. 2026 (HoloAtt-UNet), Measurement 289:122543 | **bloqueado** (Optica Open: desafio anti-bot); não contornei |
+| `planktonraw2021_hal/` | Scherrer et al. 2021 (versão HAL) | **bloqueado** (desafio anti-bot) |
+| `rbcfcn2021/` | JBO 26:036001 (2021) | **bloqueado** (SPIE: desafio anti-bot) |
+| `cotter2021_mit_c/`, `cotter2021_mit_pdf/` | Cotter et al. 2021 | página do DSpace obtida; o PDF deu **HTTP 429** de novo (terceira tentativa no total); não insisti |
+| `dellipriscoli2021_d/`, `lenslessdet2024_ieeepj/` | Delli Priscoli 2021; IEEE Photonics J. 2024 | **HTTP 502** do IEEE |
+
+**O que o complemento cobre e o que não cobre:**
+
+- *Cobre:* títulos e resumos indexados no OpenAlex e no Semantic Scholar, que incluem IEEE, Optica (OE, BOE, AO, JOSA,
+  anais DH/COSI), SPIE, Elsevier, Wiley, IOP, MDPI, Springer, além de arXiv/bioRxiv/SSRN e repositórios. Foi o que
+  trouxe o CBMS, o JSTQE e os anais de conferência que o PubMed não indexa.
+- *Não cobre:* (i) as palavras-chave de autor e o vocabulário controlado que o `TITLE-ABS-KEY` do Scopus e o campo
+  "Title, abstract or author-specified keywords" da ScienceDirect consultam; (ii) resumos que esses índices não têm
+  (muitos registros da Elsevier vêm sem resumo no OpenAlex e no Semantic Scholar: por exemplo Opt. Commun. 2026
+  133421 e 133563 e Opt. Laser Technol. 2025 113813, triados só pelo título); (iii) a sintaxe exata do Scopus (o
+  OpenAlex radicaliza sozinho, o Semantic Scholar não expande curinga em frase); (iv) a cobertura completa da
+  ScienceDirect, que indexa o texto dos periódicos da Elsevier. **As contagens acima não são as do Scopus nem as da
+  ScienceDirect e não devem ser descritas como tais.**
 
 ---
 
@@ -161,6 +259,11 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 | Liu et al. 2025, OAH-Net (10.1364/BOE.547292) | "Consequently, the speed of hologram reconstruction has become the primary bottleneck, limiting DHM's clinical feasibility for applications requiring rapid turnaround times." | Introdução §[4] (JATS/PMC) | Sim | **Sim**: "The inference speed is under 3 ms/frame ... (1536 × 2048 pixels)". Discussão: "reduces the holographic reconstruction time by up to 97% (excluding downstream data analysis)" | Pacote comercial (Ovizio) | RTX 4090, lote 1, JIT | Reconstrução aprendida contra a comercial. O YOLOv8 (3,5 ms, número citado) custa o mesmo que a reconstrução. Holografia off-axis |
 | Rivenson et al. 2018† (10.1038/lsa.2017.141) | "...requiring fewer measurements in addition to being computationally faster." | 1 | Sim | **Sim** (Tabela p. 5): rede 6,45 s contra multialtura iterativa 23,20–47,43 s (N = 2–8) por cerca de 1 mm² | Recuperação de fase iterativa multialtura | GPU de laptop | Imagem limpa contra imagem limpa. Dos 6,45 s, "3.34 s for the preprocessing stages ... pixel super-resolution, auto-focusing and free space back-propagation" |
 | Chen et al. 2022, FIN (10.1038/s41377-022-00949-8) | "For the case of M=3, FIN is ~9.3-fold faster than RH-M and ~27.3-fold faster than MH-PR, which highlights the computational efficiency of our network." | 5 | Sim | **Sim** (Tabela 1); "~1 mm² sample area within 0.04 sec" (p. 7) | Multialtura iterativa (MH-PR) e outra rede | RTX 2080 Ti | Imagem limpa contra imagem limpa |
+| Seo et al. 2009† (10.1039/b813943a; lido no JATS do PMC, manuscrito NIH, sem páginas) | "In our approach, there is no such digital reconstruction, and the detected holographic lensfree image is simply analyzed by a pattern recognition algorithm to classify different cell types on the chip. [...] Therefore, numerically and computationally our approach is much simpler and faster since high spatial resolution is not of interest for this work." Também em "Theory behind Holographic-LUCAS": "This step involves straightforward pattern recognition algorithms, and therefore is numerically much simpler and faster than the solution of the inverse wave problem." | Seção "Discussions" (e apêndice "Theory") | Sim | **Não** mediu tempo de processamento (o único tempo é o da captura, "within less than 0.3 seconds", Introdução) | A reconstrução de alta resolução do DIHM com magnificação de franja de 20–30×, descrita, não cronometrada | — | *Acrescentado em 2026-11-15.* É o precedente mais antigo do argumento e também da queda por densidade (seção 4, "Densidade") |
+| Seo et al. 2010† (10.1021/ac1007915; JATS do PMC, manuscrito NIH) | Sem a afirmação. Sobre o custo da reconstrução: "Because FFT is used, the presented recoveries are also quite fast, in terms of digital computation time, with a convergence time of less than a few seconds, using, for example, a 1.6 GHz CPU with a Pentium processor. We also achieved a >40× improvement in our computation time using a graphics processing unit (GPU) (CUDA-enabled NVIDIA GeForce GTX 285), which achieved an image reconstruction time of <1 s, up to an image size of ~20 megapixels." | "Experimental Methods", subseção "Digital Reconstruction and Phase Recovery from Holographic Images" | Não (reconstrói) | Mediu a própria reconstrução | — | CPU de 1,6 GHz; GTX 285 | *Acrescentado em 2026-11-15.* Já em 2010 a reconstrução por FFT de ≈ 20 MP levava menos de 1 s numa GPU. Não está claro se o "<1 s" é da retropropagação (método 1) ou da recuperação de fase (método 2, "convergence"); o texto do paper diz só "FFT-based reconstructions" |
+| Scherrer et al. 2022 (10.1007/978-3-031-20837-9_3; versão do autor no Archimer, pp. 1–15 = pp. 25–39 publicadas) | "However, this iterative and time-consuming step must be performed at each frame of a video, which makes it difficult to support real-time processing." (resumo); "conventional algorithms [5] used to search each object's focus plane and remove twin image artifacts are iterative and computationally intensive and therefore not always compatible with real-time processing." | 1 e 2 (versão do autor) | Sim (iterativa) | Só o próprio detector: YOLOv5s 4 ms, YOLOv5x 14 ms por holograma de 512 × 512 (Tabela 1, p. 11); YOLOv5s+SORT 44 FPS (Tabela 2, p. 12) | Nenhuma reconstrução cronometrada; o "baseline" de acerto é a função de transmissão perfeita t0, não uma reconstrução | i7 2,9 GHz + GTX 2060 | *Acrescentado em 2026-11-15.* Hologramas **simulados**, 13 objetos por imagem "randomly placed without overlapping" (p. 6), objetos só de amplitude, onda plana, z = 0,8 mm fixo (pp. 6–7); conjunto fechado de 13 classes |
+| Zhu et al. 2021 (10.1088/2515-7647/abf250) | "However, traditional digital holography usually requires post-processing steps, which is time-consuming and may not achieve the final object detection performance." | 1 (resumo) | Sim | Só entre redes: "decision time" = treino + teste (Tabela 2) | Outras redes e trabalhos anteriores do grupo, nenhuma reconstrução | TITAN V | *Acrescentado em 2026-11-15.* Microplásticos, conjunto fechado |
+| Pirone et al. 2026 (10.1088/2515-7647/ae79c2) | "Some HIFC approaches even utilize raw holograms for classification rather than reconstructed phase images. This is advantageous for high-speed analysis, as it eliminates the computational overhead of the holographic reconstruction pipeline, including zeroth and twin order filtering, refocusing, and phase unwrapping, thus dramatically reducing processing cost." | 2 | Sim (como motivação da literatura) | **Sim, estágio por estágio, mesma máquina** (Tabela 2, p. 6): demodulação (um filtro no domínio de Fourier) 0,0177 s; refoco pela busca do coeficiente de Tamura 0,3975 s; desembrulhamento 0,0444 s; classificação do bruto 0,0527 s (18 IPS) contra a do campo demodulado 0,0289 s (34 IPS). Acerto: bruto 89,62 %, demodulado 90,12 %, refocado 93,87 %, fase 95,87 % (teste, binário) | O pipeline completo off-axis, e as reconstruções aprendidas (refoco por regressão 0,0767 s; UNET ponta a ponta 0,0473 s, Tabela 4, p. 9) | Xeon W7-2475X + RTX 4000 Ada, MATLAB | *Acrescentado em 2026-11-15.* **Medição a favor do nosso argumento:** classificar o campo demodulado (um passo de Fourier) é **mais rápido** que classificar o bruto, porque a entrada é menor (p. 7: "Interestingly, this is faster than directly classifying raw holograms"), e mais acertado; o gargalo é a busca do foco ("the refocusing stage is the main bottleneck", p. 7). Off-axis, ROIs de 512 × 512 com uma célula cada (p. 4); a detecção das células não é cronometrada |
 | Göröcs et al. 2018† (10.1038/s41377-018-0067-0) | "The major computational operations are (1) segmentation of the full FOV hologram for object detection (~70 ms), (2) holographic autofocusing and reconstruction (~12 ms/object), and (3) transfer ... and saving of the images on an internal solid-state drive (~10–20 ms per object)." e "The deep learning-based phase-recovery step is currently the most intensive part of our algorithm, with a runtime of ~250 ms/object." (duas colunas juntadas) | 7 | Não afirma (reconstrói) | **Sim, estágio por estágio** | — | GTX 1080 | **Medição a favor do nosso argumento:** autofocus + retropropagação (12 ms/objeto) custam menos que a detecção (70 ms por quadro) e muito menos que a recuperação de fase para imagem limpa (250 ms/objeto) |
 
 ### 3b. Lidos, sem a afirmação (não entram na lista "afirma")
@@ -188,6 +291,15 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 | Han et al. 2025 (10.1021/acs.analchem.5c05447) | Sem acesso aberto | Afirma que os algoritmos generativos de reconstrução têm inferência lenta |
 | Kim et al. 2021, Holo-SpeckleNet (10.1016/j.jhazmat.2020.124637) | Sem acesso aberto | Mede concentração de material particulado direto do speckle, sem pós-processamento demorado |
 | O'Connor et al. 2020, Douglass et al. 2022 e Gupta et al. 2025, SRPE lensless (10.1364/OE.405563; 10.1364/OE.469199; 10.1364/OE.546326) | Optica, desafio JS | Classificação sem reconstrução com codificação por difusor. O de 2022 fala em economia computacional ao recortar a assinatura |
+| *Acrescentados em 2026-11-15 (complemento aberto):* | | |
+| Song et al. 2026, HoloAtt-UNet (10.1016/j.measurement.2026.122543) | Optica Open: desafio anti-bot | Do holograma bruto a máscaras de partículas de nuvem, evitando a reconstrução em vários planos. **Diz ter medido:** 479 vezes mais rápido que o algoritmo convencional em CPU e cerca de 60 vezes mais rápido que o convencional acelerado em GPU. Sem o texto, não sei o baseline (quantos planos) nem se a detecção entra. **Prioridade para o orientador baixar** |
+| Zhang et al. 2021, plâncton (10.1016/j.optlastec.2021.106979) | Elsevier | Afirma que a reconstrução exige "time-consuming iterative calculations" e classifica o bruto com transferência de aprendizado (≈ 92 %) |
+| "Holographic Classifier", INDIN 2020 (10.1109/INDIN45582.2020.9442146; autores não conferidos) | IEEE | Afirma que desembrulhar, filtrar e refocar "costs a lot of time"; detecção de microplásticos no bruto |
+| JBO 26:036001 (2021), contagem de hemácias por FCN (10.1117/1.JBO.26.3.036001) | SPIE: desafio anti-bot | Afirma que a análise pela fase é ineficiente pela complexidade da reconstrução; U-Net no bruto, > 288 células/s em 200 × 200 µm |
+| Tese IYTE 2019, viabilidade celular no bruto (sem DOI) | Repositório | Afirma que a reconstrução "requires intense computational work" |
+| Delli Priscoli et al. 2021 (10.1109/JSTQE.2021.3059532) | IEEE: HTTP 502 de novo | (já listado acima) |
+| Opt. Lasers Eng. 2019, contagem no bruto off-axis (10.1016/j.optlaseng.2019.02.010; autores não conferidos) | Elsevier | Detecção e contagem de objetos de fase no bruto **off-axis**, acerto de até 100 % com até 2,1·10³ células/mm², comparado com a contagem visual sobre a fase desembrulhada. O resumo não faz a afirmação de tempo. Ver a seção 5, item 12 |
+| Reconstruction-free com ViT, Opt. Commun. 2026 (10.1016/j.optcom.2026.133421) e preprint SSRN (10.2139/ssrn.6057112) | Elsevier; SSRN não tentado | Só o título ("High-throughput holographic sensing: A reconstruction-free framework via Vision Transformer foundation models") |
 
 ### 3d. Resumo dos números
 
@@ -203,6 +315,19 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 - **Não fazem a afirmação: 9.** [13] Bravo-Frank 2024, Sedaghat, Mallery, Paquin, Cugmas, os três de sombra lens-free e Chen 2021 (QIMS).
 - **Somente resumo: 12 registros** (10 linhas na tabela 3c). Desses, 8 estão em acesso aberto mas não puderam ser baixados: Cotter, Delli Priscoli, Raw3dNet, Wu 2023, Yagoda-Aharoni e os três SRPE.
 
+**Atualização de 2026-11-15 (complemento aberto e textos novos):**
+
+- **Afirmam, com a frase localizada no texto completo: 17** (os 13 acima mais Seo 2009, Scherrer 2022, Zhu 2021 e
+  Pirone 2026, este como motivação atribuída à literatura).
+- **Chamam a reconstrução de iterativa:** acrescentar Scherrer 2022 (resumo e p. 2).
+- **Mediram estágio por estágio, a favor do nosso argumento: 2** (Göröcs 2018 e Pirone 2026). Pirone é o caso mais
+  próximo do nosso: na mesma máquina, um passo no domínio de Fourier (a demodulação) custa menos que a própria
+  classificação, e classificar depois dele é mais rápido que classificar o bruto; o que custa é a busca do foco.
+- **Mediram só o próprio pipeline:** acrescentar Scherrer 2022 (só o detector) e Seo 2010 (só a reconstrução).
+- **Não mediram:** acrescentar Seo 2009 e Zhu 2021 (este só "decision time" entre redes).
+- **Somente resumo, novos: 7 linhas** (fim da tabela 3c), entre eles HoloAtt-UNet 2026, que diz ter medido contra a
+  reconstrução em vários planos e cujo texto foi bloqueado.
+
 ---
 
 ## 4. Material por tema (para o Related Work)
@@ -210,6 +335,7 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e só lido por busca de termos; **[R]** somente resumo (não citar). O acesso aparece entre parênteses.
 
 **S1 – reconhecimento no holograma bruto**
+- *2026-11-15:* [TC] Seo 2009† (PMC): reconhecimento por correlação com biblioteca, sem reconstrução; precedente da densidade. [TC] Scherrer 2022 (Archimer): YOLOv5 + SORT em hologramas simulados de plâncton, 13 classes, sem sobreposição. [TC] Zhu 2021 (IOP): microplásticos no bruto. [TC] Pirone 2026 (IOP): seis representações, do bruto à fase, com tempo e acerto. [R] HoloAtt-UNet 2026; [R] Zhang 2021 (OLT); [R] INDIN 2020; [R] JBO 2021; [R] OLEN 2019 (off-axis, denso).
 - [TC] Rockembach 2024 (IEEE Xplore, licença UFSC; texto completo desde 2026-11-14, antes só a p. 364): YOLOv5/v8/v9 detectam e classificam letras sintéticas (26 classes, Fresnel em Matlab, várias letras por imagem de 640 × 640) no bruto, fechado. Os autores apontam a limitação de conjunto fechado e o retreino quando muda o alvo ou o z (p. 369).
 - [TC] Bravo-Frank 2024 (editora): YOLOv8n → YOLOv8 → HRNet em hologramas de bactérias em fluxo, com classe "unknown" por limiar.
 - [TC] Bravo-Frank 2025 (arXiv): mesmo grupo, com dois planos reconstruídos na entrada do YOLOv8n.
@@ -235,6 +361,7 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 - [R] HoloSea plâncton 2021 (10.1186/s12862-021-01839-0); [R] microplásticos (10.1364/AO.403366); [R] Karenia brevis (10.1016/j.hal.2023.102401).
 
 **S3 – open set em holografia**
+- *2026-11-15:* nada novo sobre holograma bruto. Só títulos: anomalia em citometria holográfica (Opt. Commun. 2026, 133563) e OOD em DHM off-axis (Opt. Laser Technol. 2025, 113813), ambos sem resumo nos índices.
 - [TC] Sedaghat 2025: HoloMoA, detecção de mecanismo novo com rede siamesa **sobre fases reconstruídas**. A frase de `02-related.tex` sobre "latent representation" deve dizer que a entrada é a fase reconstruída.
 - [TC] Bravo-Frank 2024: "unknown" por limiar.
 - [R] Pastore et al. 2020 (10.1038/s41598-020-68662-3): plâncton sem anotação com detecção de anomalia. Não conferi se as imagens são holográficas.
@@ -242,12 +369,14 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 - O PubMed não trouxe mais nada relevante: os outros 6 da S3 são ruído.
 
 **S4 – open set em microscopia**
+- *2026-11-15:* [R] OpenGram, bactérias em Gram (IJCNN 2023, 10.1109/IJCNN54540.2023.10191073); [R] Open-Set Plankton Recognition (ECCV W 2025, arXiv 2503.11318). Nenhum é holográfico. Citados no Related Work só como existência, sem números.
 - [R] ARTiMiS (10.1021/acs.est.5c06078): classificadores fechados falham com partículas novas.
 - [R] "foundation model zoo" para busca por similaridade de células (10.3389/fonc.2025.1480384).
 - [R] PathoSafe, rejeição OOD em biossensores (10.3390/bios16090518).
 - O resto da S4 é ruído.
 
 **S5 – camadas de Fourier aprendidas**
+- *2026-11-15:* [R] Ekec & Teğin 2026 (OE 34:34757): FNO para câmera sem lente com difusor, motivado por o modelo direto ser uma multiplicação no domínio da frequência; [R] PSF-Net (SPIE 2024), FNO para reconstrução de hologramas de partículas.
 - [TC] Terbe 2022, p. 7, propõe como trabalho futuro exatamente filtros de Fourier aprendíveis com campo receptivo global: "A hologram can be represented as a complex image (containing the amplitude and phase information naturally) that can be processed in the Fourier space by element-wise multiplication with learnable filter matrices which have a global receptive field." **Isso é um antecedente direto da nossa camada e deve ser citado na contribuição.**
 - [TC] FIN 2022: módulos SPAF que operam no domínio da frequência para reconstrução.
 - [R] FNO para holografia computacional 4K (10.1038/s41467-025-62997-z).
@@ -263,6 +392,7 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 - `sobieranski2015portable` (já no `main.bib`).
 
 **S8 (extra) – realismo da simulação**
+- *2026-11-15:* [TC] Scherrer 2022 (objetos só de amplitude, onda plana, z fixo, sem sobreposição; pp. 6–7); [R] HoloCel 2026 (MDPI, hologramas de células gerados); [R] coerência espacial em reconstrução sem lente (OL 2026, arXiv 2607.15765); [R] efeito de aproximações do modelo na reconstrução in-line (SPIE 2022, HAL).
 - [TC] Molani 2026; [R] efeitos de coerência em DIHM (10.1364/JOSAA.25.002459); [R] coerência e resolução (10.1364/OE.26.000242).
 
 ---
@@ -282,6 +412,25 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 7. **Dois pontos para o Related Work fora do parágrafo C:** Terbe 2022 antecipa a camada de Fourier aprendível (S5), e HoloMoA trabalha sobre a fase reconstruída (S3).
 8. **Detalhe numérico:** a instrução falava em "cerca de 1 ms por quadro". A macro `\DistTimeRecZZeroFrontGpuBigMs` vale 2,9 (front end com flat field e entrada da rede). O texto da C.3 já usa a macro.
 9. **[11] com o texto completo (acrescentado em 2026-11-14):** a frase da C.3 "Our own earlier work made this argument ... without measuring it" se confirma: o artigo afirma o custo (pp. 364, 365, 369), chama a reconstrução de iterativa (p. 365) e só mede tempo de treino (p. 368). A própria conclusão diz que o tempo real ainda precisa ser avaliado fora da simulação (p. 369). O nosso texto o complementa com a medição. Dois cuidados de redação: (a) o artigo é de **detecção** (YOLO, várias letras por imagem), o que casa com "convolutional detectors" em `01-intro.tex`; (b) o "z = 50k" do artigo não tem unidade, e a leitura 5·10⁴ λ é nossa.
+10. **Seo 2009 faz as duas coisas (acrescentado em 2026-11-15):** é o precedente da queda por densidade (fórmula da
+    razão de sobreposição; 10 % abaixo de 671 células/µL; acurácia mantida até ≈ 3000 células/µL, sobreposição
+    ≥ 37 % acima disso; seção "Discussions") **e** já fazia o argumento de velocidade, sem medir ("numerically and
+    computationally our approach is much simpler and faster", mesma seção). Entrou nas duas partes do Related Work.
+11. **Isikman 2012 não diz, na frase, que a contagem até 0,4 milhão de células/µL foi feita na reconstrução**
+    (seção III.A: "The counting error is <5% for cell densities up to ~0.4 Million cells/μL"; a legenda da Fig. 5a
+    mostra contagem "in the hologram domain (pink curve) and the reconstructed image domain (blue curve)"). A fonte
+    primária, a ref. [37] dela, é Seo et al. 2010 (Anal. Chem. 82:4621), que li no PMC: "we measured the density of
+    RBCs based on automated counting of digitally reconstructed cell images [...] the reconstructed cell images
+    yielded an absolute error rate of <5%, up to a cell density of ~0.4 × 10⁶ cells/μL", e "all of the lens-free RBC
+    holograms are completely overlapping (because of a high cell density of ~0.4 × 10⁶/μL)" (Results and
+    Discussion). No paper cito as duas (`seo2010`, `isikman2012`) para a frase "com reconstrução".
+12. **Contraexemplo possível, só pelo resumo:** um trabalho de 2019 (Opt. Lasers Eng., tabela 3c) conta objetos de
+    fase no bruto **off-axis** com acerto de até 100 % até 2,1·10³ células/mm², bem acima das nossas densidades. No
+    off-axis com objetiva o padrão de cada célula não se espalha como no in-line sem lente, então não contradiz o
+    mecanismo; mas, sem o texto, não entra no paper.
+13. **Pirone 2026 é a medição independente mais próxima da nossa** (off-axis, mesma máquina, estágio por estágio):
+    o passo no domínio de Fourier é barato e até acelera a classificação; o caro é a busca do foco. Entrou no
+    parágrafo, com a ressalva de que é off-axis e de que a detecção não é cronometrada.
 
 ---
 
@@ -303,3 +452,56 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 - **Hannel et al. 2018** (arXiv 1804.06885, localização por CNN contra ajuste de Lorenz–Mie, mediu em CPU, GPU e Raspberry Pi): baixado (`hannel2018_arxiv/`), mas só lido por busca de termos. Não entrou na tabela.
 - **Paginação:** Liu foi lido no AM (a paginação da versão publicada não foi conferida). Sanborn e Bravo-Frank 2025 foram lidos no arXiv (a paginação difere da versão publicada). Os textos via PMC não têm página.
 - **Triagem:** os 207 registros do PubMed foram triados por título e, para os sinalizados, pelo resumo. As decisões estão em `referencias/c/merged/screening.csv`: 28 incluídos, 179 "não incluído".
+- **2026-11-15:** a triagem dos 711 trabalhos novos do complemento aberto está no mesmo arquivo (37 incluídos; total
+  56 em 918). Scopus e ScienceDirect **continuam sem rodar**; o que o complemento não cobre está na seção 1b.
+  Abertos mas bloqueados ao cliente automático, novos: HoloAtt-UNet (Optica Open), a versão HAL de Scherrer, JBO
+  2021 (SPIE), Cotter (MIT, 429 pela terceira vez), Delli Priscoli e IEEE Photonics J. 2024 (IEEE, 502). Não contornei
+  nenhum desafio.
+
+---
+
+## 7. O Related Work reescrito (2026-11-15) e a fonte de cada afirmação
+
+Branch `rewrite/related-work` do repositório LaTeX, `sections/02-related.tex`. Uma linha por afirmação sobre outro
+trabalho; "TC" = texto completo lido; "R" = só resumo (descrito sem aspas e sem "mediu").
+
+| Afirmação no paper | Fonte (onde está a frase) |
+|---|---|
+| Seo 2009 classificou células pela textura do holograma, sem reconstrução (citação entre aspas) | TC, PMC3931575, "Discussions": "In our approach, there is no such digital reconstruction, and the detected holographic lensfree image is simply analyzed by a pattern recognition algorithm" |
+| Kim 2018: células marcadas com microesferas | TC, Sci. Rep. 8:17003 (tabela 3a; seção 4) |
+| Delli Priscoli 2021: linhagens de neuroblastoma em holograma de microscópio | R (resumo do JSTQE) |
+| Zhu 2021: microplásticos | TC, J. Phys. Photonics 3:024013, resumo e Introdução |
+| Scherrer 2022 e Sanborn 2023: plâncton | TC (Archimer; arXiv 2301.09638) |
+| Bravo-Frank 2024: bactérias em líquidos estéreis; cascata; classe "unknown" por limiar (p. 3) | TC, npj Biosensing 1:8, p. 3: "an additional class 'unknown', is used to classify particles with confidences below the FPR threshold of our known classes" |
+| Matthews 2024: micróbios rastreados em 3D | TC, PLOS ONE 19:e0301182 |
+| Song 2025: células de câncer de mama; bruto classifica melhor que reconstruído | TC (PMC), Results, §[14]: "raw diffraction images provided more efficient features for cell classification than reconstructed images" |
+| CBMS 2024: YOLO detecta e classifica 26 letras em hologramas simulados 640 × 640; conjunto fechado; validação; "can only confidently classify the specific objects it is trained for" (p. 369) | TC, pp. 367–369 (seção 2 deste documento) |
+| Liu 2021: clustering do bruto comparável ao do reconstruído | TC (AM), resumo e Tabela 4 |
+| Pirone 2026: acerto cresce a cada estágio da reconstrução (Tabela 2); ROIs de 512 × 512 com uma célula (p. 4) | TC, Tabela 2 p. 6; p. 4: "each of which contains a single snapshot of a cell"; p. 11: "classification accuracy increases monotonically with reconstruction completeness" |
+| Scherrer 2022: "without overlapping", só amplitude, onda plana, z = 0,8 mm (pp. 6–7 da versão do autor) | TC, pp. 6–7 (seção 3a) |
+| Cotter 2021: extração sem reconstruir o holograma inteiro, em hologramas com alvos esparsos | R (resumo: "extract targets from holograms where target distribution is relatively sparse without reconstruction of the full hologram") |
+| Seo 2009: fórmula da sobreposição, 671 células/µL, ≈ 3000 células/µL, "≥37 %" (aspas) | TC, "Discussions" (seção 5, item 10) |
+| Com reconstrução, < 5 % de erro até ≈ 0,4·10⁶ células/µL, hologramas completamente sobrepostos | TC, Seo 2010 (PMC2892055), "Results and Discussion"; Isikman 2012, III.A (seção 5, item 11) |
+| Rivenson 2018, Wu 2018, FIN 2022, OAH-Net 2025 reconstroem | TC (Rivenson, FIN, OAH-Net); Wu 2018 já estava no texto antigo, não relido |
+| Göröcs 2018 classifica após reconstrução e recuperação de fase; Terbe 2022 classifica reconstruções e volumes refocados com 3D-CNN; HoloMoA usa fase reconstruída numa rede recorrente | TC (tabela 3a; seção 3b; HoloMoA, resumo: "using reconstructed phase images as input to a Convolutional Recurrent Neural Network") |
+| Lista dos que afirmam o argumento | TC, tabela 3a: Seo 2009, Kim 2018, Liu 2021, Zhu 2021, Scherrer 2022, Sanborn 2023, Matthews 2024, Song 2025, Xu 2025, Bravo-Frank 2025, Molani 2026, Pirone 2026 |
+| "iterative": Kim, Scherrer, Xu | TC: Kim p. 2; Scherrer resumo e p. 2; Xu p. 1 |
+| Molani inclui a retropropagação entre as técnicas caras | TC, p. 2: "Common reconstruction techniques, such as numerical back-propagation and iterative methods often suffer from noise and are computationally intensive" |
+| Bravo-Frank 2024 não faz a afirmação; o tempo real vem da cascata; Bravo-Frank 2025 reconstrói dois planos de Fresnel antes do detector | TC, 2024 p. 6; 2025 arXiv pp. 5–6: "these enhanced images are reconstructed into additional focal planes at z = 6 µm and 12 µm ... using a Fresnel diffraction kernel" |
+| CBMS 2024: "computationally expensive" (p. 364), "iterative and complex" (p. 365), "significantly reduces processing time and computational resources" (p. 369); só tempo de treino; Eq. 3 é convolução de Fresnel com um par de FFTs; tempo real deixado para um contexto não simulado (p. 369) | TC, seção 2 deste documento |
+| Liu 2021: ≈ 14 s por recorte contra < 0,1 s; 501 distâncias de 10 a 60 mm; sem localização cronometrada (Tabela 5) | TC, Tabela 5 e nota b; p. 7 |
+| Matthews 2024: 149 ms contra 1658 ms por quadro, mesma CPU (Tabela 2); pilha de refoco para 3D | TC, Tabela 2 (p. 11), p. 5 |
+| Rivenson 2018 e FIN 2022 comparam recuperação de fase aprendida com a iterativa multialtura | TC, Rivenson tabela p. 5; FIN Tabela 1 |
+| Göröcs 2018: ≈ 70 ms por quadro para detectar, ≈ 12 ms por objeto para autofocus + reconstrução, ≈ 250 ms por objeto para a recuperação de fase (p. 7, GPU) | TC, p. 7 (GTX 1080) |
+| Xu 2025: reconstrução aprendida 13,0 ms, YOLO 14,7 ms | TC: "The average reconstruction time for each image is 0.0130 s, the recognition time is 0.0147 s" |
+| Pirone 2026: demodulação 0,018 s, busca do foco 0,40 s, demodulado 34 contra 18 imagens/s porque o campo é menor (Tabela 2) | TC, Tabela 2 (p. 6) e p. 7 |
+| Seo 2010: reconstruções por FFT de ≈ 20 MP em menos de 1 s numa GPU | TC, "Experimental Methods" (seção 3a; ressalva sobre qual método) |
+| Open set em microscopia: bactérias em Gram (OpenGram) e plâncton, não holográficos | R (resumos) |
+| HoloMoA: novidade de mecanismo de ação, rede siamesa, fase reconstruída | TC (resumo e Métodos) |
+| "in the indexes we searched we found no open-set recognition on raw lensless holograms" | Triagem das strings S3/S4 nos três índices (seções 1, 1b e 4) |
+| FNO para câmeras sem lente com difusor (Ekec & Teğin 2026) | R (resumo) |
+| Terbe 2022, p. 7, filtros de Fourier aprendíveis como trabalho futuro (aspas) | TC, p. 7: "A hologram can be represented as a complex image ... that can be processed in the Fourier space by element-wise multiplication with learnable filter matrices which have a global receptive field" |
+
+Números nossos no parágrafo, todos por macro: `\TBackpropGpuBigMs`, `\TBackpropCpuBigS`,
+`\DistTimeRecZZeroFrontGpuBigMs`, `\DistTimePropFrontGpuBigMs`, `\TYoloTiledGpuBigMs`, `\TYoloTiledCpuBigS`,
+`\FullDetectPctMinFloor`, `\FocusBlindN`, `\TAutofocusGpuBigMs`, `\TTwinGpuBigMs`, `\TBlindOverNarrowGpuBig`.
