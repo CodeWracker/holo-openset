@@ -1,0 +1,13 @@
+stratum,n_known,n_unseen,known_acceptance,known_accuracy,unseen_rejection,closed_accuracy
+all,5129,1242,0.967635,0.893157,0.119968,0.899201
+size small (12-22 px),1714,464,0.923571,0.712952,0.12931,0.726954
+size middle (22-31 px),1695,467,0.981121,0.971091,0.130621,0.974631
+size large (31-56 px),1720,311,0.998256,0.99593,0.0900322,0.996512
+neighbour within D (99.2 px),2188,563,0.943784,0.855119,0.165187,0.865174
+no neighbour within D (99.2 px),2941,679,0.985379,0.921455,0.0824742,0.924515
+"size small, neighbour within D",755,229,0.86755,0.631788,0.209607,0.654305
+"size small, no neighbour within D",959,235,0.967675,0.776851,0.0510638,0.78415
+"size middle, neighbour within D",724,205,0.970994,0.953039,0.170732,0.958564
+"size middle, no neighbour within D",971,262,0.988671,0.984552,0.0992366,0.986612
+"size large, neighbour within D",709,129,0.997179,0.992948,0.0775194,0.994358
+"size large, no neighbour within D",1011,182,0.999011,0.998022,0.0989011,0.998022

@@ -1,0 +1,16 @@
+{
+ "set": "small_near_newrec",
+ "rep": 1,
+ "threshold": 0.5994084715843201,
+ "D_px": 99.23444400313143,
+ "size_thirds_px": [
+  22.0,
+  31.0
+ ],
+ "share_near": 0.4318003453147073,
+ "nearest_neighbour_px_median": 109.26153042699887,
+ "reproduces_json": {
+  "known_acc": 0.8931565607330864,
+  "unknown_rejection": 0.11996779388083736
+ }
+}
