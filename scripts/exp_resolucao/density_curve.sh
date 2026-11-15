@@ -40,7 +40,7 @@ case "$LAW" in
   *) echo "LAW must be d50 or u50 (the depth law of the standard family, Q1)"; exit 1 ;;
 esac
 case "$LEVEL" in 8|15|69|154|343) ;; *) [ "$STEP" = table ] || { echo "LEVEL must be 8, 15, 69, 154 or 343"; exit 1; } ;; esac
-SET=curve_${LAW}_L$(printf %03d "$LEVEL"); [ "$LEVEL" = 8 ] && SET=$SPARSE
+SET=curve_${LAW}_L$(printf %03d "${LEVEL:-0}"); [ "$LEVEL" = 8 ] && SET=$SPARSE
 FILL="fill_mean=$LEVEL"; [ "$LEVEL" = 8 ] && FILL=""   # the sparse level has no fillers
 LOG=logs/exp_resolucao/curve_${STEP}_${LAW}$([ "$STEP" != table ] && echo _L$LEVEL || true)$([ "$REP" != 1 ] && echo _r$REP || true).log
 mkdir -p logs/exp_resolucao

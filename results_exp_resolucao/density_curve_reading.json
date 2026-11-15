@@ -1,0 +1,220 @@
+{
+ "law": "u50",
+ "axis": "D_rms_192",
+ "D_um": 111.78179255743733,
+ "levels": {
+  "8": {
+   "set": "curve_u50_L008",
+   "letters_per_window": 8.0618,
+   "per_mm2": 7.057308941249238,
+   "covered": 0.005419240306854248,
+   "fillers_skipped_share": 0.0,
+   "pi_D2_sigma": 0.2770327682977669,
+   "overlap": 0.24197034263799622,
+   "reps": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.04960537714239732,
+     "rej": 0.36634460547504033
+    },
+    "rec_minus_prop": {
+     "f1": -0.0009485507270458049,
+     "rej": 0.015297906602254385
+    },
+    "fell": {
+     "raw": {
+      "f1": false,
+      "rej": false
+     },
+     "prop": {
+      "f1": false,
+      "rej": false
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": false,
+     "rej": false
+    },
+    "prop": {
+     "f1": false,
+     "rej": false
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 0,
+    "rej": 2,
+    "both": 0
+   }
+  },
+  "15": {
+   "set": "curve_u50_L015",
+   "letters_per_window": 15.1232,
+   "per_mm2": 13.238866578220804,
+   "covered": 0.010369946479797363,
+   "fillers_skipped_share": 0.0,
+   "pi_D2_sigma": 0.519688154198912,
+   "overlap": 0.40529402438234674,
+   "reps": [
+    1
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.06226778576633718,
+     "rej": 0.4380032206119163
+    },
+    "rec_minus_prop": {
+     "f1": 0.0010608595035475066,
+     "rej": 0.004830917874396157
+    },
+    "fell": {
+     "raw": {
+      "f1": false,
+      "rej": false
+     },
+     "prop": {
+      "f1": false,
+      "rej": false
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true
+  },
+  "69": {
+   "set": "curve_u50_L069",
+   "letters_per_window": 69.0792,
+   "per_mm2": 60.4720106941805,
+   "covered": 0.04784395437240601,
+   "fillers_skipped_share": 0.0,
+   "pi_D2_sigma": 2.373812549033107,
+   "overlap": 0.9068749950411582,
+   "reps": [
+    1
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.10868419471703283,
+     "rej": 0.7101449275362319
+    },
+    "rec_minus_prop": {
+     "f1": -0.01046404080330332,
+     "rej": -0.11996779388083734
+    },
+    "fell": {
+     "raw": {
+      "f1": false,
+      "rej": true
+     },
+     "prop": {
+      "f1": false,
+      "rej": false
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true
+  },
+  "154": {
+   "set": "curve_u50_L154",
+   "letters_per_window": 154.1018,
+   "per_mm2": 134.90089198474308,
+   "covered": 0.10535956335067748,
+   "fillers_skipped_share": 0.0,
+   "pi_D2_sigma": 5.295498307284827,
+   "overlap": 0.9949858848172635,
+   "reps": [
+    1
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.1661428910740217,
+     "rej": 0.7737520128824477
+    },
+    "rec_minus_prop": {
+     "f1": 0.01379692343619221,
+     "rej": 0.13687600644122377
+    },
+    "fell": {
+     "raw": {
+      "f1": true,
+      "rej": true
+     },
+     "prop": {
+      "f1": false,
+      "rej": false
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true
+  },
+  "343": {
+   "set": "curve_u50_L343",
+   "letters_per_window": 343.153,
+   "per_mm2": 300.3965287053139,
+   "covered": 0.23351621828079225,
+   "fillers_skipped_share": 3.9994936641021245e-07,
+   "pi_D2_sigma": 11.791985107504976,
+   "overlap": 0.999992435052174,
+   "reps": [
+    1
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.2678336492996186,
+     "rej": 0.6996779388083736
+    },
+    "rec_minus_prop": {
+     "f1": 0.010912523645466576,
+     "rej": 0.09500805152979075
+    },
+    "fell": {
+     "raw": {
+      "f1": true,
+      "rej": true
+     },
+     "prop": {
+      "f1": false,
+      "rej": false
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true
+  }
+ },
+ "layer_falls_first": {
+  "f1": "did not fall up to the obtained density",
+  "rej": "did not fall up to the obtained density"
+ },
+ "provisional": true
+}
