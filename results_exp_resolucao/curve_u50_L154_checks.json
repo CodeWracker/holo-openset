@@ -1,0 +1,183 @@
+{
+ "set": "curve_u50_L154",
+ "ref": "curve_u50_L008",
+ "annotations": {
+  "bytes_equal": true,
+  "rows": 40309,
+  "columns": [
+   "image_id",
+   "det_idx",
+   "classe",
+   "class_id",
+   "x0",
+   "y0",
+   "x1",
+   "y1",
+   "font_size",
+   "font_name",
+   "rotation",
+   "absorption",
+   "phase",
+   "depth",
+   "bx0",
+   "by0",
+   "bx1",
+   "by1",
+   "z",
+   "filename",
+   "split"
+  ],
+  "same_columns": true,
+  "columns_equal": {
+   "image_id": true,
+   "det_idx": true,
+   "classe": true,
+   "class_id": true,
+   "x0": true,
+   "y0": true,
+   "x1": true,
+   "y1": true,
+   "font_size": true,
+   "font_name": true,
+   "rotation": true,
+   "absorption": true,
+   "phase": true,
+   "depth": true,
+   "bx0": true,
+   "by0": true,
+   "bx1": true,
+   "by1": true,
+   "z": true,
+   "filename": true,
+   "split": true
+  },
+  "splits": {
+   "train": 28227,
+   "test": 6371,
+   "val": 5711
+  }
+ },
+ "dust.csv": true,
+ "sessions.csv": true,
+ "backgrounds.npy": true,
+ "labels": {
+  "files": 5000,
+  "same_names": true,
+  "all_equal": true
+ },
+ "objects": {
+  "files": 1600,
+  "same_names": true,
+  "all_equal": true
+ },
+ "metadata_common_columns_equal": true,
+ "physics_json_differences": {},
+ "layout_params_differences": {
+  "fill_mean": [
+   154.0,
+   null
+  ]
+ },
+ "removed": [
+  {
+   "image_id": 100,
+   "n_letters": 11,
+   "n_fillers": 465,
+   "without_fillers_equal_ref": true,
+   "without_fillers_max_abs_dn": 0,
+   "with_fillers_equal_set": true,
+   "with_fillers_max_abs_dn": 0,
+   "fillers_change_rms_dn": 16.93207820329733
+  },
+  {
+   "image_id": 0,
+   "n_letters": 3,
+   "n_fillers": 450,
+   "without_fillers_equal_ref": true,
+   "without_fillers_max_abs_dn": 0,
+   "with_fillers_equal_set": true,
+   "with_fillers_max_abs_dn": 0,
+   "fillers_change_rms_dn": 15.777137010167788
+  }
+ ],
+ "letters_per_window": {
+  "target": 154.0,
+  "annotated": {
+   "mean": 8.0618,
+   "std": 2.921179114241969,
+   "min": 3.0,
+   "p5": 3.0,
+   "p50": 8.0,
+   "p95": 13.0,
+   "max": 18.0
+  },
+  "fillers": {
+   "mean": 146.04,
+   "std": 12.662261511014322,
+   "min": 103.0,
+   "p5": 125.0,
+   "p50": 146.0,
+   "p95": 167.0,
+   "max": 200.0
+  },
+  "total": {
+   "mean": 154.1018,
+   "std": 12.356454716245713,
+   "min": 116.0,
+   "p5": 134.0,
+   "p50": 154.0,
+   "p95": 175.0,
+   "max": 205.0
+  },
+  "by_split": {
+   "test": 153.93125,
+   "train": 154.11885714285714,
+   "val": 154.21142857142857
+  }
+ },
+ "letters_in_band_per_640x640": {
+  "around_the_window": {
+   "mean": 7.971341287750297,
+   "std": 1.9855972135173519,
+   "min": 1.5102576582157132,
+   "p5": 5.034192194052377,
+   "p50": 8.054707510483803,
+   "p95": 11.07522282691523,
+   "max": 17.61967267918332
+  },
+  "total": {
+   "mean": 153.8362546396669,
+   "std": 8.665721147005307,
+   "min": 119.31035499904134,
+   "p5": 139.95054299465608,
+   "p50": 154.04628113800274,
+   "p95": 168.1420192813494,
+   "max": 185.25827274112748
+  },
+  "band_area_px": 813636
+ },
+ "fillers_skipped": {
+  "images": 0,
+  "total": 0
+ },
+ "covered_fraction": {
+  "definition": "per image, sum over the letters in the window of the ink-box area (box_area) or of the squared max side (side_sq), over the window area; mean over images",
+  "scenes_rebuilt": 100,
+  "dense_annotated": {
+   "n": 8.41,
+   "box_area": 0.005627380180358886,
+   "side_sq": 0.00648561716079712
+  },
+  "dense_total": {
+   "n": 156.07,
+   "box_area": 0.10535956335067748,
+   "side_sq": 0.1222858543395996
+  },
+  "realistic": {
+   "n": 8.0618,
+   "box_area": 0.1069812158203125,
+   "side_sq": 0.12378190283203125
+  },
+  "realistic_median_side_sq_x8": 0.11580078125
+ }
+}
