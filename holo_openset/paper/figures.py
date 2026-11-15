@@ -229,8 +229,9 @@ def fig_setup(frame=0, window=(1060, 1640)):
     final = 'embedding network\n→ gallery: known class\nor "unknown"'
     crops = [(1, 12, 'hologram $I$\n(as recorded)', MUTED), (67, 13, 'crop each box', MUTED), (84, 15, final, MUTED)]
     layer = [(1, 12, 'hologram $I$\n(as recorded)', MUTED),
-             (16, 33, 'propagation layer on the whole $I$ (1 FFT pair): the phase\nof a propagation set by one scalar '
-                     'calibrated on unlabelled\nholograms, a learned gain per frequency; no $\\lambda$, $\\Delta$, $z$, $B$', SA),
+             (16, 33, 'propagation layer on the whole $I$ (1 FFT pair):\nthe phase of a propagation, set by one scalar\n'
+                     'calibrated on unlabelled holograms, and a learned\ngain per frequency; '
+                     'no $\\lambda$, $\\Delta$, $z$ or $B$', SA),
              (67, 13, 'crop each box', MUTED), (84, 15, final, MUTED)]
     recon = [(1, 12, 'hologram $I$ and\nblank frame $B$:\n$\\sqrt{I/B}$', MUTED),
              (16, 15.5, 'back-propagate to the\ncalibrated $z_0$ (needs $\\lambda$, $\\Delta$),\nor search $z$ by autofocus', SA),
