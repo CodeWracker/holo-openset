@@ -32,3 +32,14 @@ A resposta:
 2 - faz os 2 antes de reescrever
 3 - ok
 
+
+---
+
+## Resposta do orientador ao item 4 do relatório do piloto (2026-11-14, ≈ 21:20), copiada na íntegra
+
+O item 4 das decisões pedidas em `RELATORIO_PILOTO_1MM.md` era: "Perguntar ao prof. Sobieranski a densidade típica
+das amostras. É o parâmetro do simulador que ainda não tem fonte." A resposta:
+
+Pode escolher, ele não lembra. E se essa pergunta tava no relatório, atualiza ele
+
+(Os itens 1, 2, 3 e 5 do relatório não foram respondidos nesta mensagem.)

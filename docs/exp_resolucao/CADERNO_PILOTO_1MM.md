@@ -1037,3 +1037,59 @@ conjunto do piloto**. Reporto como está.
 - No denso, a reconstrução fica 0,052 acima da camada em rejeição (r1). No base r1 a diferença tem o sinal
   contrário (−0,016). Não concluo nada com uma repetição.
 - O conjunto `small_near` (2 mm, código antigo) não foi reanalisado à luz disto.
+
+## 2026-11-14, 21:25 — P4: a densidade de objetos da amostra, escolhida por nós (responsável)
+
+O orientador respondeu ao item 4 do relatório (na íntegra no fim de `PROTOCOLO_PILOTO_1MM.md`): o prof. Sobieranski
+não lembra a densidade típica das amostras, e a escolha fica conosco. Nada foi rodado para esta entrada.
+
+### O que a literatura já salva no projeto diz (lida nos textos de `referencias/z/`, os mesmos de `LEVANTAMENTO_Z.md`)
+
+- **Seo et al. 2009** (Lab Chip, 10.1039/b813943a, PMC3931575), seção "Discussions". O método deles classifica o
+  holograma como gravado, sem reconstrução ("there is no such digital reconstruction, and the detected holographic
+  lensfree image is simply analyzed by a pattern recognition algorithm"). Dão a fração de células cujos hologramas
+  se sobrepõem: "Overlap_Ratio = 1 − exp(−π D² H C) where D is the effective diameter of the cell hologram, H is the
+  channel height and C is the concentration". E os números: "for a channel height of ~20 µm and a cell hologram
+  diamater (RMS) of ~50 µm, to achieve less than 10% overlap among cell holograms, we need a cell density of
+  C < 671 cells µL⁻¹"; "Holographic-LUCAS maintained its accuracy upto an RBC concentration of ~3000 cells µL⁻¹.
+  Beyond this concentration level, the statistical overlap of the cell holograms reaches upto ≥37%, which increases
+  the counting errors".
+- **Isikman et al. 2012** (revisão, PMC3902671), seção III.A, com reconstrução: "The counting error is <5% for cell
+  densities up to ~0.4 Million cells/μL, which corresponds to 10× diluted whole blood. Despite the sample dilution,
+  which is necessary to achieve good holographic imaging quality, >150 thousand cells are imaged at once in a single
+  full FOV holographic image." O campo citado no texto é "e.g., 24 mm²" (seções I e II).
+- **Sobieranski et al. 2015** (PMC), conclusões: a densidade é limitação intrínseca da holografia em linha
+  ("the reference wave gets distorted in the presence of high-density particles, producing self-imposed
+  interferences patterns").
+
+### Contas minhas (não estão nos artigos)
+
+- Seo 2009 em objetos por área: 671 células/µL × 20 µm = 13,4 por mm²; 3000 células/µL × 20 µm = 60 por mm².
+  Confere com a fórmula deles: 1 − exp(−π · 50² µm² · 13,4/mm²) = 10,0 %; com 60/mm², 37,6 %.
+- Isikman 2012: 150 000 células em 24 mm² = 6250 por mm² (o campo é o "e.g." do texto, não o da figura).
+- Os nossos conjuntos a 1,0 mm (janela de 640 × 640 px = 1,142 mm²): esparso 8,06 letras por janela = 7,1 por mm²
+  (0,6 % de área coberta); denso 154,1 por janela = 135 por mm² (10,5 %).
+- Os dois pontos de Seo na nossa janela: 13,4/mm² = 15 letras por janela (1,0 % de área coberta); 60/mm² = 69 letras
+  por janela (4,7 %).
+
+### Escolha
+
+1. **A densidade continua "suposição nossa" e deixa de ser um valor único: vira um eixo do estudo.** Motivo: o
+   resultado dos crops depende dela (0,94 de F1 no esparso, 0,80 no denso). Um valor único decidiria a conclusão por
+   suposição.
+2. **Faixa: de 7 a 135 objetos por mm² (8 a 154 letras por janela; 0,6 a 10,5 % de área coberta).** As duas pontas
+   já estão gravadas (`bench_1mm` e `bench_1mm_dense`). A ponta densa é a densidade relativa da geometria do CBMS
+   2024.
+3. **Dois níveis intermediários, nos dois pontos publicados por Seo 2009:** 13 por mm² (15 letras por janela), onde
+   eles calculam 10 % de sobreposição, e 60 por mm² (69 letras por janela), até onde o método deles sobre o holograma
+   cru mantém a acurácia. Gravar esses dois níveis é a decisão 3 do relatório e continua dependendo do orientador.
+4. **Para o que precisar de um conjunto só** (robustez, repetições), valem as duas pontas, como hoje.
+
+### Ressalvas da escolha
+
+- As células de Seo têm hologramas de ≈ 50 µm; as nossas letras têm 22 a 39 µm de lado e o holograma é maior. Na
+  mesma contagem por mm², a nossa sobreposição é maior que a deles. A comparação justa é pela razão de sobreposição
+  de Seo, que pede o diâmetro efetivo do nosso holograma. Não medi esse diâmetro.
+- A faixa da literatura é mais larga que a nossa: de 13 a cerca de 6250 objetos por mm².
+- **Seo 2009 já relata o efeito que os controles mostraram:** o reconhecimento sobre o holograma cru perde acurácia
+  quando os hologramas se sobrepõem. É precedente e precisa ser citado no Related Work (parte C) e na parte B.
