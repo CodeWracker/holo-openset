@@ -1,0 +1,11 @@
+role,set,flow,rep,source,f1,rejection,closed_acc,threshold,D_um,D_axis,per_mm2,pi_D2_sigma,overlap,dist_f1_to_R_ant,dist_f1_to_R_curva,dist_rejection_to_R_ant,dist_rejection_to_R_curva
+reference,small_near,raw,1,results_exp_resolucao/eval/small_near/raw_r1.json,0.790881,0.117552,0.888477,0.585596,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+reference,small_near,prop,1,results_exp_resolucao/eval/small_near/prop_r1.json,0.963266,0.89533,0.995711,0.985888,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+reference,small_near,rec_z0,1,results_exp_resolucao/eval/small_near/rec_z0_r1.json,0.977776,0.987118,0.999025,0.987101,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+control,small_near_newrec,raw,1,results_exp_resolucao/eval/small_near_newrec/raw_r1.json,0.79931,0.119968,0.899201,0.599408,165.722,D_rms_192,7.05731,0.608901,0.456052,0.00842906,0.108131,0.00241546,0.3937
+control,small_near_newrec,prop,1,results_exp_resolucao/eval/small_near_newrec/prop_r1.json,0.972818,0.977456,0.995516,0.987611,165.722,D_rms_192,7.05731,0.608901,0.456052,,,,
+control,small_near_newrec,rec_z0,1,results_exp_resolucao/eval/small_near_newrec/rec_z0_r1.json,0.972819,0.954106,0.998245,0.988115,165.722,D_rms_192,7.05731,0.608901,0.456052,,,,
+paper r1 (reference only),small_near,raw,1,results/eval/small_near/raw_r1.json,0.793925,0.0974235,0.896861,0.573347,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+paper r1 (reference only),small_near,prop,1,results/eval/small_near/prop_r1.json,0.971022,0.942029,0.996491,0.984204,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+paper r1 (reference only),small_near,rec_z0,1,results/eval/small_near/rec_z0_r1.json,0.971177,0.962158,0.99844,0.986972,157.494,D_rms_192,7.05731,0.549941,0.423016,,,,
+"R_curva (family u50, crops, r1, interpolated)",levels 15-69,raw,1,results_exp_resolucao/density_curve_reps.csv,0.90744,0.513667,0.968777,,,,,0.608901,0.456052,,,,

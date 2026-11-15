@@ -1,0 +1,57 @@
+{
+ "R_ant": {
+  "f1": 0.7908809071173376,
+  "rej": 0.11755233494363929
+ },
+ "control": {
+  "f1": 0.7993099681863058,
+  "rej": 0.11996779388083736
+ },
+ "R_curva": {
+  "f1": 0.907440476203036,
+  "rej": 0.51366729757847
+ },
+ "R_curva_from": {
+  "levels": [
+   15,
+   69
+  ],
+  "weight_upper": 0.1042955837984604,
+  "pi_D2_sigma": [
+   0.519688,
+   2.37381
+  ]
+ },
+ "geometry": {
+  "small_near": {
+   "D_um": 157.49379383700142,
+   "D_axis": "D_rms_192",
+   "per_mm2": 7.057308941249238,
+   "pi_D2_sigma": 0.5499407375289057,
+   "overlap": 0.42301599713489724
+  },
+  "small_near_newrec": {
+   "D_um": 165.72152148522952,
+   "D_axis": "D_rms_192",
+   "per_mm2": 7.057308941249238,
+   "pi_D2_sigma": 0.6089011945126905,
+   "overlap": 0.45605176587513274
+  }
+ },
+ "distances": {
+  "f1": {
+   "to_R_ant": 0.008429061068968235,
+   "to_R_curva": 0.10813050801673019
+  },
+  "rej": {
+   "to_R_ant": 0.0024154589371980784,
+   "to_R_curva": 0.3936995036976326
+  }
+ },
+ "nearer": {
+  "f1": "R_ant",
+  "rej": "R_ant"
+ },
+ "outcome": "the sampling does not explain it",
+ "note": "the control changes two pieces at once: the oversampled propagation and the drawing of the letters (continuous font sizes and positions, master raster, spacing on the pixel box of the ink, dust on the master grid)"
+}
