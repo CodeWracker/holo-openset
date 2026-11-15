@@ -95,3 +95,78 @@ sorteada de uma normal com desvio de 50 µm, cortada em ±150 µm (faixa total d
 "double-sided adhesive film (DSA, 50 µm for microchannel height)": 50 µm é a altura total do canal. As duas leis
 não são a mesma, e a escolha muda todas as gravações da curva. A resposta entra na entrada Q1, antes de gravar.
 O item a, a medida do diâmetro e a rodada (d1) não dependem dela.
+
+## 2026-11-15, 08:51 — Q1: a lei de profundidade padrão, o eixo da figura e o que roda na fase 2 (responsável)
+
+Escrito antes de gravar qualquer conjunto da curva e antes de ler qualquer teste da família padrão. Já lidos nesta
+etapa (fase 1, tudo pré-registrado no Q0): as cinco repetições do `bench_1mm_dense`, a rodada d1 da distância e a
+medida do diâmetro (que não usa teste).
+
+### A lei de profundidade (resposta do orientador)
+
+Pergunta feita pelo diálogo às ≈ 08:25, com as duas opções do fim do Q0. Resposta dele: **"Uniforme nos 50 µm
+(Recomendado)"**. Fica assim:
+
+- **Lei padrão da família de 1 mm:** a profundidade de cada objeto é uniforme na altura do canal, ±25 µm em torno
+  da distância da sessão (desvio de 14,4 µm). Fonte: Sobieranski et al. 2015, materiais e métodos, "double-sided
+  adhesive film (DSA, 50 µm for microchannel height)". A distância da sessão passa a ser a do meio do canal
+  (suposição nossa).
+- **Implementação:** o mesmo único sorteio normal g por objeto que hoje vira `depth_std · g` (cortado) passa a
+  virar 25 µm · erf(g/√2), que é uniforme em ±25 µm. O fluxo de sorteios não muda: as cenas ficam as mesmas e as
+  letras ficam pareadas uma a uma com as do piloto. Vale para as letras anotadas, as de fora da janela e as de
+  enchimento. A poeira continua nos planos fixos dos vidros. Desligada (padrão), nada muda.
+- **O que vira o conjunto já treinado** (`bench_1mm_depth50`: normal com desvio de 50 µm, cortada em ±150 µm):
+  teste de estresse, com esse nome. Não é mais "o padrão".
+- **A perda do treino com amostra plana é medida de novo nesta lei** (linhas abaixo). O 0,2 de F1 do piloto foi
+  medido na lei larga.
+
+### A família padrão e a ordem
+
+- Conjuntos `curve_u50_L008`, `_L015`, `_L069`, `_L154`, `_L343` (letras por janela), todos com a lei acima,
+  as mesmas 40 309 letras anotadas, gravador, física e receita do piloto. O nível 8 é gravado de novo (é o
+  `bench_1mm` com a lei nova).
+- O nível 8 é gravado primeiro e recebe logo r1–r5 (pelo Q0 ele recebe r2–r5 de qualquer jeito), para liberar a
+  rodada d2 da distância. Depois r1 nos outros quatro níveis, a tabela de r1, e r2–r5 nos níveis que a regra do Q0
+  indicar. Nada do Q0 muda ("caiu", "se separam", densidade obtida, nenhum nível novo sem perguntar).
+
+### O eixo da figura (fixado agora, depois de medir D e antes de ler teste da família)
+
+- Medida (fase 1, `hologram_diameter_summary.json`): D_rms convergiu (R = 192 e 256 px diferem em 0,17 %), então,
+  pela regra do Q0, **D = D_rms(192) = 111,8 µm** (D_86 = 114,9 µm; D_vis = 159,3 µm). É 3,8 vezes o lado médio da
+  letra.
+- Com esse D a razão de sobreposição é 0,24 / 0,40 / 0,905 / 0,995 / 1,000 nos cinco níveis (7 / 13 / 60 / 135 /
+  300 por mm²). Em escala linear os dois níveis mais densos caem no mesmo ponto.
+- **Eixo x:** a razão de sobreposição em escala log–log complementar, isto é, o número médio de vizinhas
+  sobrepostas (π D² σ, o expoente da fórmula de Seo) em escala logarítmica. As marcas mostram a razão de
+  sobreposição de cada nível. Um segundo eixo, em cima, mostra a densidade (objetos por mm²). Painéis: F1 e
+  rejeição das não vistas; curvas de crops, camada e reconstrução; r1 em todos os níveis e média com mínimo e
+  máximo onde houver cinco repetições.
+- **Observação sem teste novo:** pela medida, já no nível esparso 24 % dos hologramas se sobrepõem. O limiar de
+  10 % de Seo fica abaixo do nosso nível mais esparso. Isso é descritivo: a medida de D de Seo não é definida no
+  artigo.
+
+### Os conjuntos que já existem no mesmo eixo (acréscimo meu, descritivo)
+
+O escritor da seção da simulação apontou que o conjunto de letras pequenas a 2 mm tem crops a 0,793 / 0,153 com uma
+densidade relativa só ≈ 2,6 vezes a do esparso. A densidade em objetos por mm² não compara geometrias diferentes; a
+razão de sobreposição compara, porque D cresce com a distância. Por isso meço D com o mesmo script e a mesma
+definição (D_rms em R = 192 px, ou o R equivalente em relação ao tamanho do padrão, com a conferência de
+convergência) para a geometria do CBMS 2024 (19,25 mm) e para o conjunto de letras pequenas a 2 mm, cada um pelo seu
+próprio caminho de gravação, e ponho esses conjuntos no eixo com os resultados que já existem. Não é teste novo e
+não entra em nenhum critério. **Previsão registrada antes de medir e antes de ler a curva:** se a sobreposição é a
+variável certa, conjuntos com sobreposição parecida têm crops parecidos, qualquer que seja a distância. Se não
+tiverem, reporto assim.
+
+### d2 e as linhas de profundidade (com os cinco modelos do nível 8 da família padrão)
+
+- **Distância (d2):** teste e 32 hologramas de validação do nível 8 regravados a 0,7 (estresse), 0,9 e 1,1 mm com a
+  lei padrão; linhas como no d1 (como está; recalibrado literal; recalibrado por razão, a principal).
+- **Profundidade, sem critério:** (i) os cinco modelos do piloto (amostra plana) testados no teste do nível 8 da
+  família padrão; (ii) os cinco modelos da família padrão testados no teste plano do piloto; (iii) os cinco modelos
+  da família padrão testados no teste da lei larga (o estresse). Reporto ao lado das linhas que já existem.
+
+### Correção a uma frase minha do P4 do caderno do piloto
+
+Escrevi que Isikman et al. 2012 contam "com reconstrução" até ≈ 0,4 milhão de células por µL. A frase do artigo não
+diz em que domínio a contagem foi feita (a legenda da Fig. 5a mostra os dois). A fonte primária da contagem com
+reconstrução e hologramas sobrepostos é Seo et al. 2010 (Anal. Chem.), lida pelo escritor do Related Work.
