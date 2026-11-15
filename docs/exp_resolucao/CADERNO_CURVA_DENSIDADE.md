@@ -755,3 +755,15 @@ Em todos os estratos as não vistas são aceitas em ≥ 79 %. O que varia: o ace
 pequenas (0,713, contra 0,996 nas grandes) e mais nas pequenas com vizinha (0,632). A rejeição é maior com vizinha
 (0,165 contra 0,083), onde o score todo é mais baixo (a aceitação das conhecidas também cai). Descritivo; não escolhe
 nada.
+
+## 2026-11-15, 17:00 — D13: Q4, os dois controles a cinco repetições (ANTES de qualquer treino ou leitura de teste)
+
+Pré-registro: `CADERNO_CURVA.md`, Q4 (commit `273c558`). Roda: r2–r5 de `raw`, `prop`, `rec_z0` em `small_near_ctlN` e
+`small_near_ctlP` (24 treinos e avaliações), `--no-aux`, `--threads 4`, pela fila do `phaseS.sh` (r1 pulado: modelo e
+json existem), quatro filas em tmux (`res_S3_*`): ctlN r2–r3 (GPU 0), ctlP r2–r3 (GPU 1), ctlN r4–r5 e ctlP r4–r5
+(GPU 2). Cada avaliação lê o teste uma vez, na fila. Tabela: `scripts/exp_resolucao/small_near_factors_five_reps.py` →
+`results_exp_resolucao/small_near_factors_five_reps.csv` e `_reading.json` (a leitura do Q4: por repetição, R_reg(k) =
+crops do `small_near_newrec` em k; R_curva(k) = crops da família u50 em k, interpolados em log(π D² σ) entre 15 e 69
+na sobreposição do controle, com o código do Q2-S / Q3-D; "volta para a curva" se mais perto de R_curva(k) nas duas
+métricas; ≥ 4 de 5 → explica; ≥ 4 de 5 mais perto de R_reg(k) nas duas → não explica; o resto inconclusivo). O
+`small_near_factors.csv` (r1) fica como está.
