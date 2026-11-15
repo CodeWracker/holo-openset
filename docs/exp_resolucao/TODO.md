@@ -295,8 +295,8 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       contra `density_curve.csv`; pytest 72, `reproduce check` 13/13) **Curva de densidade, família padrão, cinco
       repetições em todos os níveis** (a regra "se separam" deu sim nos quatro níveis em r1). F1 / rejeição, média
       de 5, níveis 7 / 13 / 60 / 135 / 300 por mm² (sobreposição 0,242 / 0,405 / 0,907 / 0,995 / 1,000):
-      crops 0,937/0,714; 0,922/0,612; 0,855/0,260; 0,789/0,089; 0,668/0,032 (acerto fechado 0,977 → 0,770);
-      camada 0,975/0,983; 0,974/0,993; 0,972/0,975; 0,957/0,864; 0,942/0,744;
+      crops 0,937/0,714; 0,922/0,612; 0,855/0,260; 0,789/0,089; 0,668/0,031 (acerto fechado 0,976 → 0,770);
+      camada 0,975/0,983; 0,974/0,993; 0,972/0,975; 0,957/0,864; 0,942/0,743;
       reconstrução 0,977/0,996; 0,978/0,993; 0,973/0,967; 0,972/0,976; 0,960/0,895.
       **Regra "caiu" (≥ 4 de 5):** crops em rejeição a partir de 60/mm² e em F1 a partir de 135/mm²; **camada e
       reconstrução não caem em nenhum nível** (maior queda da camada, no 343: −0,033 F1, −0,239 rejeição; por
@@ -353,17 +353,30 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
       executor da densidade um `curve_alpha.csv` (α calibrado e treinado por nível e repetição) e o gerador deve
       passar a usá-lo; a frase "training moved the scalar by …" saiu da 8.6 até lá; (2) Fresnel e fração fora do
       crop continuam medidos nas letras do piloto (mesmas letras; dizer se necessário).
-- [~] Q-w5. **Terceira passada, parte 2 (mandada às 11:37, com a curva completa):** gerador (denso = nível de
-      135/mm² da família padrão; α de `curve_alpha.csv`; tabela e figura da curva; conjuntos antigos no eixo);
-      8.4 final (figura e tabela da curva moram ali); resultados (06) reescritos para as cinco RQ novas (método
-      proposto = camada de propagação; camadas real/complexa = ablações; RQ4 em torno do argumento de tempo; RQ5
-      remete às 8.5/8.6; simulação conveniente só na 8.1); abstract e conclusão novos; discussão só no que
-      contradiz; frase "does as well" da introdução ajustada (empate até 60/mm²). Não mexe: título, 05, 09.
-- [~] Q-rev. (devoluções da densidade e da distância revisadas; falta a da parte 2 da escrita) Eu: revisar cada devolução (números nos arquivos, pytest 64, `reproduce check` 13/13, diffs), juntar os
-      dois branches de escrita em `rewrite/inversion` (deduplicar `main.bib`: o da simulação acrescenta no topo, o do
-      Related Work no fim), compilar.
-- [ ] Q-fim. Depois da curva: abstract, resultados e conclusão (encomenda dele: "fica para depois da curva");
-      relatório curto da curva; diff do LaTeX para ele, sem merge.
+- [x] Q-w5. (feita 11:37–11:54 e revisada por mim: li abstract, 06 inteiro, 8.4, discussão, conclusão e a prosa
+      nova do método; conferi a calibração do α contra `train.calibrate_alpha`) **Terceira passada, parte 2 e
+      fecho:** gerador com a família padrão completa (denso = 135/mm²; α de `curve_alpha.csv`; `tab_curve.tex`;
+      `fig_density_curve`; conjuntos antigos no eixo); 8.4 final com a curva; resultados reescritos para as cinco
+      RQ (método proposto = camada de propagação; camadas real/complexa = ablações; RQ4 em torno do argumento de
+      tempo; RQ5 remete às 8.5/8.6); abstract e conclusão novos; discussão no que contradizia; prosa da camada de
+      propagação no método (era um `\todo`; não estava na lista do orientador, avisado no relatório); vocabulário
+      do protocolo. Três frases mudaram de sentido com os números da camada de propagação (fonte a 5 cm: cai com as
+      reconstruções; feixe estreito: custa mais à camada; crops em conjunto fechado na geometria de CBMS 2024:
+      0,881). **Minhas correções de revisão** (`5c6c171`, `53ede2f`): depois de recalibrar a reconstrução fica à
+      frente em F1 (+0,045), não em rejeição; acerto fechado dos crops no abstract; "perto da curva"; "base set"
+      restante. `rewrite/inversion` em `53ede2f`: 37 commits a partir do `main`, 41 páginas, 0 referências
+      indefinidas, 0 overfull. `\todo` que restam: letras pequenas a 2 mm (orientador), nota do levantamento,
+      declarações finais.
+- [x] Q-rev. (feito) Todas as devoluções revisadas: números refeitos a partir dos arquivos por repetição, pytest 72,
+      `reproduce check` 13/13, diffs de código lidos, nada em `results/` nem `expected/`.
+- [x] Q-fim. (entregue às ≈ 11:58) `RELATORIO_CURVA.md` (+ PDF), PDF do paper e diff `main..rewrite/inversion` em
+      `scratchpad/entrega/` (`relatorio_curva.pdf`, `paper_inversao_53ede2f.pdf`,
+      `latex_main..rewrite-inversion_53ede2f.diff`), enviados ao orientador. **Sem merge, sem push.**
+      **PARADO, esperando o orientador:** (1) nível mais denso para a camada "cair" ou basta o descritivo; (2) letras
+      pequenas a 2 mm: manter, investigar (controle: regravar com o gravador sobreamostrado, r1) ou tirar;
+      (3) .RIS do Scopus/ScienceDirect e os quatro PDFs; (4) escolhas a reverter (curva na 8.4 e não na RQ1; lugar
+      da seção; prosa do método; título); (5) regenerar a figura do quadro inteiro com a camada de propagação (muda
+      `expected/`); (6) push/merge. Nada novo roda sem a resposta dele e sem pré-registro.
 
 ### Fase A: experimento da resolução
 
@@ -593,3 +606,6 @@ errado".
   para a camada "cair" pela regra, ou basta o descritivo; o que fazer com as letras pequenas a 2 mm no eixo
   (manter com a frase honesta, investigar com um controle, tirar); .RIS do Scopus/ScienceDirect e PDFs bloqueados;
   lugar da seção e título do paper; push/merge.
+- **2026-11-15, 11:58 — etapa da curva entregue.** Relatório, PDF do paper e diff enviados; tudo commitado
+  localmente nos dois repositórios, nada enviado ao GitHub nem ao Overleaf. **Próximo passo ao voltar: ler a resposta
+  do orientador às seis perguntas da seção 8 de `RELATORIO_CURVA.md`; não rodar nem mesclar nada antes.**
