@@ -168,3 +168,22 @@ Respostas do responsável (mensagem da fase 2 e Q1): lei padrão uniforme em ±2
 - 08:56 `LAW=u50 LEVEL=343 WORKERS=8 ... record`, em paralelo. Dois processos de GPU rendem quase a soma: L008
   0,15 → 0,20 s por imagem, L343 0,58 → 0,60 s por imagem (GPU a 86–97 %); threads prontas 3–19,
   `cpu.pressure` some avg10 = 0,00. Fico com dois processos de GPU no máximo.
+
+## 2026-11-15, 09:15 — D3: `curve_u50_L008` gravado e conferido; r1–r5 lançados
+
+- Gravação: 955 s (08:54:55–09:10:50; em paralelo com L343 a partir de 08:56). Disco: ≈ 3 GB sem o `rec_z0.npy`.
+- `LAW=u50 LEVEL=8 bash scripts/exp_resolucao/density_curve.sh 5 verify` (16 s) → `results_exp_resolucao/curve_u50_L008_checks.json`,
+  `curve_u50_L008_sanity.json`, folha de contato `docs/exp_resolucao/img/curve_u50_L008_examples.png`:
+  - `annotations.csv` contra o `bench_1mm`: 40 309 linhas (28 227 / 5711 / 6371), todas as colunas iguais a menos de
+    `depth` e `z`; z − depth igual (diferença máxima 1,0 × 10⁻¹⁶ m).
+  - Profundidades: |depth| máx. 24,9993 µm (≤ 25 µm), média −0,016 µm, desvio **14,437 µm** (esperado 25/√3 =
+    14,434 µm), Kolmogorov–Smirnov contra a uniforme em ±25 µm p = 0,90. Pareamento com o piloto: nas 40 199 letras
+    em que a normal do piloto não foi cortada, depth = 25 µm · erf((depth_piloto / 2,6 µm)/√2) com diferença máxima
+    1,0 × 10⁻²⁰ m.
+  - Idênticos ao `bench_1mm` byte a byte: `metadata.csv`, `dust.csv`, `sessions.csv`, `backgrounds.npy`, os 5000
+    rótulos YOLO e os 1600 mapas de verdade (a profundidade não entra neles). `physics.json`: a única diferença é
+    `depth_uniform = 2,5 × 10⁻⁵` (o campo `like` é igual: os dois feitos por `simulate fresnel`).
+  - Duas imagens refeitas da semente (100, treino; 0, teste), com o gerador de ruído: **idênticas** às guardadas.
+  - Sanidade (treino): lados de tinta 12,81 / 17,38 / 23,29 px (os do piloto), nível médio 101,49 (piloto 101,49),
+    brancos 101,51, ruído refeito das sementes média 0,002–0,007, rms 2,091–2,102.
+- 09:11 `reconstruct` (47 s) e, em sequência, `train` + `evaluate` de r1 a r5 (tmux `res_curve_L008_run`).
