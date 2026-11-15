@@ -387,8 +387,14 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   Overleaf: NADA (o remoto do paper é só o Overleaf, ligado ao `main`); só depois de o orientador revisar o PDF.
 - [ ] **R-S.** Controle das letras pequenas a 2 mm (`small_near_newrec`, r1, três fluxos; referência retreinada).
   Executor "densidade".
-- [ ] **R-J.** Banco focal (`bank_jit`) treinado em `curve_u50_L008`, r1; testes a 1,0 / 0,9 / 1,1 mm como estão
-  (0,7 mm à parte). Executor "distância". Só r1.
+- [x] **R-J.** (13:55, conferido por mim contra `eval/curve_u50_L008/bank_jit_r1.json` e
+  `robustness_curve_u50_L008_bank_jit.csv`) Banco focal, r1: **não aguenta** pela regra do Q2. F1 0,981 a 1,0 mm;
+  0,650 a 0,9 mm (−0,331) e 0,678 a 1,1 mm (−0,303); rejeição 0,994 / 0,997; acerto em fechado 0,972 / 0,973;
+  acerto das conhecidas 0,506 / 0,530 (o que cai é o limiar, não a separação). Sem recalibrar ele cai menos que a
+  camada (0,399 / 0,301) e a reconstrução (0,226 / 0,268); fica 0,32 / 0,29 abaixo da reconstrução recalibrada.
+  A 0,7 mm rejeita tudo. Planos depois do treino: 0,970–1,029 mm (o banco estreitou). Tabela:
+  `results_exp_resolucao/bank_jit_distance.csv`; caderno: D3 de `CADERNO_CURVA_DISTANCIA.md`. FALTA: pôr no texto
+  (8.6 e limitação iii), por macro, dizendo que é uma repetição.
 - [ ] **R-txt.** Texto no `rewrite/inversion` (executor da escrita):
   (a) abstract e conclusão dizem com todas as letras: a reconstrução calibrada é a melhor rota no denso e quando z
   muda; a camada é a alternativa que se calibra sozinha; nada de vender a camada como superior (conferir intro e
@@ -401,8 +407,9 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   (d) nota do Related Work vira lista do que o orientador vai mandar (.RIS do Scopus e do ScienceDirect; PDFs do
   HoloAtt-UNet 2026, Cotter 2021, Delli Priscoli 2021, JBO 26:036001);
   (e) figura do quadro inteiro com a camada de propagação (muda `expected/`: autorizado para isso).
-- [ ] **R-viz.** Figura que explica a pergunta 1 (a regra "caiu", as quedas por repetição dos três fluxos, como é a
-  amostra em cada nível). Nenhum nível novo.
+- [x] **R-viz.** (13:50, conferido: placar e quedas refeitos por mim a partir de `density_curve_reps.csv`)
+  `docs/exp_resolucao/img/explica_regra_caiu.png` (+ `.pdf`), script `scripts/exp_resolucao/explain_fall_rule.py`,
+  commit `231e53e`. Enviada ao orientador com a explicação.
 - [ ] **R-titulo.** Responder: o título atual ainda fala em "Learnable Fourier Layer"; dar opinião e opções, não
   mudar sem a palavra dele.
 - [ ] **R-rev.** Conferir cada devolução contra os arquivos; depois de R-S e R-J, pôr os resultados no texto
@@ -650,3 +657,10 @@ errado".
   ao voltar: esperar as devoluções, conferir cada uma contra os arquivos; depois mandar ao executor da escrita os
   resultados de R-S e R-J para o texto; compilar; PDF + diff ao orientador; push final só do código.** Resposta do
   título (R-titulo): o trecho "with a Learnable Fourier Layer" é o que envelhece; propor opções, não mudar sozinho.
+- **2026-11-15, 13:58 — R-viz e R-J prontos e conferidos; R-S e R-txt em curso.** Erro meu: mandei os executores
+  para as GPUs 6 e 7, que não existem (o container tem 0–5); o da distância usou a 3, sem efeito em número. O
+  executor da densidade parou com duas perguntas (parâmetros opcionais no `FresnelLayout` para escrever as leis do
+  `SmallLayout`; cache `rec_z0` em `data/small_near`): respondi sim às duas, com condições (padrão inalterado
+  provado por testes; nenhum arquivo existente alterado). Referência parcial do controle S (r1): crops 0,791 / 0,118,
+  camada 0,963 / 0,895. **Próximo passo ao voltar: devolução da escrita (revisar; depois mandar R-J e R-S para o
+  texto), devolução do controle S (conferir, aplicar a leitura do Q2), compilar, PDF + diff, push do código.**
