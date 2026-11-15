@@ -72,7 +72,11 @@
    "pi_D2_sigma": 0.519688154198912,
    "overlap": 0.40529402438234674,
    "reps": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5
    ],
    "r1": {
     "prop_minus_raw": {
@@ -98,7 +102,26 @@
      }
     }
    },
-   "separate_r1": true
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": false,
+     "rej": false
+    },
+    "prop": {
+     "f1": false,
+     "rej": false
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 0,
+    "rej": 5,
+    "both": 0
+   }
   },
   "69": {
    "set": "curve_u50_L069",
@@ -109,7 +132,11 @@
    "pi_D2_sigma": 2.373812549033107,
    "overlap": 0.9068749950411582,
    "reps": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5
    ],
    "r1": {
     "prop_minus_raw": {
@@ -135,7 +162,26 @@
      }
     }
    },
-   "separate_r1": true
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": false,
+     "rej": true
+    },
+    "prop": {
+     "f1": false,
+     "rej": false
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 5,
+    "rej": 5,
+    "both": 5
+   }
   },
   "154": {
    "set": "curve_u50_L154",
@@ -146,7 +192,11 @@
    "pi_D2_sigma": 5.295498307284827,
    "overlap": 0.9949858848172635,
    "reps": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5
    ],
    "r1": {
     "prop_minus_raw": {
@@ -172,7 +222,26 @@
      }
     }
    },
-   "separate_r1": true
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": true,
+     "rej": true
+    },
+    "prop": {
+     "f1": false,
+     "rej": false
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 5,
+    "rej": 5,
+    "both": 5
+   }
   },
   "343": {
    "set": "curve_u50_L343",
@@ -183,7 +252,11 @@
    "pi_D2_sigma": 11.791985107504976,
    "overlap": 0.999992435052174,
    "reps": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5
    ],
    "r1": {
     "prop_minus_raw": {
@@ -209,12 +282,31 @@
      }
     }
    },
-   "separate_r1": true
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": true,
+     "rej": true
+    },
+    "prop": {
+     "f1": false,
+     "rej": false
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 5,
+    "rej": 5,
+    "both": 5
+   }
   }
  },
  "layer_falls_first": {
   "f1": "did not fall up to the obtained density",
   "rej": "did not fall up to the obtained density"
  },
- "provisional": true
+ "provisional": false
 }

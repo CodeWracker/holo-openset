@@ -5,8 +5,8 @@ x: the mean number of overlapping neighbours pi D^2 sigma (the exponent of the o
 1 - exp(-pi D^2 sigma); a log scale of the complementary log-log of the ratio), D = the effective hologram diameter
 of the axis measure, sigma the obtained density; ticks at the levels, labelled with their overlap ratio; top axis:
 the density in objects per mm^2. Panels: F1 (open set) and rejection of the unseen, on the test split; crops (raw),
-layer (prop), reconstruction (rec_z0); open markers r1, filled markers and bars the mean, min and max where the
-level has five repetitions.
+layer (prop), reconstruction (rec_z0); open markers r1 (dotted line), filled markers, bars and solid line the mean, min
+and max where the level has five repetitions.
 -> docs/exp_resolucao/img/density_curve.png and .pdf
     python scripts/exp_resolucao/density_curve_figure.py
 """
@@ -42,6 +42,7 @@ def main():
             five = g[g.n_reps == 5]
             if len(five):
                 xf = five.pi_D2_sigma * (1 + 0.025 * (k - 1))
+                ax.plot(xf, five[f'{m}_mean'], ls='-', color=col, lw=1.0)
                 ax.errorbar(xf, five[f'{m}_mean'], yerr=[five[f'{m}_mean'] - five[f'{m}_min'],
                                                          five[f'{m}_max'] - five[f'{m}_mean']],
                             fmt=mk, color=col, ms=5, capsize=2, lw=1, label=f'{label}, mean of 5 (min-max)')
