@@ -412,6 +412,8 @@ def numbers():
             if len(r):
                 r = r.iloc[0]
                 macro(f'EnrollPair{k}Diff', r.diff_mean, '{:+.3f}')
+                macro(f'EnrollPair{k}Layer', r.layer_mean)
+                macro(f'EnrollPair{k}Rec', r.rec_mean)
                 macro(f'EnrollPair{k}Lo', r.diff_min, '{:+.3f}')
                 macro(f'EnrollPair{k}Hi', r.diff_max, '{:+.3f}')
                 macro(f'EnrollPair{k}Pos', int(sum(r[f'diff_r{i}'] > 0 for i in range(1, 6))), '{}')
