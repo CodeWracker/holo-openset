@@ -103,3 +103,33 @@ Na íntegra:
   `expected/` que isso muda.
 - **Complemento 2, 3 e 4:** ajustes de texto no branch `rewrite/inversion`.
 - **Complemento 5:** banco focal (`bank_jit`) a 0,9 e 1,1 mm sem recalibrar, só r1; pré-registrado na entrada Q2.
+
+## Resposta do orientador à entrega da Fase R (2026-11-15, ≈ 15:50)
+
+Os números são os da lista "O que espera a sua palavra" da minha mensagem final da Fase R (1 Overleaf; 2 título;
+3 nível mais denso; 4 banco focal; 5 coluna de 2 mm da tabela de tamanho; 6 frase-tese; 7 abstract; 8 diagrama;
+9 arquivos que ele manda). Na íntegra:
+
+> #2 ok
+> #4 faz o que achar melhor
+> #5 tempo de gpu não é um problema, faça o necessário pela qualidade da pesquisa
+> #6 calma já leio
+> #3 que figura?
+
+### O que cada item vira (leitura do responsável; Fase S do `TODO.md`)
+
+- **#2 (título):** aprovado o que recomendei: "Open-Set Recognition of Interference Patterns on Lensless Holograms:
+  Why Crops of the Raw Hologram Fail, and What a Propagation Step Costs from a Window to the Whole Field of View".
+  Troco no `rewrite/inversion`.
+- **#3 (nível mais denso):** ele não tinha localizado a figura; reenviada (`docs/exp_resolucao/img/
+  explica_regra_caiu.png`). A decisão continua dele. Para ele decidir com o dado na mão, meço quanto o gerador
+  consegue colocar acima de 300 por mm² (sem gravar holograma nem treinar).
+- **#4 (banco focal):** a decisão é minha. Decido completar o teste: cinco repetições, os bancos mais largos que o
+  pacote já tem (treinados para ±12 %) e a recalibração do banco. Pré-registro na entrada Q3 de `CADERNO_CURVA.md`.
+- **#5 (coluna de 2 mm):** refazer com o conjunto regravado, cinco repetições, os dez fluxos da tabela. A frase dele
+  ("faça o necessário pela qualidade da pesquisa") eu leio como critério geral desta rodada: onde o que falta é
+  tempo de GPU, faço a versão completa. Por ela, e por decisão minha, entra também um diagnóstico em r1 de por que
+  o conjunto de 2 mm está fora da curva (dois controles), que o texto hoje declara como "não sabemos por quê".
+  Se ele achar que passei do pedido, é só descartar: nada disso mexe no que já existe.
+- **#6 (frase-tese):** ele vai ler. Não mexo na frase. #1, #7, #8, #9 seguem esperando.
+- Continua valendo: nada no Overleaf antes da revisão dele; sem merge; pré-registro antes de rodar.

@@ -221,3 +221,106 @@ recalibrar? Se aguentar, é uma vantagem real da camada sobre a reconstrução; 
   distância, e o preço do banco a 1,0 mm (banco − camada e banco − reconstrução). Sem limiar para essas diferenças.
 - **O que não rodo sem perguntar:** r2–r5; um banco mais largo ou com mais jitter (a mudança de 10 % está fora da
   faixa de ±5 % em que ele foi treinado); a recalibração do banco.
+
+## 2026-11-15, 15:58 — Q3: pré-registro da coluna de 2 mm refeita, do banco focal completo e do diagnóstico do conjunto fora da curva (responsável)
+
+Resposta do orientador de ≈ 15:50 (`PROTOCOLO_CURVA.md`, na íntegra): "#4 faz o que achar melhor" e "#5 tempo de
+gpu não é um problema, faça o necessário pela qualidade da pesquisa". Escrito antes de qualquer gravação, treino ou
+leitura de teste destes itens. Valem as regras de sempre: pastas da etapa (`HOLO_RESULTS`, `HOLO_MODELS`), escolhas
+só na validação, cada teste lido uma vez por modelo, nada em `results/`, `expected/` nem `models/`.
+
+### C. Coluna das letras pequenas a 2 mm com o conjunto regravado (cinco repetições; pedido dele)
+
+- **Conjunto:** `small_near_newrec` como está em disco (gravado no Q2-S, grade 2 vezes mais fina que o pixel, raster
+  mestre 16). Não é regravado.
+- **Fluxos:** os dez da tabela de tamanho (`SMALL_FLOWS` do pipeline: `raw`, `learned`, `complex`, `wiener`, `prop`,
+  `bank_jit`, `bank_w3`, `rec_z0`, `rec_af`, `rec_twin`), com a receita que o pacote usa para os conjuntos de letras
+  pequenas (`--no-aux`, `pipeline.py`), r1 a r5. Os três modelos de r1 que já existem (`raw`, `prop`, `rec_z0`) não
+  são treinados de novo nem relidos.
+- **O que reporto:** média de cinco por fluxo, ao lado da coluna do paper (conjunto gravado na amostragem do sensor,
+  em `results/`), e a diferença por fluxo. Não há critério: é a mesma medida num registro mais fiel.
+  **Previsão registrada:** nenhum fluxo muda o F1 médio em mais de 0,02 e a ordem das rotas não muda (crops muito
+  abaixo; rotas com propagação juntas). Se mudar mais que isso, reporto com destaque.
+- **No texto (decisão de escrita minha; o orientador pode reverter):** a coluna "small, 2 mm" passa a ser a do
+  conjunto regravado, e os números das letras pequenas a 2 mm citados fora da tabela (quadrados da figura da curva,
+  8.4, RQ5) passam a ser os dele, com cinco repetições. O conjunto antigo continua em `results/` (pipeline do pacote
+  intocado) e é citado uma vez, como o registro na amostragem do sensor que dá a mesma leitura (ou não, se não der).
+- **Medida ao lado, sem leitura de teste:** a mesma conferência (nativa contra convergida, 4 cenas sem ruído) para
+  as letras pequenas a 19,25 mm (`small_z0`), para declarar a amostragem da outra coluna. Se a gravação nativa
+  ficar dentro da tolerância de 1 % do piloto, a legenda diz isso. Se passar, a coluna de 19,25 mm recebe o mesmo
+  tratamento (regravação e cinco repetições), pela mesma frase do orientador; aviso antes de disparar.
+
+### J2. Banco focal: completar o teste (decisão minha, pelo "#4 faz o que achar melhor")
+
+O teste J do Q2 foi uma repetição e só do banco do paper (±5 %), que não aguentou. Ficaram três perguntas que um
+revisor faz: vale nas cinco repetições? um banco treinado para a mudança aguenta? e o banco recalibrado sem rótulo
+fecha a diferença para a reconstrução recalibrada?
+
+- **(a) `bank_jit`, r2 a r5**, mesmo procedimento do teste J (nível esparso da família padrão, `--no-aux`,
+  `--alpha-extend 12`, seleção e limiar na validação de 1,0 mm; testes de d2 a 0,9 e 1,1 mm como estão; 0,7 mm à
+  parte, como estresse).
+- **(b) Bancos mais largos que o pacote já tem, sem criar hiperparâmetro:** `bank_wide` (7 planos em ±12 %, jitter
+  de 12 %) e `bank_w2` (9 planos em ±12 %, jitter de 12 %), os dois treinados para uma faixa que contém a mudança de
+  10 %; e `bank_w3` (7 planos em ±12 %, jitter de 5 %; é o "focal stack (7)" da tabela de tamanho), que separa a
+  largura dos planos do jitter. r1 a r5, mesma receita e mesmos testes. O `bank_w1` (±8 %) não cobre a mudança e não
+  roda. Os 0,7 mm (30 %) ficam fora da faixa de todos: estresse, fora da regra.
+- **Regra, a mesma do Q2-J, agora com cinco repetições:** numa repetição, o banco aguenta se, a 0,9 e a 1,1 mm, o F1
+  dele ficar menos de 0,10 abaixo e a rejeição menos de 0,30 abaixo dos valores dele próprio a 1,0 mm. Um banco
+  **aguenta a mudança de distância** se aguentar em pelo menos 4 de 5 repetições.
+- **O que reporto para a pergunta do orientador ("vantagem real sobre a reconstrução"):** para cada banco, por
+  repetição e na média: o preço a 1,0 mm (banco − reconstrução, banco − camada); o banco como está contra a
+  reconstrução como está e contra a reconstrução recalibrada a 0,9 e 1,1 mm, com a contagem de sinais (k de 10
+  comparações). Sem limiar para essas diferenças. As frases possíveis, fixadas agora: (i) nenhum banco aguenta →
+  "o banco focal não dispensa a recalibração"; (ii) um banco largo aguenta → "um banco treinado para ±12 % dispensa
+  a recalibração numa mudança de 10 %, ao preço de X a 1,0 mm, e fica Y abaixo/acima da reconstrução recalibrada";
+  em nenhum caso a camada é vendida como superior à reconstrução calibrada (instrução do orientador de 13:34).
+- **(c) Recalibração do banco sem rótulo**, pelo procedimento "por razão" da camada (`recalibrate_distance.py`: a
+  razão entre o α achado nos 32 hologramas sem rótulo da distância nova e o da validação de 1,0 mm multiplica todos
+  os planos; o resto como na linha recalibrada da camada), para os quatro bancos, r1 a r5, a 0,9, 1,1 e 0,7 mm.
+  Reporto ao lado da camada e da reconstrução recalibradas, com a diferença para a reconstrução recalibrada e a
+  contagem de sinais (k de 15, como no d2). Sem critério. Se o procedimento não se aplicar ao banco sem mudar o
+  pacote, o executor para e me diz.
+- **O que não rodo sem perguntar:** bancos com hiperparâmetros novos; outro nível de densidade; os conjuntos de
+  19,25 mm.
+
+### D. Por que as letras pequenas a 2 mm estão fora da curva: dois controles em r1 (decisão minha, pela frase do #5)
+
+O texto diz hoje "We do not know why this set is off the curve". O Q2-S descartou a amostragem. O que já está em
+disco, antes de rodar qualquer coisa (`sets_by_fresnel.csv`, `depth_training.csv`):
+
+- o conjunto de 2 mm tem números de Fresnel de 0,20 a 1,60 (p5–p95), contra 0,30 a 0,98 na família padrão; a fração
+  do padrão de cada letra fora do próprio crop vai a 0,76 nas letras menores, contra 0,61;
+- a 1,0 mm, esparso, treinar e testar os crops com a lei larga de profundidade (a do conjunto de 2 mm) dá 0,924 /
+  0,605, contra 0,928 / 0,622 com a amostra plana (r1): a lei de profundidade, sozinha, não derrubou os crops.
+
+**Controles (cada um muda uma coisa em relação ao `small_near_newrec`; mesma gravação convergida, mesma receita,
+r1, fluxos `raw`, `prop`, `rec_z0`):**
+
+- **D-N (faixa do número de Fresnel):** os tamanhos das letras passam a ser os que dão, a 2,0 mm, a faixa de N_F da
+  família padrão (as fontes do conjunto base vezes √(2,0 / 19,25) = 0,3223); o resto igual (8 ± 3 letras por janela,
+  borda e espaçamento, física, profundidade, ruído, poeira).
+- **D-P (lei de profundidade):** a lei do conjunto (normal, desvio de 50 µm, cortada em ±150 µm) trocada pela
+  padrão (uniforme no canal de 50 µm); o resto igual.
+- Para cada controle meço D e a sobreposição com o mesmo script e calculo R_curva na sobreposição do próprio
+  controle (interpolação em log(π D² σ), r1), como no Q2-S.
+
+**Leitura, fixada agora, só com os crops:** seja R_reg o par (F1, rejeição) do `small_near_newrec` em r1 (0,799 /
+0,120). Se o controle ficar mais perto de R_curva que de R_reg nas duas métricas, o fator trocado explica o desvio;
+mais perto de R_reg nas duas, não explica; uma de cada, inconclusivo. **Previsão registrada:** D-N volta para a
+curva e D-P não. Se D-N explicar, existe uma segunda forma de os crops falharem além dos vizinhos (o padrão da
+própria letra saindo do crop quando N_F é baixo), e a frase do paper "a causa não é o padrão sair do crop" tem de
+ganhar o limite em que foi medida (os N_F da família padrão). Nesse caso escrevo a proposta de frase e aponto para o
+orientador; é uma repetição, descritivo.
+
+**Leitura estratificada, sem modelo novo (descritiva):** com o modelo de crops de r1 do `small_near_newrec` e o
+limiar dele, a aceitação das conhecidas e a rejeição das não vistas por terço de tamanho da letra e por haver ou
+não o centro de outro holograma a menos de D. É uma segunda passada no mesmo teste, com o mesmo modelo e o mesmo
+limiar; não escolhe nada.
+
+**O que não rodo sem perguntar:** r2–r5 dos controles; outros fatores (a distância sozinha).
+
+### L. Quanto o gerador consegue colocar acima de 300 por mm² (medida para a decisão do orientador sobre o #3)
+
+Sem gravar holograma e sem treinar: o mesmo teste de `curve_feasibility_343.csv` para 514 e 771 letras por janela
+(450 e 675 por mm²): letras pedidas, colocadas, puladas e área coberta nas mesmas cenas. Só informa a decisão dele;
+nenhum nível novo é gravado sem a palavra dele.
