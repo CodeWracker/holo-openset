@@ -305,3 +305,74 @@ margem e as leis do próprio conjunto; profundidade 0; sem ruído, sem poeira). 
 
 (`hologram_diameter_realistic*`, `hologram_diameter_small_near*`; figuras `img/hologram_diameter_<conjunto>.png`.)
 Nos três, D_rms convergiu (todas as letras dentro de 5 %), então o eixo usa D_rms(192·k).
+
+## 2026-11-15, 11:34 — D6: r2–r5 em 15, 69, 154 e 343; tabela final, figura e α da família
+
+r2–r5 lançados às 10:51 (15 e 69 no tmux `res_curve_reps_A`; 154 e 343 em `res_curve_reps_B`, 90 s depois), fim às
+11:18. As 75 avaliações da família existem (5 níveis × 3 fluxos × 5 repetições), cada teste lido uma vez; os 75
+modelos rodaram os 3000 passos (conferido no log). Treino por repetição ≈ 2,5–5 min (dois processos na GPU),
+avaliação ≈ 20–40 s. Disco: conjuntos 8,7–9,1 GB cada (≈ 44 GB), modelos 669 MB por nível.
+
+### Tabela final (`results_exp_resolucao/density_curve.csv`, por nível e fluxo; `density_curve_reps.csv`, por repetição; `density_curve_reading.json`)
+
+D = 111,8 µm (D_rms(192)). Média (mín.–máx.) de 5 repetições, teste:
+
+| nível | por janela / mm² | área | sobrep. (π D² σ) | raw F1 | raw rej. | prop F1 | prop rej. | rec_z0 F1 | rec_z0 rej. |
+|---|---|---|---|---|---|---|---|---|---|
+| 8 | 8,06 / 7,06 | 0,54 % | 0,242 (0,277) | 0,937 (0,925–0,947) | 0,714 (0,614–0,827) | 0,975 (0,969–0,978) | 0,983 (0,937–1,000) | 0,977 (0,974–0,980) | 0,996 (0,988–1,000) |
+| 15 | 15,12 / 13,24 | 1,04 % | 0,405 (0,520) | 0,922 (0,913–0,931) | 0,612 (0,531–0,698) | 0,974 (0,972–0,975) | 0,993 (0,982–1,000) | 0,978 (0,976–0,981) | 0,993 (0,985–1,000) |
+| 69 | 69,08 / 60,47 | 4,78 % | 0,907 (2,374) | 0,855 (0,847–0,861) | 0,260 (0,211–0,303) | 0,972 (0,969–0,976) | 0,975 (0,944–0,995) | 0,973 (0,959–0,978) | 0,967 (0,848–0,998) |
+| 154 | 154,10 / 134,90 | 10,54 % | 0,995 (5,295) | 0,789 (0,782–0,794) | 0,089 (0,059–0,115) | 0,957 (0,943–0,964) | 0,864 (0,717–0,950) | 0,972 (0,970–0,973) | 0,976 (0,969–0,983) |
+| 343 | 343,15 / 300,40 | 23,35 % | 1,000 (11,79) | 0,668 (0,660–0,682) | 0,032 (0,022–0,039) | 0,942 (0,936–0,953) | 0,744 (0,650–0,865) | 0,960 (0,953–0,965) | 0,895 (0,833–0,944) |
+
+Acerto fechado (média): raw 0,977 / 0,970 / 0,941 / 0,894 / 0,770; prop 0,997 / 0,997 / 0,992 / 0,987 / 0,975;
+rec_z0 0,998 / 0,999 / 0,997 / 0,994 / 0,985 (8 / 15 / 69 / 154 / 343).
+
+Camada − crops e reconstrução − camada (média, mín.–máx.):
+
+| nível | prop − raw F1 | prop − raw rej. | rec_z0 − prop F1 | rec_z0 − prop rej. | limiares do P0 (F1 / rej. / os dois, de 5) |
+|---|---|---|---|---|---|
+| 8 | +0,038 (0,031–0,050) | +0,269 (0,170–0,366) | +0,002 | +0,013 | 0 / 2 / 0 |
+| 15 | +0,052 (0,041–0,062) | +0,381 (0,302–0,451) | +0,004 | +0,000 | 0 / 5 / 0 |
+| 69 | +0,116 (0,109–0,126) | +0,715 (0,641–0,766) | +0,001 | −0,009 | 5 / 5 / 5 |
+| 154 | +0,168 (0,161–0,172) | +0,775 (0,649–0,834) | +0,015 | +0,111 | 5 / 5 / 5 |
+| 343 | +0,273 (0,268–0,277) | +0,712 (0,624–0,827) | +0,018 | +0,152 | 5 / 5 / 5 |
+
+### "Caiu" pela regra do Q0 (contra o nível 8, mesma repetição; 4 de 5), aplicada mecanicamente
+
+| nível | raw F1 / rej. (repetições que caíram) | prop F1 / rej. | rec_z0 F1 / rej. |
+|---|---|---|---|
+| 15 | não (0) / não (0) | não / não | não / não |
+| 69 | não (0) / **caiu (5)** | não / não | não / não |
+| 154 | **caiu (5)** / **caiu (5)** | não / não | não / não |
+| 343 | **caiu (5)** / **caiu (5)** | não (0) / não (0) | não / não |
+
+Quedas médias da camada contra o esparso: F1 −0,001 / −0,003 / −0,018 / −0,033; rejeição +0,010 / −0,008 / −0,119 /
+−0,239 (15 / 69 / 154 / 343). **Onde a camada cai: a camada não caiu, nem em F1 nem em rejeição, até a densidade
+obtida (343 letras por janela, 300 por mm², 23,35 % de área).** A reconstrução também não caiu.
+
+### Figura (`docs/exp_resolucao/img/density_curve.png` e `.pdf`, `scripts/exp_resolucao/density_curve_figure.py`, só lê os csv)
+
+Eixo x: π D² σ em escala log, marcas com a razão de sobreposição de cada nível (0,242 / 0,405 / 0,907 / 0,995 /
+1,0000); em cima, objetos por mm² obtidos; painéis F1 e rejeição; crops, camada e reconstrução; círculos abertos e
+linha pontilhada = r1, cheios com barra e linha contínua = média, mínimo e máximo das 5 repetições.
+
+### α da família (`results_exp_resolucao/curve_alpha.csv`, `scripts/exp_resolucao/curve_alpha.py`)
+
+Calibrado recalculado por `train.calibrate_alpha` (as 32 imagens que o `train()` sorteou), como no
+`pilot_five_reps.py`; treinado do checkpoint (`fourier.alpha`). Os 25 calibrados recalculados batem com os que o log
+de cada treino imprimiu (6 casas). Distância (mm), média (mín.–máx.):
+
+| nível | calibrado | treinado | variação |
+|---|---|---|---|
+| 8 | 0,9965 (0,9943–0,9999) | 0,9647 (0,9629–0,9679) | −3,19 % (−3,70 a −2,93) |
+| 15 | 0,9976 (0,9971–0,9999) | 0,9655 (0,9594–0,9701) | −3,23 % |
+| 69 | 0,9993 (0,9971–0,9999) | 0,9716 (0,9677–0,9775) | −2,77 % |
+| 154 | 0,9999 (todos) | 0,9788 (0,9750–0,9874) | −2,11 % |
+| 343 | 0,9999 (todos) | 0,9835 (0,9795–0,9858) | −1,64 % |
+
+Nível 8, por repetição (α calibrado → mm; α treinado → mm; variação): r1 0,001056 → 0,9971; 0,001025 → 0,9679;
+−2,93 % · r2 0,001059 → 0,9999; 0,001020 → 0,9629; −3,70 % · r3 0,001053 → 0,9943; 0,001020 → 0,9629; −3,16 % ·
+r4 0,001053 → 0,9943; 0,001020 → 0,9631; −3,14 % · r5 0,001056 → 0,9971; 0,001024 → 0,9667; −3,04 %.
+
+`pytest`: 72 passam; `reproduce check`: 13/13.
