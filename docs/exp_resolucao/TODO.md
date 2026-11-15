@@ -684,3 +684,13 @@ errado".
   Q2, mandar ao escritor o parágrafo (8.4 e limitação vii; tirar o `\todo` das letras pequenas), compilar, PDF +
   diff finais, push do código, mensagem final com as pendências (título; nível mais denso; r2–r5 ou banco mais largo;
   abstract longo; Overleaf depois da revisão dele).**
+- **2026-11-15, 14:23 — pergunta nova do orientador (≈ 14:05): "No diagrama físico onde está a distância de 1mm que
+  motivou toda essa mudança? Pra mim n ficou muito claro".** Ele tinha razão: a Fig. `fig:setup` rotulava z como
+  19,25 mm e mostrava a camada real como "proposed route". Refeita (escritor: `d9a5b9d` no código, `d8511a6` no
+  paper; ajuste meu de uma caixa: `b17d529`, `23930ff`): seta de z com as duas distâncias, painel em escala (sensor,
+  bancada a 1,0 mm, CBMS 2024 a 19,25 mm, zoom do primeiro milímetro com a janela do sensor pela folha de dados e
+  "coverslip and air gap (not measured)"), três rotas. Legenda reescrita e uma frase no parágrafo "The bench".
+  Paper: 45 páginas, 0 indefinidas, 0 overfull. Figura enviada a ele (`entrega/diagrama_bancada_novo.png`).
+  R-S: conjunto gravado (5000 imagens, s = 2, mestre 16); resto em tmux `res_S_rest` desde 14:17.
+  **Próximo passo ao voltar: devolução do R-S (conferir; leitura do Q2; parágrafo no texto); PDF + diff finais;
+  push do código; mensagem final.**
