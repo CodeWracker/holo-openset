@@ -29,17 +29,22 @@
 #   newrec_reconstruct, newrec_train (prop with the default grid of alpha), newrec_evaluate
 #                      -> results_exp_resolucao/eval/base_newrec/<flow>_r1.json
 # Both:
+# REPETITION: REP=1..5 (default 1) for the steps *_train and *_evaluate, as pilot_1mm.sh does: models and evaluation
+# json of that repetition (a model or json that exists is never redone; r1 is untouched); logs of REP > 1:
+# logs/exp_resolucao/controls_<step>_r<REP>.log.  e.g.  REP=2 bash scripts/exp_resolucao/controls_1mm.sh 5 dense_train
 #   table              controls_checks.py table -> results_exp_resolucao/controls.csv (and the paired differences of
 #                      bench_1mm_dense to bench_1mm r1)
 set -e
 cd "$(dirname "$0")/../.."
 source scripts/exp_resolucao/env.sh
 GPU=$1; STEP=$2
-[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,33p' "$0"; exit 1; }
+[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,36p' "$0"; exit 1; }
+REP=${REP:-1}
+case "$REP" in 1|2|3|4|5) ;; *) echo "REP must be 1-5"; exit 1 ;; esac
 WORKERS=3          # scene builders (PIL, one thread each)
 DENSE=bench_1mm_dense
 NEWREC=base_newrec
-LOG=logs/exp_resolucao/controls_${STEP}.log
+LOG=logs/exp_resolucao/controls_${STEP}$([ "$REP" != 1 ] && echo _r$REP || true).log
 mkdir -p logs/exp_resolucao
 py() { echo "+ $(date '+%F %T') python -m holo_openset $*"; python -m holo_openset "$@"; }
 # the folders of the study, never the paper's
@@ -52,18 +57,18 @@ PHYS_BASE="oversample=2 margin=1728 reach=1024 depth_std=50e-6 depth_max=150e-6"
 train3() {   # set, extra arguments of prop
   for F in raw prop rec_z0; do
     X=""; [ $F = prop ] && X="$2"
-    py train --set $1 --flow $F --rep 1 --no-aux $X --device cuda:$GPU --threads 4
+    py train --set $1 --flow $F --rep $REP --no-aux $X --device cuda:$GPU --threads 4
   done
 }
 evaluate3() {
   for F in raw prop rec_z0; do
-    [ -f $HOLO_RESULTS/eval/$1/${F}_r1.json ] && { echo "exists ${F}_r1.json"; continue; }
-    py evaluate --set $1 --flow $F --rep 1 --device cuda:$GPU --threads 4
+    [ -f $HOLO_RESULTS/eval/$1/${F}_r$REP.json ] && { echo "exists ${F}_r$REP.json"; continue; }
+    py evaluate --set $1 --flow $F --rep $REP --device cuda:$GPU --threads 4
   done
 }
 
 {
-echo "start $(date '+%F %T') gpu $GPU step $STEP"
+echo "start $(date '+%F %T') gpu $GPU step $STEP rep $REP"
 python -c "from holo_openset import paths; print('data', paths.DATA, 'results', paths.RESULTS, 'models', paths.MODELS)"
 t0=$(date +%s)
 case "$STEP" in
