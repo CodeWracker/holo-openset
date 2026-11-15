@@ -90,7 +90,7 @@ def panel_c(ax):
         ax.scatter(d.fresnel, 100 * (1 - d.share_mean), s=6, c=[MUTED if big else '#b9b7b0'], zorder=2, lw=0)
     sb = pr.csv('sets_by_fresnel')
     for s, label, col, xy in [(pr.CBMS, 'letters of the\nCBMS geometry\n(19.25 mm)', ZC[19.25], (0.025, 22)),
-                              (pr.SPARSE, 'letters of the\n1.0 mm sets', ZC[1.0], (1.6, 72))]:
+                              (pr.PILOT, 'letters of the\n1.0 mm sets', ZC[1.0], (1.6, 72))]:
         r = sb[sb.set == s].iloc[0]
         ax.errorbar(r.fresnel_p50, 100 * r.outside_crop_p50,
                     xerr=[[r.fresnel_p50 - r.fresnel_p5], [r.fresnel_p95 - r.fresnel_p50]],
@@ -111,7 +111,67 @@ def panel_c(ax):
     ax.set_title('the relative size', fontsize=7.5)
 
 
+def diameter_mm(set_name=None):
+    """D of the axis of Q1 (hologram_diameter*_summary.json): the 1.0 mm sets by default, or the summary whose laws come
+    from set_name (the sets of the paper, measured by the same script), None if not measured."""
+    import json
+    for f in sorted(pr.RES.glob('hologram_diameter*summary.json')):
+        j = json.loads(f.read_text())
+        if (set_name is None and f.name == 'hologram_diameter_summary.json') or \
+                (set_name is not None and j.get('laws_from') == set_name):
+            d = j.get('D_ef_um', {}).get(j.get('axis'))
+            return d * 1e-3 if d else None
+    return None
+
+
+def curve_axes(ax, t, metric, ylabel, top=True):
+    """One panel of the density curve on the axis of Q1: x = pi D^2 sigma on a log scale (the mean number of
+    overlapping neighbours), ticks labelled with the share of overlapping holograms, the density on the top axis;
+    r1 at every level (open), the mean of five with its min-max where five exist (filled)."""
+    d_mm = diameter_mm()
+    for f in pr.FLOWS:
+        g = t[t.flow == f].sort_values('pi_D2_sigma')
+        if not len(g):
+            continue
+        five = g.n_reps == 5
+        y = np.where(five, g[f'{metric}_mean'], g[f'{metric}_r1'])
+        ax.plot(g.pi_D2_sigma, y, '-', color=COLORS[f], lw=1.0, zorder=2)
+        ax.plot(g.pi_D2_sigma, g[f'{metric}_r1'], 'o', mfc='white', mec=COLORS[f], ms=3.5, zorder=3)
+        if five.any():
+            h = g[five]
+            ax.errorbar(h.pi_D2_sigma, h[f'{metric}_mean'],
+                        yerr=[h[f'{metric}_mean'] - h[f'{metric}_min'], h[f'{metric}_max'] - h[f'{metric}_mean']],
+                        fmt='o', color=COLORS[f], ms=4, lw=0.8, capsize=1.5, zorder=4)
+    lv = t.drop_duplicates('level').sort_values('pi_D2_sigma')
+    ax.set_xscale('log')
+    ax.set_xticks(lv.pi_D2_sigma, [f'{100 * o:.0f}' if o < 0.995 else '>99' for o in lv.overlap])
+    ax.minorticks_off()
+    ax.set_xlabel('overlapping holograms (%; axis: $\\pi D^2\\sigma$, log)')
+    ax.set_ylabel(ylabel)
+    if top and d_mm:
+        k = np.pi * d_mm ** 2
+        sec = ax.secondary_xaxis('top', functions=(lambda x: x / k, lambda s_: s_ * k))
+        sec.set_xticks(lv.per_mm2, [f'{v:.0f}' for v in lv.per_mm2])
+        sec.minorticks_off()
+        sec.tick_params(labelsize=6)
+        sec.set_xlabel('objects per mm$^2$', fontsize=6.5)
+
+
 def panel_d(ax):
+    t = pr.csv('density_curve')
+    if len(t):                                   # the axis of Q1, from the table of the curve
+        curve_axes(ax, t, 'rejection', 'rejection of never-seen patterns')
+        cb, d_c = pr.evals(pr.CBMS), diameter_mm(pr.CBMS)
+        dens = pr.density(pr.CBMS)[0]
+        if d_c and dens:                         # the CBMS geometry on the same axis, with its own diameter
+            x = np.pi * d_c ** 2 * dens
+            for f in pr.FLOWS:
+                y = pr.value(cb, f, pr.REJ, pr.reps_mode(cb))
+                if y is not None:
+                    ax.plot(x, y, 'D', color=COLORS[f], mfc='white', ms=4, zorder=3)
+        ax.set_ylim(-0.03, 1.05)
+        ax.set_title('the density', fontsize=7.5, pad=14)
+        return
     fam = pr.family()
     groups = sorted({x['law'] for x in fam})
     uni = [g for g in groups if g[0] == 'uniform']            # the standard family of Q1, when it exists
@@ -128,8 +188,9 @@ def panel_d(ax):
             for x, y, p in zip(xs, ys, pts):
                 ax.plot(x, y, 'o', color=COLORS[f], mfc=COLORS[f] if p['mode'] == 5 else 'white', ms=4, zorder=3)
         if g != main and pts:
-            lab = f'depth uniform $\\pm${g[1]:g} $\\mu$m' if g[0] == 'uniform' else f'depth sd {g[1]:g} $\\mu$m'
-            ax.annotate(lab, xy=(pts[-1]['density'], 0.5), fontsize=5.5, color=MUTED)
+            lab = (f'depth uniform $\\pm${g[1]:g} $\\mu$m' if g[0] == 'uniform' else
+                   'nearly flat sample' if g[1] < 10 else f'depth sd {g[1]:g} $\\mu$m')
+            ax.annotate(lab, xy=(pts[0]['density'] * 1.6, 0.42), fontsize=5.5, color=MUTED, rotation=-28)
     cb = pr.evals(pr.CBMS)
     m = pr.reps_mode(cb)
     x = pr.cbms_equivalent_density()
@@ -150,21 +211,25 @@ def panel_d(ax):
 
 
 def panel_e(ax):
-    dt = pr.csv('depth_training')
-    lo, hi = dt.trained_um.min(), dt.trained_um.max()
-    conds = [(lo, lo), (lo, hi), (hi, hi), (hi, lo)]
-    labels = [f'{a:g}\n$\\to${b:g}' for a, b in conds]
-    off = {'raw': -0.15, 'prop': 0.0, 'rec_z0': 0.15}
-    for f in pr.FLOWS:
-        ys = []
-        for a, b in conds:
-            r = dt[(dt.flow == f) & np.isclose(dt.trained_um, a) & np.isclose(dt.tested_um, b)]
-            ys.append(float(r.f1.iloc[0]) if len(r) else np.nan)
-        ax.plot(np.arange(4) + off[f], ys, 'o', color=COLORS[f], ms=4)
-    ax.axvspan(0.5, 1.5, color=GRID, lw=0, zorder=0)
-    ax.set_xticks(range(4), labels)
+    """Open-set F1 against the depth law of the test, for the models trained on a nearly flat sample (open) and on the
+    standard law (filled), five repetitions each (depth_tests.csv)."""
+    dt = pr.csv('depth_tests')
+    dt = dt[dt.kind != 'diff']
+    tests = [('flat', 'nearly\nflat'), ('u50', 'standard\n(channel)'), ('wide', 'stress\ntest')]
+    off = {'raw': -0.2, 'prop': 0.0, 'rec_z0': 0.2}
+    for tr, mfc_filled, ls in [('flat', False, ':'), ('u50', True, '-')]:
+        for f in pr.FLOWS:
+            ys = []
+            for te, _ in tests:
+                r = dt[(dt.trained == tr) & (dt.tested == te) & (dt.flow == f)]
+                ys.append(float(r.f1_mean.iloc[0]) if len(r) else np.nan)
+            xs = np.arange(len(tests)) + off[f]
+            ax.plot(xs, ys, ls, color=COLORS[f], lw=0.8)
+            ax.plot(xs, ys, 'o', color=COLORS[f], mfc=COLORS[f] if mfc_filled else 'white', ms=4)
+    ax.axvspan(1.5, 2.5, color=GRID, lw=0, zorder=0)
+    ax.set_xticks(range(len(tests)), [t[1] for t in tests])
     ax.tick_params(axis='x', labelsize=6)
-    ax.set_xlabel('depth spread (sd, $\\mu$m): training $\\to$ test')
+    ax.set_xlabel('depth law of the test sample')
     ax.set_ylabel('open-set F1')
     ax.set_title('the depth', fontsize=7.5)
 
@@ -177,6 +242,9 @@ def legend(ax):
           Line2D([], [], color=MUTED, marker='o', mfc='white', lw=0, ms=4, label='(d) one repetition (r1)'),
           Line2D([], [], color=MUTED, marker='o', lw=0, ms=4, label='(d) mean of five repetitions'),
           Line2D([], [], color=MUTED, marker='D', mfc='white', lw=0, ms=4, label='(d) CBMS geometry, r1'),
+          Line2D([], [], color=MUTED, marker='o', mfc='white', ls=':', lw=0.8, ms=4,
+                 label='(e) trained on a nearly flat sample'),
+          Line2D([], [], color=MUTED, marker='o', ls='-', lw=0.8, ms=4, label='(e) trained on the standard law'),
           Line2D([], [], color=ZC[19.25], lw=1.3, label='(b) 19.25 mm (CBMS 2024)'),
           Line2D([], [], color=ZC[1.0], lw=1.3, label='(b) 1.0 mm (bench)'),
           Line2D([], [], color=ZC[19.25], marker='v', mfc='white', lw=0, ms=5,
