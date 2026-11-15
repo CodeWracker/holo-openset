@@ -1,0 +1,321 @@
+{
+ "curve_u50_robust/z07": {
+  "set": "curve_u50_robust/z07",
+  "ref": "curve_u50_L008",
+  "split": "test",
+  "physics_json_differences": {
+   "top": {
+    "split": [
+     "test",
+     null
+    ],
+    "like": [
+     "/home/jovyan/compartilhado/ralph/openset-microscopy/holo-openset/data/curve_u50_L008",
+     null
+    ]
+   },
+   "physics": {
+    "z0": [
+     0.0007,
+     0.001
+    ]
+   }
+  },
+  "physics_only_z0": true,
+  "depth_law": {
+   "depth_std": 2.6e-06,
+   "depth_max": 7.8e-06,
+   "depth_uniform": 2.5e-05,
+   "dust_depths": [
+    0.001,
+    -0.0002
+   ]
+  },
+  "depth_law_equal_ref": true,
+  "annotations": {
+   "rows": 6371,
+   "rows_ref": 6371,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "det_idx": true,
+    "classe": true,
+    "class_id": true,
+    "x0": true,
+    "y0": true,
+    "x1": true,
+    "y1": true,
+    "font_size": true,
+    "font_name": true,
+    "rotation": true,
+    "absorption": true,
+    "phase": true,
+    "depth": true,
+    "bx0": true,
+    "by0": true,
+    "bx1": true,
+    "by1": true,
+    "filename": true,
+    "split": true
+   },
+   "session_z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999016,
+    "ratio_max": 0.7000000000000535,
+    "max_rel_dev": 1.4055423491754482e-13
+   }
+  },
+  "metadata": {
+   "rows": 800,
+   "rows_ref": 800,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "filename": true,
+    "label_filename": true,
+    "split": true,
+    "session": true,
+    "n_letters": true,
+    "n_outside": true,
+    "n_dust": true,
+    "classes": true
+   },
+   "z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999499,
+    "ratio_max": 0.70000000000005,
+    "max_rel_dev": 7.149836278586008e-14
+   },
+   "z_mm": {
+    "min": 0.6924897708347,
+    "mean": 0.6992746044187749,
+    "max": 0.7079781567392001
+   }
+  },
+  "sessions": {
+   "rows": 50,
+   "rows_ref": 50,
+   "same_columns": true,
+   "columns_equal": {
+    "session": true,
+    "split": true,
+    "beam_waist": true,
+    "beam_dx": true,
+    "beam_dy": true
+   },
+   "z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999197,
+    "ratio_max": 0.7000000000000501,
+    "max_rel_dev": 1.1468603844377867e-13
+   }
+  },
+  "dust": {
+   "rows": 3772,
+   "rows_ref": 3772,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "x0": true,
+    "y0": true,
+    "x1": true,
+    "y1": true,
+    "depth": true,
+    "absorption": true,
+    "phase": true
+   }
+  },
+  "camera": {
+   "prnu_equal": true,
+   "window_dust_n": 6,
+   "window_dust_equal": true,
+   "seed": 7,
+   "layout_params_equal": true
+  },
+  "backgrounds": {
+   "sessions": [
+    0,
+    5,
+    12,
+    13,
+    14,
+    37,
+    44,
+    45
+   ],
+   "equal_to_ref": false,
+   "max_abs_diff_dn": 1.875,
+   "mean_level": 102.38420104980469,
+   "mean_level_ref": 102.38421630859375
+  },
+  "rebuilt": {
+   "image_id": 0,
+   "row": 0,
+   "session": 0,
+   "n_letters": 3,
+   "equal_stored": true,
+   "max_abs_dn": 0,
+   "stored_minus_ref_rms_dn": 3.6123898383102477,
+   "stored_minus_ref_max_abs_dn": 76.0
+  }
+ },
+ "curve_u50_robust/z07_val": {
+  "set": "curve_u50_robust/z07_val",
+  "ref": "curve_u50_L008",
+  "split": "val",
+  "physics_json_differences": {
+   "top": {
+    "split": [
+     "val",
+     null
+    ],
+    "like": [
+     "/home/jovyan/compartilhado/ralph/openset-microscopy/holo-openset/data/curve_u50_L008",
+     null
+    ]
+   },
+   "physics": {
+    "z0": [
+     0.0007,
+     0.001
+    ]
+   }
+  },
+  "physics_only_z0": true,
+  "depth_law": {
+   "depth_std": 2.6e-06,
+   "depth_max": 7.8e-06,
+   "depth_uniform": 2.5e-05,
+   "dust_depths": [
+    0.001,
+    -0.0002
+   ]
+  },
+  "depth_law_equal_ref": true,
+  "annotations": {
+   "rows": 5711,
+   "rows_ref": 5711,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "det_idx": true,
+    "classe": true,
+    "class_id": true,
+    "x0": true,
+    "y0": true,
+    "x1": true,
+    "y1": true,
+    "font_size": true,
+    "font_name": true,
+    "rotation": true,
+    "absorption": true,
+    "phase": true,
+    "depth": true,
+    "bx0": true,
+    "by0": true,
+    "bx1": true,
+    "by1": true,
+    "filename": true,
+    "split": true
+   },
+   "session_z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999165,
+    "ratio_max": 0.7000000000000528,
+    "max_rel_dev": 1.192379528447418e-13
+   }
+  },
+  "metadata": {
+   "rows": 700,
+   "rows_ref": 700,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "filename": true,
+    "label_filename": true,
+    "split": true,
+    "session": true,
+    "n_letters": true,
+    "n_outside": true,
+    "n_dust": true,
+    "classes": true
+   },
+   "z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999401,
+    "ratio_max": 0.7000000000000498,
+    "max_rel_dev": 8.548717289613705e-14
+   },
+   "z_mm": {
+    "min": 0.6964566780674,
+    "mean": 0.7011714002177143,
+    "max": 0.7075840940145
+   }
+  },
+  "sessions": {
+   "rows": 50,
+   "rows_ref": 50,
+   "same_columns": true,
+   "columns_equal": {
+    "session": true,
+    "split": true,
+    "beam_waist": true,
+    "beam_dx": true,
+    "beam_dy": true
+   },
+   "z": {
+    "ratio_expected": 0.7,
+    "ratio_min": 0.6999999999999197,
+    "ratio_max": 0.7000000000000501,
+    "max_rel_dev": 1.1468603844377867e-13
+   }
+  },
+  "dust": {
+   "rows": 3374,
+   "rows_ref": 3374,
+   "same_columns": true,
+   "columns_equal": {
+    "image_id": true,
+    "x0": true,
+    "y0": true,
+    "x1": true,
+    "y1": true,
+    "depth": true,
+    "absorption": true,
+    "phase": true
+   }
+  },
+  "camera": {
+   "prnu_equal": true,
+   "window_dust_n": 6,
+   "window_dust_equal": true,
+   "seed": 7,
+   "layout_params_equal": true
+  },
+  "backgrounds": {
+   "sessions": [
+    29,
+    31,
+    35,
+    38,
+    40,
+    47,
+    49
+   ],
+   "equal_to_ref": false,
+   "max_abs_diff_dn": 1.875,
+   "mean_level": 102.69804382324219,
+   "mean_level_ref": 102.6980209350586
+  },
+  "rebuilt": {
+   "image_id": 2900,
+   "row": 0,
+   "session": 29,
+   "n_letters": 11,
+   "equal_stored": true,
+   "max_abs_dn": 0,
+   "stored_minus_ref_rms_dn": 6.346740324917738,
+   "stored_minus_ref_max_abs_dn": 126.0
+  }
+ }
+}
