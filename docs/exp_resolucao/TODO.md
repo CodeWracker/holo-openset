@@ -389,7 +389,7 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   Executor "densidade".
 - [x] **R-J.** (13:46, conferido por mim contra `eval/curve_u50_L008/bank_jit_r1.json` e
   `robustness_curve_u50_L008_bank_jit.csv`) Banco focal, r1: **não aguenta** pela regra do Q2. F1 0,981 a 1,0 mm;
-  0,650 a 0,9 mm (−0,331) e 0,678 a 1,1 mm (−0,303); rejeição 0,994 / 0,997; acerto em fechado 0,972 / 0,973;
+  0,650 a 0,9 mm (−0,330) e 0,678 a 1,1 mm (−0,303); rejeição 0,994 / 0,997; acerto em fechado 0,972 / 0,973;
   acerto das conhecidas 0,506 / 0,530 (o que cai é o limiar, não a separação). Sem recalibrar ele cai menos que a
   camada (0,399 / 0,301) e a reconstrução (0,226 / 0,268); fica 0,32 / 0,29 abaixo da reconstrução recalibrada.
   A 0,7 mm rejeita tudo. Planos depois do treino: 0,970–1,029 mm (o banco estreitou). Tabela:
