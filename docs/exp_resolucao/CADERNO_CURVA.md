@@ -324,3 +324,31 @@ limiar; não escolhe nada.
 Sem gravar holograma e sem treinar: o mesmo teste de `curve_feasibility_343.csv` para 514 e 771 letras por janela
 (450 e 675 por mm²): letras pedidas, colocadas, puladas e área coberta nas mesmas cenas. Só informa a decisão dele;
 nenhum nível novo é gravado sem a palavra dele.
+
+## 2026-11-15, 16:59 — Q4: os dois controles do conjunto de 2 mm passam a cinco repetições (responsável)
+
+**O que saiu do Q3-D em r1 (conferido por mim contra `eval/small_near_ctl{N,P}/` e refazendo a interpolação):**
+com a faixa de N_F da família padrão (D-N) os crops voltam para a curva (0,916 / 0,530, contra R_curva 0,908 / 0,516
+e R_reg 0,799 / 0,120); com a lei de profundidade padrão (D-P) não saem do lugar (0,803 / 0,136). As duas previsões
+registradas valeram. Na mesma repetição, a reconstrução do D-N rejeitou 0,849 (0,954 no conjunto regravado), sem
+critério para isso.
+
+**Mudança de plano, escrita antes de rodar:** no Q3 escrevi que não rodaria r2–r5 dos controles sem perguntar. Levanto
+essa trava para r2–r5 e só para ela, porque (i) o resultado do D-N vai sustentar uma frase do paper que explica um
+desvio, e uma repetição é menos do que o paper usa em todo o resto; (ii) a rejeição da reconstrução no D-N em r1
+pede as outras repetições para saber se é da repetição ou do conjunto; (iii) o orientador escreveu às ≈ 15:50 "tempo
+de gpu não é um problema, faça o necessário pela qualidade da pesquisa". Aviso a ele na entrega. Os outros fatores
+(a distância sozinha; qual ponta da faixa de tamanhos pesa) continuam sem rodar.
+
+- **O que roda:** r2 a r5 de `raw`, `prop` e `rec_z0` em `small_near_ctlN` e `small_near_ctlP`, mesma receita
+  (`--no-aux`), pastas da etapa. Os modelos de r1 não são retreinados nem relidos.
+- **Leitura com cinco repetições, fixada agora, só com os crops:** na repetição k, R_reg(k) é o par (F1, rejeição)
+  dos crops do `small_near_newrec` nessa repetição e R_curva(k) o dos crops da família padrão na sobreposição do
+  controle, nessa repetição (interpolação em log(π D² σ) entre os níveis 15 e 69). O controle "volta para a curva"
+  na repetição k se ficar mais perto de R_curva(k) que de R_reg(k) nas duas métricas. **O fator explica o desvio**
+  se isso acontecer em ≥ 4 de 5 repetições; **não explica** se, em ≥ 4 de 5, o controle ficar mais perto de R_reg(k)
+  nas duas; o resto é inconclusivo. Reporto também as médias de cinco e as distâncias médias.
+- **Sem critério, ao lado:** camada e reconstrução dos dois controles, média de cinco, mínimo e máximo, contra as do
+  `small_near_newrec` (0,973 / 0,985 e 0,974 / 0,985, cinco repetições).
+- **Previsão registrada:** D-N explica em ≥ 4 de 5; D-P não explica em ≥ 4 de 5; a rejeição de 0,849 da reconstrução
+  no D-N não se repete na média (palpite, sem critério).
