@@ -435,11 +435,33 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
 - [x] **S-titulo.** (16:03; paper `0bc6e5a`; compila em 45 páginas, 0 indefinidas, 0 overfull; o abstract continua na página 1) Título novo no `rewrite/inversion` (`main.tex`, linha 43): "Open-Set Recognition of Interference
   Patterns on Lensless Holograms: Why Crops of the Raw Hologram Fail, and What a Propagation Step Costs from a
   Window to the Whole Field of View". Conferir outros lugares que repetem o título.
-- [ ] **S-C.** (executor da densidade) Coluna de 2 mm: dez fluxos × r1–r5 no `small_near_newrec` (47 treinos novos),
+- [x] **S-C.** (17:00, conferido por mim contra os 50 json de `eval/small_near_newrec/` e os de `results/eval/
+  small_near`) **A coluna refeita confirma a do paper; a previsão valeu** (nenhum F1 médio muda mais de 0,02; o
+  maior: crops +0,013). F1 novo / do paper: crops 0,806 / 0,793 (rejeição 0,191 / 0,153; fechado 0,896 / 0,888);
+  camada real 0,951 / 0,944; complexa 0,949 / 0,955; Wiener 0,964 / 0,966; camada de propagação 0,973 / 0,972
+  (rejeição 0,985 / 0,963); banco (5) 0,970 / 0,977; banco (7) 0,974 / 0,972; reconstrução 0,974 / 0,974 (rejeição
+  0,985 / 0,969); autofoco 0,975 / 0,977; autofoco + gêmea 0,977 / 0,976. Tabela:
+  `small_near_newrec_five_reps.csv`. A 19,25 mm a amostragem do sensor basta para as letras pequenas (par (1, 2)
+  máx. 0,79 %; nativa contra s = 2: 0,5–0,8 %): nada regravado. FALTA: texto (escritor, parte 2, acionado).
+  (Texto original do item:) Coluna de 2 mm: dez fluxos × r1–r5 no `small_near_newrec` (47 treinos novos),
   tabela ao lado da coluna do paper; conferência nativa contra convergida a 19,25 mm para as letras pequenas.
-- [ ] **S-D.** (executor da densidade) Dois controles em r1 para o conjunto fora da curva: D-N (faixa de N_F da
+- [~] **S-D.** (17:00, r1 conferido por mim contra `eval/small_near_ctl{N,P}/` e refazendo a interpolação)
+  **r1: a faixa de N_F explica, a lei de profundidade não; as duas previsões valeram.** D-N (fontes × 0,3223; N_F
+  0,295 / 0,544 / 0,979; sobreposição 0,451): crops 0,916 / 0,530, R_curva 0,908 / 0,516, R_reg 0,799 / 0,120;
+  camada 0,976 / 0,990; reconstrução 0,961 / 0,849 (estranho, sem critério). D-P (uniforme ±25 µm): crops 0,803 /
+  0,136; camada 0,978 / 0,997; reconstrução 0,974 / 0,998. Estratos (modelo de crops r1 do regravado): as não
+  vistas são aceitas em todo estrato (rejeição 0,05–0,21); as conhecidas pequenas (12–22 px) acertam 0,713 contra
+  0,971 e 0,996. Arquivos: `small_near_factors.csv`, `_reading.json`, `small_near_newrec_strata.csv`.
+  **Q4 (17:00, `273c558`): os dois controles vão a cinco repetições** (levantei a minha trava do Q3 só para r2–r5;
+  leitura de cinco fixada antes; aviso o orientador na entrega). RODANDO (executor da densidade). FALTA: conferir
+  `small_near_factors_five_reps.csv`; texto (escritor, parte 3: 8.4, limitação vii, e a frase do mecanismo com o
+  limite de N_F; NÃO mexer na frase-tese).
+  (Texto original do item:) Dois controles em r1 para o conjunto fora da curva: D-N (faixa de N_F da
   família padrão) e D-P (lei de profundidade padrão); leitura estratificada do modelo de crops que já existe.
-- [ ] **S-L.** (executor da densidade) Quanto o gerador coloca a 450 e 675 por mm² (sem holograma, sem treino).
+- [x] **S-L.** (17:00, conferido contra `curve_feasibility_dense.csv`, 20 cenas) A 450 por mm² (514 por janela) o
+  gerador coloca quase tudo (512 por janela; 0,75 % do enchimento pulado; 34 % da área coberta). A 675 por mm²
+  satura em ≈ 656 por janela (≈ 575 por mm²; 15 % pulado; 42 % coberta). Vai para o orientador decidir o #3.
+  (Texto original do item:) Quanto o gerador coloca a 450 e 675 por mm² (sem holograma, sem treino).
 - [x] **S-J.** (16:34, conferido por mim: médias, veredito e diferenças refeitos a partir de `eval/curve_u50_L008/
   bank*_r*.json`, `robustness_curve_u50_L008_banks_*.csv` e `distance_tests_u50_rows.csv`; batem com
   `banks_distance.csv`) **Nenhum banco aguenta a mudança de 10 % pela regra** (≥ 4 de 5): `bank_jit` 0 de 5,
@@ -783,3 +805,12 @@ errado".
   conferir contra `eval/small_near_newrec/`, `small_near_newrec_five_reps.csv`, `small_near_factors*.{csv,json}`,
   `small_near_newrec_strata.csv`, `curve_feasibility_dense.csv`; depois mandar ao escritor a coluna de 2 mm e o
   diagnóstico; revisar; compilar; PDF + diff; push do código (GitHub, sem merge); mensagem final.**
+- **2026-11-15, 17:00 — S-C, S-L e o r1 do S-D conferidos; Q4 aberto.** Coluna de 2 mm refeita confirma a do paper.
+  Controles em r1: a faixa de N_F explica o conjunto fora da curva; a profundidade não. Decidi levar os dois
+  controles a cinco repetições (Q4, `273c558`) antes de escrever a explicação. Escritor: parte 1 (banco focal)
+  feita e revisada (paper `0c2392c`, 46 páginas); parte 2 (coluna de 2 mm) em andamento. **Próximo passo ao
+  voltar: (1) devolução do executor da densidade com `small_near_factors_five_reps.csv` → conferir; (2) devolução
+  do escritor (parte 2) → revisar; (3) mandar ao escritor a parte 3 (diagnóstico: 8.4, limitação vii, frase do
+  mecanismo com o limite de N_F, sem tocar na frase-tese); (4) `pytest` + `reproduce check`, compilar, PDF + diff,
+  push do código (GitHub, sem merge), mensagem final com: aviso do Q4, pergunta do #3 com a viabilidade, e o que
+  segue esperando (Overleaf, frase-tese, abstract, diagrama, arquivos dele).**
