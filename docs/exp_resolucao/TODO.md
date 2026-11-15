@@ -395,7 +395,7 @@ Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
   A 0,7 mm rejeita tudo. Planos depois do treino: 0,970–1,029 mm (o banco estreitou). Tabela:
   `results_exp_resolucao/bank_jit_distance.csv`; caderno: D3 de `CADERNO_CURVA_DISTANCIA.md`. FALTA: pôr no texto
   (8.6 e limitação iii), por macro, dizendo que é uma repetição.
-- [ ] **R-txt.** Texto no `rewrite/inversion` (executor da escrita):
+- [x] **R-txt.** (feito e revisado; R-J já no texto; falta só o parágrafo de R-S) Texto no `rewrite/inversion` (executor da escrita):
   (a) abstract e conclusão dizem com todas as letras: a reconstrução calibrada é a melhor rota no denso e quando z
   muda; a camada é a alternativa que se calibra sozinha; nada de vender a camada como superior (conferir intro e
   discussão);
@@ -675,3 +675,12 @@ errado".
   Em curso: escritor pondo R-J no texto (8.6, RQ2 "The focal stack", limitação iii); executor da densidade em R-S.
   **Próximo passo ao voltar: revisar a devolução do escritor (R-J); esperar R-S, conferir, aplicar a leitura do Q2,
   mandar ao escritor; testes; compilar; PDF + diff; push do código (só GitHub).**
+- **2026-11-15, 13:52 — PDF intermediário e diff enviados ao orientador** (`scratchpad/entrega/paper_inversao_28f9158.pdf`,
+  `latex_53ede2f..28f9158.diff`): R-txt e R-J no texto (8.6, RQ2, limitação iii). Testes refeitos por mim: `pytest`
+  78 (72 + 6 novos do `FresnelLayout`), `reproduce check` 13/13. Código enviado de novo ao GitHub
+  (`exp/resolucao-fonte`, sem merge). Overleaf: nada. O abstract cabe na página 1, com ≈ 450 palavras (avisar).
+  Falta: R-S (gravando em tmux `res_S_record`; convergência a 2,0 mm passou com s = 2, máx. 0,80 %). **Próximo passo
+  ao voltar: devolução do R-S → conferir contra `eval/small_near*/` e `small_near_control.csv`, aplicar a leitura do
+  Q2, mandar ao escritor o parágrafo (8.4 e limitação vii; tirar o `\todo` das letras pequenas), compilar, PDF +
+  diff finais, push do código, mensagem final com as pendências (título; nível mais denso; r2–r5 ou banco mais largo;
+  abstract longo; Overleaf depois da revisão dele).**
