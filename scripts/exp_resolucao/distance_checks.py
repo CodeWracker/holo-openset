@@ -2,7 +2,8 @@
 scripts/exp_resolucao/distance_tests.sh, step `checks`). For each set of --sets (a split of --ref recorded again with
 simulate like and only z0 changed), against --ref:
 
-  physics.json   the only differences: physics.z0 (= --z0) and the keys like / split
+  physics.json   the only differences: physics.z0 (= --z0) and the keys like / split; the depth law (every physics
+                 field with 'depth' in its name) written out and compared with that of --ref
   annotations    the rows of that split of --ref, every column equal except z; and z - depth (the session distance)
                  equal to that of --ref times z0 / z0_ref (the session draws are relative, so they must scale exactly)
   metadata.csv   the rows of that split, every column equal except z, and z in the same ratio
@@ -78,6 +79,9 @@ def check(name, ref, z0, dev):
     res['physics_json_differences'] = dict(top=top, physics=ph)
     res['physics_only_z0'] = set(ph) == {'z0'} and abs(cfg['physics']['z0'] - z0) < 1e-12 and set(top) <= {'like', 'split'}
     ratio = cfg['physics']['z0'] / rcfg['physics']['z0']
+    # the depth law the set was recorded with (every physics field with 'depth' in its name), and that of --ref
+    res['depth_law'] = {k: v for k, v in cfg['physics'].items() if 'depth' in k}
+    res['depth_law_equal_ref'] = res['depth_law'] == {k: v for k, v in rcfg['physics'].items() if 'depth' in k}
 
     A, R = pd.read_csv(root / 'annotations.csv'), pd.read_csv(rroot / 'annotations.csv')
     R = R[R.split == split]

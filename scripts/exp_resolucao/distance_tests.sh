@@ -5,6 +5,12 @@
 # (record_07, robust_a, robust_b), with the distance as a parameter:
 #   ZROB=09|11 [REP=1..5] bash scripts/exp_resolucao/distance_tests.sh <physical GPU> <step>
 # 0.7 mm is NOT run here: its sets, rows and json exist and stay those of pilot_1mm.sh (ZROB=07 is refused).
+# Round d2 (CADERNO_CURVA.md Q1): FAM=u50 runs the same steps on the five models of the sparse level of the standard
+# family (curve_u50_L008: depth uniform over the 50 um channel) at ZROB=07|09|11, the recordings inheriting the
+# physics of that set (only z0 changes): data/curve_u50_robust/z<ZROB>[_val], rows in
+# robustness_curve_u50_L008_dist.csv, recal_curve_u50_L008_z<ZROB>.json, distance_checks_u50_z<ZROB>.json, table
+# distance_tests_u50.csv (distance_tests.py --family u50), logs dist_u50_<step>_z<ZROB>[_r<REP>].log.
+# FAM=pilot (the default) is round d1, unchanged.
 # Steps (each one skips what exists; log logs/exp_resolucao/dist_<step>_z<ZROB>[_r<REP>].log with start, end, seconds):
 #   record     the test and validation splits of bench_1mm recorded again at z0 = ZROB/10 mm, exactly as record_07
 #              (simulate like: same scenes, seeds, sessions, camera and recorder; the session distance keeps its
@@ -27,22 +33,27 @@ set -e
 cd "$(dirname "$0")/../.."
 source scripts/exp_resolucao/env.sh
 GPU=$1; STEP=$2
-[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,29p' "$0"; exit 1; }
-SET=bench_1mm
-ROBUST=bench_1mm_robust
+[ -n "$GPU" ] && [ -n "$STEP" ] || { sed -n '2,35p' "$0"; exit 1; }
+FAM=${FAM:-pilot}
+case "$FAM" in
+  pilot) SET=bench_1mm; ROBUST=bench_1mm_robust; OUTCSV=robustness_bench_1mm_dist; CHK=distance_checks; LP=dist ;;
+  u50) SET=curve_u50_L008; ROBUST=curve_u50_robust; OUTCSV=robustness_curve_u50_L008_dist; CHK=distance_checks_u50
+       LP=dist_u50 ;;
+  *) echo "FAM must be pilot or u50"; exit 1 ;;
+esac
 WORKERS=3          # scene builders (PIL, one thread each), as record_07
-OUTCSV=robustness_bench_1mm_dist
 REP=${REP:-1}
 case "$REP" in 1|2|3|4|5) ;; *) echo "REP must be 1-5"; exit 1 ;; esac
 ZROB=${ZROB:-}
 case "$ZROB" in
   09) ZM=0.9e-3 ;;
   11) ZM=1.1e-3 ;;
-  07) echo "0.7 mm is pilot_1mm.sh (record_07, robust_a, robust_b): its files exist and are not redone"; exit 1 ;;
+  07) if [ "$FAM" = u50 ]; then ZM=0.7e-3; else
+      echo "0.7 mm is pilot_1mm.sh (record_07, robust_a, robust_b): its files exist and are not redone"; exit 1; fi ;;
   *) if [ "$STEP" = table ]; then ZROB=all; else echo "ZROB must be 09 or 11"; exit 1; fi ;;
 esac
 V=z$ZROB
-LOG=logs/exp_resolucao/dist_${STEP}_z${ZROB}$([ "$REP" != 1 ] && echo _r$REP || true).log
+LOG=logs/exp_resolucao/${LP}_${STEP}_z${ZROB}$([ "$REP" != 1 ] && echo _r$REP || true).log
 mkdir -p logs/exp_resolucao
 py() { echo "+ $(date '+%F %T') python -m holo_openset $*"; python -m holo_openset "$@"; }
 # rows of robustness_bench_1mm_dist.csv for this repetition, variant and flows exist already?
@@ -54,7 +65,7 @@ sys.exit(0 if t is not None and need <= set(zip(t[t.rep == $REP].variant, t[t.re
 }
 
 {
-echo "start $(date '+%F %T') gpu $GPU step $STEP z $ZROB rep $REP"
+echo "start $(date '+%F %T') gpu $GPU family $FAM set $SET step $STEP z $ZROB rep $REP"
 python -c "from holo_openset import paths; print('data', paths.DATA, 'results', paths.RESULTS, 'models', paths.MODELS)"
 t0=$(date +%s)
 case "$STEP" in
@@ -66,7 +77,7 @@ case "$STEP" in
     done
     ;;
   checks)
-    J=$HOLO_RESULTS/distance_checks_$V.json
+    J=$HOLO_RESULTS/${CHK}_$V.json
     [ -f $J ] && { echo "exists $J"; exit 0; }
     python scripts/exp_resolucao/distance_checks.py --sets $ROBUST/$V $ROBUST/${V}_val --ref $SET --z0 $ZM \
            --out $J --device cuda:$GPU
@@ -79,7 +90,7 @@ case "$STEP" in
            --flows raw prop rec_z0 --rep $REP --out $OUTCSV --device cuda:$GPU --threads 4
     ;;
   robust_b)
-    J=$HOLO_RESULTS/recal_bench_1mm_$V.json
+    J=$HOLO_RESULTS/recal_${SET}_$V.json
     [ -f $J ] || python scripts/exp_resolucao/recalibrate_distance.py --set $ROBUST/${V}_val --ref $SET --n 32 \
                    --extend 12 --out $J --device cuda:$GPU
     Z=$(python scripts/exp_resolucao/recalibrate_distance.py --read $J z)
@@ -98,10 +109,11 @@ case "$STEP" in
            --rec-tag _recal_ratio --suffix +recal_ratio --device cuda:$GPU --threads 4
     ;;
   rep)
-    for S in robust_a robust_b; do ZROB=$ZROB REP=$REP bash "$0" $GPU $S > /dev/null; done
+    for S in robust_a robust_b; do FAM=$FAM ZROB=$ZROB REP=$REP bash "$0" $GPU $S > /dev/null; done
     ;;
   table)
-    python scripts/exp_resolucao/distance_tests.py
+    if [ "$FAM" = u50 ]; then python scripts/exp_resolucao/distance_tests.py --family u50
+    else python scripts/exp_resolucao/distance_tests.py; fi
     ;;
   *) echo "unknown step $STEP"; exit 1 ;;
 esac
