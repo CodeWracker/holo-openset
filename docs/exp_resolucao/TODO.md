@@ -382,7 +382,8 @@ Executores (Opus, high), lançados às ≈ 08:15 (IDs internos em `scratchpad/ag
 
 Pré-registro: entrada Q2 de `CADERNO_CURVA.md` (13:37), antes de rodar.
 
-- [ ] **R-push.** `exp/distancia-autofocus` e `exp/resolucao-fonte` para o GitHub, como branches, SEM merge.
+- [x] **R-push.** (13:39) `exp/distancia-autofocus` e `exp/resolucao-fonte` para o GitHub, como branches, SEM merge.
+  Commits posteriores desta fase: enviar de novo no fim (`git push origin exp/resolucao-fonte`).
   Overleaf: NADA (o remoto do paper é só o Overleaf, ligado ao `main`); só depois de o orientador revisar o PDF.
 - [ ] **R-S.** Controle das letras pequenas a 2 mm (`small_near_newrec`, r1, três fluxos; referência retreinada).
   Executor "densidade".
@@ -644,3 +645,8 @@ errado".
   com a camada de propagação; texto sem vender a camada como superior; banco focal a 0,9 e 1,1 mm só em r1.
   **Próximo passo ao voltar: ver as devoluções dos executores (densidade: R-S; distância: R-J; escrita: R-txt;
   figura: R-viz), conferir contra os arquivos, integrar no texto, compilar e mandar PDF + diff.**
+- **2026-11-15, 13:42 — push do código feito; quatro executores lançados** (R-S, R-J, R-txt, R-viz; IDs em
+  `scratchpad/agentes.md`). GPUs combinadas: densidade 4–5, distância 6, figura do quadro inteiro 7. **Próximo passo
+  ao voltar: esperar as devoluções, conferir cada uma contra os arquivos; depois mandar ao executor da escrita os
+  resultados de R-S e R-J para o texto; compilar; PDF + diff ao orientador; push final só do código.** Resposta do
+  título (R-titulo): o trecho "with a Learnable Fourier Layer" é o que envelhece; propor opções, não mudar sozinho.
