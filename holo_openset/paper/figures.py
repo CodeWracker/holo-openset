@@ -18,7 +18,8 @@ from holo_openset.paper.style import (COLORS, INK, KNOWN, LABELS, MUTED, ORDER, 
 from holo_openset.reconstruct import (COARSE, N_FINE, Holograms, backprop, channels, kernel, normalise, per_object,
                                       remove_twin, scan)
 from holo_openset.sim.letters import FONTS, letter_mask
-from holo_openset.sim.physics import IDEAL, PIXEL, WAVELENGTH, Z0, Physics, freq_sq, record, sensor_intensity
+from holo_openset.sim.physics import (FULL_FRAME, IDEAL, PIXEL, WAVELENGTH, Z0, Physics, freq_sq, record,
+                                      sensor_intensity)
 from holo_openset.sim.scene import camera, make_scene, session
 
 DEV = torch.device(os.environ.get('HOLO_PAPER_DEVICE', 'cpu'))
@@ -51,25 +52,52 @@ def _note(key, value):
 
 
 # ------------------------------------------------------------------------------------------------ formation
+def _bench_numbers():
+    """The two sample-to-sensor distances and the letter sizes of the two families of sets, read from the files that
+    define them: the nominal distance of the package (the geometry of CBMS 2024), data/<set>/physics.json of the sets
+    at the distance of the bench, and the letter sides (5th-95th percentile) of results_exp_resolucao/sets_by_fresnel.csv.
+    Anything missing is None and is not drawn."""
+    out = dict(z_cbms=Z0, z_bench=None, side_cbms=None, side_bench=None)
+    for name in ('curve_u50_L008', 'bench_1mm'):
+        f = paths.DATA / name / 'physics.json'
+        if f.exists():
+            out['z_bench'] = json.load(open(f))['physics']['z0']
+            break
+    f = paths.PROJECT / 'results_exp_resolucao' / 'sets_by_fresnel.csv'
+    if f.exists():
+        t = pd.read_csv(f)
+        for key, name in (('side_cbms', 'realistic'), ('side_bench', 'bench_1mm')):
+            r = t[t.set == name]
+            if len(r):
+                out[key] = (r.side_px_p5.iloc[0] * PIXEL, r.side_px_p95.iloc[0] * PIXEL)
+    return out
+
+
 def fig_setup(frame=0, window=(1060, 1640)):
-    """The bench (top left), what it records: a full frame of the sensor and a 640x640 window of it (top right), and
-    the two routes from the recording to the decision (bottom). Blue: fixed by the equipment; orange: depends on the
-    sample and changes between acquisitions."""
+    """(a) The bench, not to scale, with the two sample-to-sensor distances; (b) what it records: a full frame of the
+    sensor and a 640x640 window of it; (c) the two distances along the optical axis, to scale; (d) the three routes
+    from the recording to the decision, with the localiser they share. Blue: fixed by the equipment; orange: depends
+    on the sample and changes between acquisitions."""
     from matplotlib.patches import FancyArrowPatch, FancyBboxPatch, Polygon, Rectangle
     EQ, SA = KNOWN, UNKNOWN
-    fig = plt.figure(figsize=(7.16, 4.5))
-    ax = fig.add_axes([0, 0.47, 0.70, 0.53])
+    C_BENCH, C_CBMS = '#e87ba4', '#6250d6'           # the colours of the two distances in the summary figure
+    nb = _bench_numbers()
+    zb_mm = nb['z_bench'] * 1e3 if nb['z_bench'] else None
+    zc_mm = nb['z_cbms'] * 1e3
+    um = lambda r: f'{r[0] * 1e6:.0f}–{r[1] * 1e6:.0f} µm'
+    fig = plt.figure(figsize=(7.16, 6.9))
+    fs = 6.2
+
+    # ---------------------------------------------------------------- (a) the bench, not to scale
+    ax = fig.add_axes([0, 0.64, 0.70, 0.36])
     ax.set_xlim(0, 100)
     ax.set_ylim(0, 46)
     ax.axis('off')
-    fs = 6.2
 
     def dist(x0, x1, y, label, color):
         ax.add_patch(FancyArrowPatch((x0, y), (x1, y), arrowstyle='<->', mutation_scale=6, lw=0.6, color=color))
-        ax.text((x0 + x1) / 2, y - 1.0, label, ha='center', va='top', fontsize=fs, color=color)
-    # light: from the pinhole, through the sample, to the sensor
+        ax.text((x0 + x1) / 2, y - 1.0, label, ha='center', va='top', fontsize=fs, color=color, linespacing=1.2)
     ax.add_patch(Polygon([[12, 22.6], [12, 23.4], [76, 39], [76, 7]], closed=True, fc='#eef4fc', ec='none', zorder=0))
-    # source and pinhole
     ax.add_patch(FancyBboxPatch((1.2, 19.5), 6.5, 7, boxstyle='round,pad=0.3', fc='white', ec=MUTED, lw=0.7))
     ax.text(4.45, 23, 'LED', ha='center', va='center', fontsize=6.5)
     ax.text(4.45, 17.2, '$\\lambda$ = 385 nm\n10 nm band', ha='center', va='top', fontsize=fs, color=EQ,
@@ -77,7 +105,6 @@ def fig_setup(frame=0, window=(1060, 1640)):
     ax.add_patch(Rectangle((11.7, 17.5), 0.6, 4.9, fc=MUTED, ec='none'))
     ax.add_patch(Rectangle((11.7, 23.6), 0.6, 4.9, fc=MUTED, ec='none'))
     ax.text(12, 30.2, 'pinhole\n$D$ = 100 µm', ha='center', va='bottom', fontsize=fs, color=EQ, linespacing=1.2)
-    # sample: slide, sample layer, coverslip
     ax.add_patch(Rectangle((30, 7), 3.0, 32, fc='#dcdcd6', ec=MUTED, lw=0.5))
     ax.add_patch(Rectangle((33, 7), 2.4, 32, fc='#f7f3ea', ec=MUTED, lw=0.4))
     ax.add_patch(Rectangle((35.4, 7), 0.9, 32, fc='#dcdcd6', ec=MUTED, lw=0.5))
@@ -96,46 +123,98 @@ def fig_setup(frame=0, window=(1060, 1640)):
     ax.text(38.2, 11.5, 'dust on both glass surfaces', ha='left', va='center', fontsize=fs, color=SA)
     ax.text(56, 23, 'each object scatters light\nthat interferes with the\nunscattered wave', ha='center',
             va='center', fontsize=fs, color=MUTED, style='italic', linespacing=1.25)
-    # sensor: window and pixels
     ax.add_patch(Rectangle((76, 6), 1.0, 34, fc='#dcdcd6', ec=MUTED, lw=0.5))
     ax.add_patch(Rectangle((77.5, 6), 1.8, 34, fc=MUTED, ec='none'))
     for y in np.arange(6.4, 40, 1.25):
         ax.plot([77.5, 79.3], [y, y], color='white', lw=0.3)
     ax.add_patch(plt.Circle((76.5, 19), 0.3, color='white', ec=MUTED, lw=0.4))
     ax.text(77.6, 41, 'sensor', ha='center', va='bottom', fontsize=6.5)
-    ax.text(80.8, 36, 'pixel $\\Delta$ = 1.67 µm\n3840 × 2748 px\n(6.4 × 4.6 mm)', ha='left', va='top',
-            fontsize=fs, color=EQ, linespacing=1.25)
+    h_mm, w_mm = FULL_FRAME[0] * PIXEL * 1e3, FULL_FRAME[1] * PIXEL * 1e3
+    ax.text(80.8, 36, f'pixel $\\Delta$ = {PIXEL * 1e6:g} µm\n{FULL_FRAME[1]} × {FULL_FRAME[0]} px\n'
+            f'({w_mm:.1f} × {h_mm:.1f} mm)', ha='left', va='top', fontsize=fs, color=EQ, linespacing=1.25)
     ax.text(80.8, 24, 'records intensity;\nshot and read noise,\n8 bits; dust on\nits window', ha='left',
             va='top', fontsize=fs, color=INK, linespacing=1.25)
-    # distances (not to scale: L is eight times z)
     dist(12, 30, 3.6, '$L$ = 15 cm', EQ)
     ax.plot([19.8, 20.8], [2.6, 4.6], color=EQ, lw=0.7)
     ax.plot([21.2, 22.2], [2.6, 4.6], color=EQ, lw=0.7)
-    dist(34.2, 77.5, 3.6, '$z \\approx 19.25$ mm, changes with every mount', SA)
-    ax.text(1, 44.5, 'not to scale', ha='left', va='top', fontsize=5.6, color=MUTED, style='italic')
+    zlab = (f'$z$: ≈ {zb_mm:.0f} mm on the bench, {zc_mm:g} mm in the\ngeometry of CBMS 2024; changes with every mount'
+            if zb_mm else f'$z$ = {zc_mm:g} mm (geometry of CBMS 2024); changes with every mount')
+    dist(34.2, 77.5, 3.6, zlab, SA)
+    ax.text(5, 45.3, 'not to scale', ha='left', va='top', fontsize=5.6, color=MUTED, style='italic')
+    ax.text(0.3, 45.8, '(a)', ha='left', va='top', fontsize=8, fontweight='bold')
 
-    # what it records: a full frame and a 640 x 640 window of it
+    # ---------------------------------------------------------------- (b) what it records
     src = Holograms(paths.dataset('full_frames'))
     img = np.asarray(src.holo[src.row[frame]], np.float32)
     y0, x0 = window
-    fa = fig.add_axes([0.705, 0.585, 0.185, 0.36])
+    fa = fig.add_axes([0.705, 0.705, 0.185, 0.265])
     show(fa, img[::4, ::4], vmin=None)
     fa.add_patch(Rectangle((x0 / 4, y0 / 4), 160, 160, fill=False, ec=SA, lw=0.9))
-    fa.set_title('hologram $I$: full frame\n29.4 mm$^2$', loc='center', fontsize=6.2, pad=2, linespacing=1.15)
-    wa = fig.add_axes([0.9, 0.585, 0.098, 0.36])
+    fa.set_title('(b) hologram $I$: full frame\n29.4 mm$^2$', loc='center', fontsize=6.2, pad=2, linespacing=1.15)
+    wa = fig.add_axes([0.9, 0.705, 0.098, 0.265])
     show(wa, img[y0:y0 + 640, x0:x0 + 640])
-    for s in wa.spines.values():
-        s.set_visible(True)
-        s.set_color(SA)
-        s.set_linewidth(0.9)
+    for sp in wa.spines.values():
+        sp.set_visible(True)
+        sp.set_color(SA)
+        sp.set_linewidth(0.9)
     wa.set_title('a 640$^2$ window\n1.07 × 1.07 mm', loc='center', fontsize=6.2, pad=2, linespacing=1.15)
-    fig.text(0.85, 0.615, 'and a blank frame $B$ (no sample) per session', ha='center', va='center', fontsize=fs,
+    fig.text(0.85, 0.68, 'and a blank frame $B$ (no sample) per session', ha='center', va='center', fontsize=fs,
              color=INK)
 
-    # the two routes; the localiser runs on the hologram for both
-    bx = fig.add_axes([0, 0, 1, 0.47])
+    # ---------------------------------------------------------------- (c) the two distances, to scale
+    sx = fig.add_axes([0.035, 0.425, 0.62, 0.2])
+    sx.set_aspect('equal')
+    zmax = zc_mm * 1.06
+    sx.set_xlim(-0.6, zmax)
+    sx.set_ylim(-0.4, h_mm + 0.9)
+    for sp in ['left', 'right', 'top']:
+        sx.spines[sp].set_visible(False)
+    sx.set_yticks([])
+    sx.grid(False)
+    sx.set_xticks([0, 5, 10, 15, zc_mm])
+    sx.set_xticklabels(['0', '5', '10', '15', f'{zc_mm:g}'], fontsize=6)
+    sx.set_xlabel('distance from the chip of the sensor along the optical axis (mm), to scale', fontsize=6.2)
+    sx.add_patch(Rectangle((-0.35, 0), 0.35, h_mm, fc=MUTED, ec='none'))
+    sx.text(-0.45, h_mm / 2, f'sensor\n{h_mm:.1f} mm', ha='right', va='center', fontsize=5.8, rotation=90)
+    for z, col, side, lab in [(zb_mm, C_BENCH, nb['side_bench'], 'the bench'),
+                              (zc_mm, C_CBMS, nb['side_cbms'], 'geometry of CBMS 2024')]:
+        if not z:
+            continue
+        sx.plot([z, z], [0, h_mm], color=col, lw=1.4)
+        txt = f'{lab}: {z:.1f} mm' if z < 10 else f'{lab}: {z:g} mm'
+        txt += f'\nletters {um(side)}' if side else ''
+        sx.text(z + (0.35 if z < 5 else -0.35), h_mm + 0.15, txt, ha='left' if z < 5 else 'right', va='bottom',
+                fontsize=5.9, color=col, linespacing=1.15)
+    sx.text(-0.6, h_mm + 0.9, '(c)', ha='left', va='top', fontsize=8, fontweight='bold')
+    # zoom on the first millimetre: what lies between the sample of the bench and the chip
+    zx = fig.add_axes([0.70, 0.42, 0.29, 0.215])
+    zx.set_xlim(-0.05, 1.1)
+    zx.set_ylim(0, 1)
+    zx.set_yticks([])
+    for sp in ['left', 'right', 'top']:
+        zx.spines[sp].set_visible(False)
+    zx.grid(False)
+    zx.set_xticks([0, 0.5, 1.0])
+    zx.tick_params(labelsize=6)
+    zx.set_xlabel('the first millimetre (mm), to scale', fontsize=6.2)
+    zx.add_patch(Rectangle((-0.05, 0), 0.05, 0.75, fc=MUTED, ec='none'))
+    zx.text(-0.02, 0.8, 'chip', ha='center', va='bottom', fontsize=5.6)
+    top = Physics().sensor_dust_z * 1e3             # the window of the sensor (datasheet, PARAMETROS.md, row 40)
+    glass = 0.4                                     # its glass, 0.4 mm thick (MT9J003 datasheet, p. 54)
+    zx.add_patch(Rectangle((top - glass, 0), glass, 0.75, fc='#dcdcd6', ec=MUTED, lw=0.5))
+    zx.text(top - glass / 2, 0.38, 'sensor\nwindow\n(datasheet)', ha='center', va='center', fontsize=5.4,
+            linespacing=1.1)
+    if zb_mm:
+        zx.add_patch(Rectangle((top, 0), zb_mm - top, 0.75, fc='none', ec=MUTED, lw=0.4, hatch='///', alpha=0.5))
+        zx.text((top + zb_mm) / 2, 0.38, 'coverslip\nand air gap\n(not measured)', ha='center', va='center',
+                fontsize=5.4, linespacing=1.1, bbox=dict(fc='white', ec='none', pad=0.6))
+        zx.plot([zb_mm, zb_mm], [0, 0.75], color=C_BENCH, lw=1.4)
+        zx.text(zb_mm - 0.02, 0.8, f'sample, {zb_mm:.1f} mm', ha='right', va='bottom', fontsize=5.6, color=C_BENCH)
+
+    # ---------------------------------------------------------------- (d) three routes and the localiser they share
+    bx = fig.add_axes([0, 0, 1, 0.37])
     bx.set_xlim(0, 100)
-    bx.set_ylim(0, 38)
+    bx.set_ylim(0, 47)
     bx.axis('off')
     hb = 7.0
 
@@ -146,32 +225,33 @@ def fig_setup(frame=0, window=(1060, 1640)):
     def arrow(p0, p1):
         bx.add_patch(FancyArrowPatch(p0, p1, arrowstyle='->', mutation_scale=7, lw=0.6, color=MUTED,
                                      shrinkA=0, shrinkB=0))
-    yc, yd, yp = 29, 17.5, 6
-    final = 'ResNet18 embedding\n→ gallery: known class\nor "unknown"'
-    conv = [(1, 12, 'hologram $I$ and\nblank frame $B$:\n$\\sqrt{I/B}$', MUTED),
-            (16, 14.5, 'autofocus: reconstruct\nat 114 candidate $z$,\nkeep the sharpest', SA),
-            (34, 13, 'back-propagate to $z$\n(needs $\\lambda$, $\\Delta$):\n1 FFT pair', MUTED),
-            (50.5, 13, 'twin-image removal\n(optional): 2 FFT\npairs per pass', MUTED),
-            (67, 13, 'per-object focus\nin each box;\ncrop the box', MUTED),
-            (84, 15, final, MUTED)]
-    prop = [(1, 12, 'hologram $I$\n(as recorded)', MUTED),
-            (16, 47.5, 'learned Fourier layer on the whole $I$: one weight per spatial-frequency radius,\n'
-                       'learned from class labels; 1 FFT pair; no $\\lambda$, $z$, $\\Delta$ or blank frame', INK),
-            (67, 13, 'crop each box', MUTED),
-            (84, 15, final, MUTED)]
-    for y, steps in [(yc, conv), (yp, prop)]:
+    y1, y2, y3, yd = 40, 25, 8, 16.5
+    final = 'embedding network\n→ gallery: known class\nor "unknown"'
+    crops = [(1, 12, 'hologram $I$\n(as recorded)', MUTED), (67, 13, 'crop each box', MUTED), (84, 15, final, MUTED)]
+    layer = [(1, 12, 'hologram $I$\n(as recorded)', MUTED),
+             (16, 33, 'propagation layer on the whole $I$ (1 FFT pair): the phase\nof a propagation set by one scalar '
+                     'calibrated on unlabelled\nholograms, a learned gain per frequency; no $\\lambda$, $\\Delta$, $z$, $B$', SA),
+             (67, 13, 'crop each box', MUTED), (84, 15, final, MUTED)]
+    recon = [(1, 12, 'hologram $I$ and\nblank frame $B$:\n$\\sqrt{I/B}$', MUTED),
+             (16, 15.5, 'back-propagate to the\ncalibrated $z_0$ (needs $\\lambda$, $\\Delta$),\nor search $z$ by autofocus', SA),
+             (33.5, 12, 'twin-image\nremoval (optional)', MUTED),
+             (47.5, 11, 'focus each\nobject (optional)', MUTED),
+             (67, 13, 'crop each box', MUTED), (84, 15, final, MUTED)]
+    for y, steps in [(y1, crops), (y2, layer), (y3, recon)]:
         for k, (x, w, t, c) in enumerate(steps):
-            box(x, y, w, t, color=c, lw=1.1 if c == INK else 0.7)
+            box(x, y, w, t, color=c)
             if k:
                 px, pw = steps[k - 1][0], steps[k - 1][1]
                 arrow((px + pw + 0.5, y), (x - 0.5, y))
-    bx.text(1, yc + hb / 2 + 1.2, 'conventional route', fontsize=6.5, fontweight='bold', va='bottom')
-    bx.text(16 + 14.5 / 2, yc - hb / 2 - 1.0, 'or fixed $z = z_0$ (no search)', ha='center', va='top',
-            fontsize=5.6, color=SA, style='italic')
-    bx.text(1, yp + hb / 2 + 1.2, 'proposed route', fontsize=6.5, fontweight='bold', va='bottom')
-    box(50.5, yd, 13, 'localiser (YOLO) on $I$,\nin 640$^2$ tiles:\none box per pattern', MUTED, fc='#f6f5f2')
-    arrow((63.8, yd + 1.2), (66.8, yc - hb / 2 - 0.5))
-    arrow((63.8, yd - 1.2), (66.8, yp + hb / 2 + 0.5))
+    for y, name in [(y1, '(i) crops of the raw hologram'), (y2, '(ii) propagation layer'),
+                    (y3, '(iii) calibrated reconstruction (the conventional route)')]:
+        bx.text(4.5, y + hb / 2 + 0.9, name, fontsize=6.5, fontweight='bold', va='bottom')
+    bx.text(0.3, y1 + hb / 2 + 0.9, '(d)', ha='left', va='bottom', fontsize=8, fontweight='bold')
+    box(51.2, 32.5, 13.3, 'localiser (YOLO) on $I$,\nin 640$^2$ tiles: one box\nper pattern, every route',
+        MUTED, fc='#f6f5f2')
+    arrow((65.0, 34.5), (66.5, y1 - 1.5))
+    arrow((65.0, 30.5), (66.5, y2 + 1.5))
+    arrow((65.0, 29.5), (66.5, y3 + 1.5))
     bx.text(99, 0.2, 'blue: fixed by the equipment     orange: depends on the sample and changes between '
             'acquisitions', ha='right', va='bottom', fontsize=5.8, color=MUTED)
     save(fig, 'fig_setup')
