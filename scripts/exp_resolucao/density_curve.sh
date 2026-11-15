@@ -23,7 +23,8 @@
 #   reconstruct  reconstruct --methods z0 (the set's z0, 1.0 mm)
 #   train        raw, prop (--alpha-extend 12), rec_z0; repetition REP (default 1), --no-aux
 #   evaluate     -> $HOLO_RESULTS/eval/<set>/<flow>_r<REP>.json
-#   table        density_curve_table.py --law LAW -> $HOLO_RESULTS/density_curve_<LAW>.csv and _reading.json (the rules
+#   table        density_curve_table.py -> $HOLO_RESULTS/density_curve.csv, _reps.csv, _reading.json (u50; other laws
+#                with the suffix _<LAW>) (the rules
 #                of Q0: obtained density, overlap ratio, "fell", "the curves separate")
 set -e
 cd "$(dirname "$0")/../.."
@@ -84,7 +85,7 @@ case "$STEP" in
     done
     ;;
   table)
-    python scripts/exp_resolucao/density_curve_table.py --law $LAW --sparse $SPARSE
+    python scripts/exp_resolucao/density_curve_table.py --law $LAW --sparse $SPARSE --prefix density_curve$([ "$LAW" != u50 ] && echo _$LAW || true)
     ;;
   *) echo "unknown step $STEP"; exit 1 ;;
 esac

@@ -22,6 +22,11 @@ letter), else D_vis. Overlap ratio 1 - exp(-pi D_ef^2 sigma) for sigma = 7, 13, 
 -> $HOLO_RESULTS/hologram_diameter.csv, hologram_diameter_summary.json, docs/exp_resolucao/img/hologram_diameter.png
 
     python scripts/exp_resolucao/hologram_diameter.py --device cuda:N
+Other sets (--set realistic, small_near: Q1, the existing sets on the same axis): the laws of their own layout (the
+layouts of the paper: integer font sizes, the mask drawn on the pixels), their z0, margin and recording path (native,
+s = 1), every radius scaled by k = sqrt(z0 / 1.0 mm) (the size of the pattern at the same Fresnel numbers) and the
+window enlarged to hold R_OUT k; outputs with the suffix _<set>, and the letter densities of the set (metadata.csv: in
+the window and in the band of the reach) with their overlap ratios.
 """
 import argparse
 import json
@@ -39,7 +44,7 @@ import torch   # noqa: E402
 from holo_openset import paths   # noqa: E402
 from holo_openset.model import pick_device   # noqa: E402
 from holo_openset.sim.generate import layout_of   # noqa: E402
-from holo_openset.sim.letters import CLASSES, FONTS, letter_master   # noqa: E402
+from holo_openset.sim.letters import CLASSES, FONTS, letter_mask, letter_master   # noqa: E402
 from holo_openset.sim.physics import PIXEL, physics_from_dict, sensor_intensity   # noqa: E402
 from holo_openset.sim.scene import material, physical_object   # noqa: E402
 
@@ -53,26 +58,29 @@ SIGMAS = [7, 13, 60, 135, 300]   # objects per mm^2
 IMG = paths.PROJECT / 'docs' / 'exp_resolucao' / 'img'
 
 
-def measures(e):
-    """The measures of one energy map e (float64 [h, w], the letter near the centre) -> dict, radial profile."""
+def measures(e, k=1.0):
+    """The measures of one energy map e (float64 [h, w], the letter near the centre) -> dict, radial profile. k
+    scales every radius (RADII, R_OUT, the disc of the centroid and of D_86) for a pattern k times larger; the columns
+    keep the nominal names (D_rms_<R at 1.0 mm>)."""
     h, w = e.shape
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float64)
     c0 = ((h - 1) / 2, (w - 1) / 2)
-    disc = (yy - c0[0]) ** 2 + (xx - c0[1]) ** 2 <= 256 ** 2
+    r256, r_out = round(256 * k), round(R_OUT * k)
+    disc = (yy - c0[0]) ** 2 + (xx - c0[1]) ** 2 <= r256 ** 2
     cy, cx = (e * yy)[disc].sum() / e[disc].sum(), (e * xx)[disc].sum() / e[disc].sum()
     r = np.sqrt((yy - cy) ** 2 + (xx - cx) ** 2)
     out = dict(cy_off=cy - c0[0], cx_off=cx - c0[1])
     for R in RADII:
-        m = r <= R
+        m = r <= round(R * k)
         out[f'D_rms_{R}'] = 2 * math.sqrt(2) * math.sqrt((e[m] * r[m] ** 2).sum() / e[m].sum())
     ring = np.floor(r).astype(int)
     amp = np.sqrt(e)
-    n = np.bincount(ring.ravel(), minlength=R_OUT + 1)[:R_OUT + 1]
-    prof = np.bincount(ring.ravel(), weights=amp.ravel(), minlength=R_OUT + 1)[:R_OUT + 1] / np.maximum(n, 1)
+    n = np.bincount(ring.ravel(), minlength=r_out + 1)[:r_out + 1]
+    prof = np.bincount(ring.ravel(), weights=amp.ravel(), minlength=r_out + 1)[:r_out + 1] / np.maximum(n, 1)
     above = np.nonzero(prof >= NOISE)[0]
     out['r_vis'] = float(above.max() + 1) if len(above) else 0.0
     out['D_vis'] = 2 * out['r_vis']
-    m = r <= 256
+    m = r <= r256
     ord_ = np.argsort(r[m])
     cum = np.cumsum(e[m][ord_])
     k = np.searchsorted(cum, 0.865 * cum[-1])
@@ -93,34 +101,50 @@ def pair_rule(d):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--device', default='cpu')
-    ap.add_argument('--set', default='bench_1mm', help='the set whose layout and physics give the laws')
+    ap.add_argument('--set', default='bench_1mm', help='the set whose layout and physics give the laws (and its z0, '
+                                                    'margin and recording path: native for the sets of the paper)')
     a = ap.parse_args()
     torch.set_num_threads(4)
     dev = pick_device(a.device)
     cfg = json.load(open(paths.dataset(a.set) / 'physics.json'))
     lay = layout_of(cfg)
-    phys = physics_from_dict(cfg['physics']).replace(
-        window=(WINDOW, WINDOW), margin=MARGIN, reach=0, depth_std=0.0, depth_max=0.0, dust_density=0.0,
-        sensor_dust_density=0.0, full_well=0.0, read_noise=0.0, prnu=0.0, bits=0)
-    ses = dict(z=1.0e-3)
-    f = lay.factor
+    p0 = physics_from_dict(cfg['physics'])
+    # the radii scale with the size of the pattern, sqrt(z) at the same Fresnel numbers: k = 1 at 1.0 mm
+    k = math.sqrt(p0.z0 / 1.0e-3)
+    win = WINDOW if k == 1 else 64 * math.ceil((2 * round(R_OUT * k) + 64) / 64)
+    margin = MARGIN if k == 1 else p0.margin
+    phys = p0.replace(window=(win, win), margin=margin, reach=0, depth_std=0.0, depth_max=0.0, depth_uniform=0.0,
+                      dust_density=0.0, sensor_dust_density=0.0, full_well=0.0, read_noise=0.0, prnu=0.0, bits=0)
+    ses = dict(z=p0.z0)
+    physical = getattr(lay, 'physical', False)
+    f = lay.factor if physical else 1
+    suffix = '' if a.set == 'bench_1mm' else f'_{a.set}'
     rng = random.Random(SEED)
     blank = sensor_intensity(dict(objects=[], dust=[], sensor_dust=[]), ses, phys, dev, sample=False).cpu().numpy()
     rows, profs = [], []
     t0 = time.time()
     for letter in CLASSES:
         for k in range(PER_CLASS):
-            size, font = rng.uniform(lay.font_min, lay.font_max), rng.choice(FONTS)
-            angle = rng.uniform(-lay.rotation, lay.rotation)
-            master = letter_master(letter, font, size * f, angle)
-            mat = material(rng, phys)
-            mat['depth'] = 0.0
-            c = MARGIN + WINDOW / 2
-            o = physical_object(master, round(c * f - master.shape[1] / 2), round(c * f - master.shape[0] / 2), f,
-                                kind='letter', classe=letter, **mat)
+            c = margin + win / 2
+            if physical:
+                size, font = rng.uniform(lay.font_min, lay.font_max), rng.choice(FONTS)
+                angle = rng.uniform(-lay.rotation, lay.rotation)
+                master = letter_master(letter, font, size * f, angle)
+                mat = material(rng, phys)
+                mat['depth'] = 0.0
+                o = physical_object(master, round(c * f - master.shape[1] / 2), round(c * f - master.shape[0] / 2),
+                                    f, kind='letter', classe=letter, **mat)
+            else:   # the layouts of the paper: integer font size, the mask on the pixels (scene._draw_letter)
+                size, font, angle = rng.randint(lay.font_min, lay.font_max), rng.choice(FONTS), \
+                    rng.uniform(-lay.rotation, lay.rotation)
+                master = np.asarray(letter_mask(letter, font, size, angle), np.float32) / 255
+                mat = material(rng, phys)
+                mat['depth'] = 0.0
+                o = dict(mask=master, x=round(c - master.shape[1] / 2), y=round(c - master.shape[0] / 2),
+                         kind='letter', classe=letter, **mat)
             inten = sensor_intensity(dict(objects=[o], dust=[], sensor_dust=[]), ses, phys, dev).cpu().numpy()
             e = (inten / blank - 1) ** 2
-            m, prof = measures(e)
+            m, prof = measures(e, k)
             side = max(master.shape) / f
             rows.append(dict(classe=letter, k=k, font=font.stem, font_size=size, rotation=angle,
                              absorption=mat['absorption'], phase=mat['phase'], side_px=side, **m))
@@ -129,7 +153,7 @@ def main():
                                                      ['side_px', 'D_rms_192', 'D_rms_256', 'D_vis', 'D_86']}, flush=True)
     t = pd.DataFrame(rows)
     paths.RESULTS.mkdir(parents=True, exist_ok=True)
-    t.to_csv(paths.RESULTS / 'hologram_diameter.csv', index=False, float_format='%.6g')
+    t.to_csv(paths.RESULTS / f'hologram_diameter{suffix}.csv', index=False, float_format='%.6g')
     um = PIXEL * 1e6
     cols = ['side_px'] + [f'D_rms_{R}' for R in RADII] + ['D_vis', 'D_86']
     stats = {c: dict(mean=float(t[c].mean()), median=float(t[c].median()), p5=float(t[c].quantile(.05)),
@@ -141,8 +165,9 @@ def main():
     overlap = {c: {str(s): 1 - math.exp(-math.pi * (d_ef[c] * PIXEL * 1e3) ** 2 * s) for s in SIGMAS}
                for c in ['D_rms_192', 'D_vis', 'D_86', 'D_rms_256']}
     summary = dict(
-        seed=SEED, letters=len(t), per_class=PER_CLASS, laws_from=a.set, z_mm=1.0, oversample=phys.oversample,
-        window=WINDOW, margin=MARGIN, noise_level=NOISE, r_out=R_OUT, pixel_um=um, stats_px=stats,
+        seed=SEED, letters=len(t), per_class=PER_CLASS, laws_from=a.set, z_mm=p0.z0 * 1e3, oversample=phys.oversample,
+        layout=type(lay).__name__, radius_scale_k=k, radii_px={str(R): round(R * k) for R in RADII},
+        window=win, margin=margin, noise_level=NOISE, r_out=round(R_OUT * k), pixel_um=um, stats_px=stats,
         D_ef_px=d_ef, D_ef_um={c: v * um for c, v in d_ef.items()},
         convergence=dict(rule='D_rms(256) within 5 % of D_rms(192), on D_ef', rel_diff_D_ef=conv_set,
                          rel_diff_letters_median=float(conv_letters.median()),
@@ -150,26 +175,41 @@ def main():
                          letters_within_5pct=float((conv_letters <= 0.05).mean())),
         axis=axis, letters_visible_at_r_out=int(t.vis_at_R_OUT.sum()),
         overlap_ratio=overlap, sigmas_per_mm2=SIGMAS, seconds=time.time() - t0)
-    json.dump(summary, open(paths.RESULTS / 'hologram_diameter_summary.json', 'w'), indent=1)
+    if suffix:   # the letter densities of the set (metadata), in the window and in the band around it
+        meta = pd.read_csv(paths.dataset(a.set) / 'metadata.csv')
+        H = p0.window[0] + 2 * min(p0.reach, p0.margin)
+        band = H * H - p0.window[0] * p0.window[1]
+        win_mm2 = p0.window[0] * p0.window[1] * (PIXEL * 1e3) ** 2
+        dens = dict(letters_per_window=float(meta.n_letters.mean()),
+                    window_per_mm2=float(meta.n_letters.mean() / win_mm2),
+                    band_per_mm2=float(meta.n_outside.mean() / (band * (PIXEL * 1e3) ** 2)),
+                    window_mm2=win_mm2, band_px2=band)
+        dmm = d_ef[axis] * PIXEL * 1e3
+        dens['overlap_window'] = 1 - math.exp(-math.pi * dmm ** 2 * dens['window_per_mm2'])
+        dens['overlap_band'] = 1 - math.exp(-math.pi * dmm ** 2 * dens['band_per_mm2'])
+        dens['pi_D2_sigma_window'] = math.pi * dmm ** 2 * dens['window_per_mm2']
+        summary['density'] = dens
+    json.dump(summary, open(paths.RESULTS / f'hologram_diameter{suffix}_summary.json', 'w'), indent=1)
     print(json.dumps(summary, indent=1))
     # figure: radial profile of sqrt(e) for a few letters against the noise
     fig, ax = plt.subplots(figsize=(7, 4.2), constrained_layout=True)
     pick = t.side_px.sort_values().index[np.linspace(0, len(t) - 1, 6).astype(int)]
     for i in pick:
-        ax.semilogy(np.arange(R_OUT + 1), np.maximum(profs[i], 1e-6), lw=1,
+        ax.semilogy(np.arange(len(profs[i])), np.maximum(profs[i], 1e-6), lw=1,
                     label=f"{t.classe[i]}, side {t.side_px[i]:.1f} px, D_rms(192) {t.D_rms_192[i]:.0f}, "
                           f"D_vis {t.D_vis[i]:.0f}, D_86 {t.D_86[i]:.0f}")
     ax.axhline(NOISE, color='k', ls='--', lw=0.8, label='noise of the set (2.1 / 101.5)')
     for R in RADII:
-        ax.axvline(R, color='0.8', lw=0.6, zorder=0)
+        ax.axvline(round(R * k), color='0.8', lw=0.6, zorder=0)
     ax.set_xlabel('radius from the energy centroid (px of 1.67 um)')
     ax.set_ylabel('azimuthal mean of |I / B - 1|')
     ax.set_ylim(1e-4, 2)
-    ax.set_title('One isolated letter at 1.0 mm (s = 4, no noise): radial profile of the pattern', fontsize=9)
+    ax.set_title(f'One isolated letter of {a.set} at {p0.z0 * 1e3:g} mm (s = {phys.oversample}, no noise): radial '
+                 'profile of the pattern', fontsize=9)
     ax.legend(fontsize=6.5, loc='upper right')
     IMG.mkdir(parents=True, exist_ok=True)
-    fig.savefig(IMG / 'hologram_diameter.png', dpi=150)
-    print('wrote', IMG / 'hologram_diameter.png')
+    fig.savefig(IMG / f'hologram_diameter{suffix}.png', dpi=150)
+    print('wrote', IMG / f'hologram_diameter{suffix}.png')
 
 
 if __name__ == '__main__':
