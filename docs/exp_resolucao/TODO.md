@@ -502,7 +502,7 @@ Pré-registro: entrada Q5 de `CADERNO_CURVA.md` (11:40, commit `13388f5`), antes
   tabela de seis níveis (as cinco linhas antigas idênticas, por diff). Executor da densidade. Regras do Q0;
   previsões e frases por desfecho no Q5. Estimativa: gravação ≈ 1,5–2 h (o nível de 300 levou 76 min), treinos
   ≈ 3 min por repetição. GPUs todas com uso de outros containers às 11:38 (a 1 era a menos carregada).
-- [x] **T-frases.** (11:45, paper `a1c7276`) As duas frases (#3) no `rewrite/inversion`: contribuição (2) da
+- [x] **T-frases.** (11:41, paper `a1c7276`) As duas frases (#3) no `rewrite/inversion`: contribuição (2) da
   introdução ("…and of why: within the Fresnel numbers of our standard sets, the patterns of neighbouring objects
   entering the crop, not the spread…") e a conclusão ("…in a dense one; within the Fresnel numbers of our standard
   sets, the cause is the fringes of neighbouring patterns entering each crop"). Frase-tese intocada. Falta compilar
@@ -885,7 +885,7 @@ errado".
 - **2026-11-17, 11:41 — FASE T ABERTA.** O orientador respondeu "#2 pode rodar / #3 faz" e mandou o PDF do
   HoloAtt-UNet. Resposta na íntegra no fim do `PROTOCOLO_CURVA.md` (`e9c1e95`); pré-registro Q5 (`13388f5`). Plano
   na seção "Fase T". **Próximo passo: acionar o executor da densidade (T-L), fazer T-frases, ler o PDF (T-holoatt).**
-- **2026-11-17, 11:52.** T-frases feita (`a1c7276`). **T-L RODANDO:** gravação de `curve_u50_L514` começou às
+- **2026-11-17, 11:43.** T-frases feita (`a1c7276`). **T-L RODANDO:** gravação de `curve_u50_L514` começou às
   11:41:21 na GPU 1, tmux `res_curve_rec_L514`, log `logs/exp_resolucao/curve_record_u50_L514.log` (executor da
   densidade; o script aceita o nível desde `1b056ff`). **T-holoatt RODANDO:** PDF copiado para
   `scratchpad/recebidos/holoatt_unet/` (sha256 3688be3d…), texto por página em `scratchpad/recebidos_txt/holoatt_unet/`
