@@ -128,7 +128,7 @@ def diameter_mm(set_name=None):
     return None
 
 
-def curve_axes(ax, t, metric, ylabel, top=True, top_label='objects per mm$^2$'):
+def curve_axes(ax, t, metric, ylabel, top=True, top_label='objects per mm$^2$', compact=False):
     """One panel of the density curve on the axis of Q1: x = pi D^2 sigma on a log scale (the mean number of
     overlapping neighbours), ticks labelled with the share of overlapping holograms, the density on the top axis;
     r1 at every level (open), the mean of five with its min-max where five exist (filled)."""
@@ -148,14 +148,19 @@ def curve_axes(ax, t, metric, ylabel, top=True, top_label='objects per mm$^2$'):
                         fmt='o', color=COLORS[f], ms=4, lw=0.8, capsize=1.5, zorder=4)
     lv = t.drop_duplicates('level').sort_values('pi_D2_sigma')
     ax.set_xscale('log')
-    ax.set_xticks(lv.pi_D2_sigma, [f'{100 * o:.0f}' if o < 0.995 else '>99' for o in lv.overlap])
+    xs = lv.pi_D2_sigma.to_numpy()
+    # in a narrow panel, a tick too close to the next one (less than 0.25 decade) keeps its mark, not its label
+    keep = [not compact or k == len(xs) - 1 or np.log10(xs[k + 1] / xs[k]) >= 0.25 for k in range(len(xs))]
+    ax.set_xticks(xs, [((f'{100 * o:.0f}' if o < 0.995 else '>99') + f'\n{x:.2g}') if kp else ''
+                       for o, x, kp in zip(lv.overlap, xs, keep)])
+    ax.tick_params(axis='x', labelsize=6)
     ax.minorticks_off()
-    ax.set_xlabel('overlapping holograms (%)')
+    ax.set_xlabel('overlapping holograms (%) and $\\pi D^2\\sigma$')
     ax.set_ylabel(ylabel)
     if top and d_mm:
         k = np.pi * d_mm ** 2
         sec = ax.secondary_xaxis('top', functions=(lambda x: x / k, lambda s_: s_ * k))
-        sec.set_xticks(lv.per_mm2, [f'{v:.0f}' for v in lv.per_mm2])
+        sec.set_xticks(lv.per_mm2, [f'{v:.0f}' if kp else '' for v, kp in zip(lv.per_mm2, keep)])
         sec.minorticks_off()
         sec.tick_params(labelsize=6)
         sec.set_xlabel(top_label, fontsize=6.5)
@@ -193,7 +198,7 @@ def panel_d(ax):
     t = pr.csv('density_curve')
     if len(t):                                   # the axis of Q1, from the table of the curve
         curve_axes(ax, t, 'rejection', 'rejection of never-seen patterns',
-                   top_label='the density: objects per mm$^2$')
+                   top_label='the density: objects per mm$^2$', compact=True)
         draw_old(ax, [o for o in old_sets('rejection') if o[3] == 'D'])
         ax.set_ylim(-0.03, 1.05)
         return

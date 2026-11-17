@@ -952,7 +952,8 @@ def depth_table():
     return lines
 
 
-LEVEL_WORD = {8: 'Eight', 15: 'Fifteen', 69: 'SixtyNine', 154: 'OneFiftyFour', 343: 'ThreeFortyThree'}
+LEVEL_WORD = {8: 'Eight', 15: 'Fifteen', 69: 'SixtyNine', 154: 'OneFiftyFour', 343: 'ThreeFortyThree',
+              514: 'FiveFourteen'}
 
 
 def curve_macros():
@@ -1025,6 +1026,20 @@ def curve_macros():
         macro('CurveDenseRecAboveText', f'in {CARDINAL[pos[0]]} of {CARDINAL[n[0]]} repetitions at both levels'
               if pos[0] == pos[1] and n[0] == n[1] else
               f'in {CARDINAL[pos[0]]} of {CARDINAL[n[0]]} and {CARDINAL[pos[1]]} of {CARDINAL[n[1]]} repetitions')
+    if len(reps):
+        lv_all = sorted(t.level.unique())
+        allpos = []
+        for lv in reversed(lv_all):
+            q = reps[(reps.level == lv) & (reps.flow == 'rec_z0 - prop')]
+            if len(q) and int((q.rejection > 0).sum()) == len(q):
+                allpos.append(lv)
+            else:
+                break
+        macro('CurveRecAboveLevels', CARDINAL[len(allpos)])
+        if allpos:
+            macro('CurveRecAboveFromDensity', t[t.level == min(allpos)].per_mm2.iloc[0], '{:.0f}')
+            n = int(((reps.level == allpos[0]) & (reps.flow == 'rec_z0 - prop')).sum())
+            macro('CurveDenseRecAboveText', f'in {CARDINAL[n]} of {CARDINAL[n]} repetitions at each of these levels')
     # where each flow falls first (rule of Q0, from the five repetitions), as a density
     for f in FLOWS:
         for m_, M_ in [('f1', 'Fone'), ('rej', 'Rej')]:
@@ -1054,6 +1069,8 @@ def curve_macros():
         for k, K in [('f1', 'Fone'), ('rej', 'Rej')]:
             v = j.get('layer_falls_first', {}).get(k)
             macro(f'CurveLayerFallsFirst{K}', f'{v} letters per window' if isinstance(v, int) else str(v))
+            lv = t[t.level == v] if isinstance(v, int) else t.iloc[0:0]
+            macro(f'CurveLayerFallsFirst{K}Density', lv.per_mm2.iloc[0] if len(lv) else 'none', '{:.0f}')
         macro('CurveProvisional', 'provisional (one repetition at some levels)' if j.get('provisional') else 'final')
 
 
