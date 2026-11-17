@@ -145,7 +145,7 @@ na triagem conjunta: 56 incluídos em 918.
 | `microplastic2021/` | Zhu et al. 2021, J. Phys. Photonics 3:024013 | PDF (IOP, CC BY), lido por busca de termos e nas passagens citadas |
 | `planktonraw2022_archimer/`, `planktonraw2022_pdf/` | Scherrer et al. 2022, LNCS 13483:25–39 | página e PDF da versão do autor (Archimer, Ifremer), lido inteiro |
 | `seo2010_pmc/` | Seo et al. 2010, Anal. Chem. 82:4621–4627 (ref. [37] de Isikman 2012) | JATS do PMC (manuscrito NIH), lido nas seções de resultados e métodos |
-| `holoattunet2026/` | Song et al. 2026 (HoloAtt-UNet), Measurement 289:122543 | **bloqueado** (Optica Open: desafio anti-bot); não contornei |
+| `holoattunet2026/` | Song et al. 2026 (HoloAtt-UNet), Measurement 289:122543 | **bloqueado** (Optica Open: desafio anti-bot); não contornei. *2026-11-17: o orientador mandou o PDF; lido (seção 2).* |
 | `planktonraw2021_hal/` | Scherrer et al. 2021 (versão HAL) | **bloqueado** (desafio anti-bot) |
 | `rbcfcn2021/` | JBO 26:036001 (2021) | **bloqueado** (SPIE: desafio anti-bot) |
 | `cotter2021_mit_c/`, `cotter2021_mit_pdf/` | Cotter et al. 2021 | página do DSpace obtida; o PDF deu **HTTP 429** de novo (terceira tentativa no total); não insisti |
@@ -235,6 +235,86 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 
 ---
 
+### Song et al. 2026, HoloAtt-UNet, *Measurement* 289:122543, doi:10.1016/j.measurement.2026.122543 (texto completo lido em 2026-11-17)
+
+- **Acesso:** PDF enviado pelo orientador (18 pp., sha256 3688be3d…dc1df1), em
+  `scratchpad/recebidos/holoatt_unet/`. Li as 18 páginas no texto extraído (duas colunas intercaladas; cada citação
+  abaixo foi conferida na coluna certa) e as Figs. 4 e 6 na imagem da página. As páginas são as da revista.
+- **(a) A rota sem reconstrução.** A entrada é o holograma bruto, dividido por um fundo de mediana temporal; cada
+  quadro de 4872 × 3248 vira seis sub-imagens de ≈ 1624 × 1624, reduzidas a 512 × 512 por interpolação bilinear
+  (p. 2: "each full-frame hologram was uniformly divided into six non-overlapping sub-images (2 rows × 3 columns),
+  each approximately 1,624 × 1,624 pixels. [...] we downsampled these sub-images to 512 × 512 pixels using bilinear
+  interpolation, rather than cropping"). A saída é uma imagem codificada de 512 × 512 × 3: um quadrado por
+  partícula, com o centro em (x, y), o lado codificando z e a cor codificando o raio (p. 3: "the color encodes the
+  particle radius r, while the geometric properties of the encoded squares (center coordinates and edge length)
+  encode the particle's spatial coordinates (x, y) and depth position z"). A tarefa é **segmentação/regressão de
+  gotas de nuvem**, não classificação: uma classe só (gotas esféricas; p. 16: "The current model is primarily
+  trained on spherical liquid cloud droplets"). Não é conjunto aberto e não fala de classes novas. O rótulo é a
+  saída do algoritmo convencional (p. 2: "these raw holograms are initially processed with conventional algorithms
+  to retrieve detailed cloud particle information"; p. 6, algoritmo de Mölkoselkä et al. [35]).
+- **(b) O argumento de velocidade, nas palavras deles.** p. 1 (resumo): "traditional processing methods are
+  computationally intensive"; "This design directly maps raw holograms to particle segmentation masks, thereby
+  circumventing the computationally expensive multi-plane reconstruction stage and achieving significant efficiency
+  gains." p. 2: "The conventional holographic processing workflow-comprising diffraction reconstruction, focal plane
+  detection, target segmentation, and feature extraction-is inherently computationally intensive and
+  time-consuming. The computational burden is particularly acute when high spatial resolution is required, as the
+  number of reconstruction planes increases substantially, leading to an exponential growth in processing time
+  [18]." Não chamam a reconstrução de "iterative" (a palavra não aparece no texto).
+- **(c) O que foi medido.** p. 7: "Upon processing 800 holograms, the conventional algorithm required an average of
+  62.3 s per image, the GPU‑accelerated conventional algorithm 7.82 s per image, and HoloAtt-UNet only 0.13 s per
+  image. This corresponds to a speed‑up factor of approximately 479 compared to the CPU‑based conventional algorithm
+  and about 60 compared to the GPU‑accelerated conventional algorithm." A Fig. 6 (p. 8) dá os tempos acumulados:
+  49 662 s, 6 259,2 s e 103,7 s para 800 imagens. p. 15 e p. 16: "average processing time per hologram from 62.3 s
+  to 0.13 s".
+  - **Linha de base:** o algoritmo convencional multiplano (p. 6: "The conventional multi‑plane reconstruction
+    algorithm processes the original 1,624 × 1,624 pixels sub‑images without downsampling"); a Fig. 4 (p. 6) mostra
+    pilha reconstruída → "Minimum image" → "Particle region" → "Focused particle" → campo de partículas. Ou seja: a
+    reconstrução da pilha, o foco e a segmentação de cada partícula entram no tempo da linha de base. **Quantos
+    planos e qual o passo em z: não diz** (o Δz = 144 µm do p. 2 é do HolodecML de Schreck et al., não da linha de
+    base deles). A versão GPU: p. 7, "implemented with PyTorch on an NVIDIA RTX 4090".
+  - **Tamanho:** a linha de base roda nas sub-imagens de 1624 × 1624 sem redução; a rede, nas de 512 × 512. **Se
+    "por imagem" é por quadro inteiro ou por sub-imagem: não diz** (o texto usa "per image" e "per hologram").
+  - **O que entra no tempo da rede** (fundo, divisão em seis, redução, binarização e decodificação): **não diz**.
+  - **Hardware:** Tabela 1 (p. 6), "Xeon (R) Platinum 8352 V" e "RTX 4090/24 GB", descrita como "Experimental
+    setting of the HoloAtt-UNet network". Em que CPU rodou o convencional: **não diz** explicitamente.
+  - **Inconsistência interna:** p. 7 diz também que a versão GPU está "averaging 6.0 s per image", contra os 7,82 s
+    da frase seguinte e da Fig. 6. Usei 7,82 s (o que bate com a Fig. 6 e com o fator ≈ 60). p. 7 diz que o
+    convencional "exhibits a super-linear increase in processing time as the number of images grows"; os números
+    acumulados da Fig. 6 crescem menos que linearmente (5604 s para 100 imagens, 49 662 s para 800).
+  - **Tempo real:** não demonstrado; p. 16: "direct benchmarking of HoloAtt-UNet on target airborne hardware has not
+    yet been performed. Therefore, real-time airborne deployment should be interpreted as a projected capability
+    rather than an established result of this study."
+- **(d) Comparação com uma retropropagação a distância conhecida:** **não há.** O problema é 3D: as gotas estão em
+  profundidades diferentes de um volume de amostragem de ≈ 15 cm³ (p. 2: "a sampling volume of approximately 15
+  cm³"); erro de z por partícula 6,34 mm (p. 7) e faixa "0-30 mm" citada (p. 7). Uma única retropropagação não é
+  alternativa ali; a frase do paper "none of them is a single back-propagation at a known distance" continua
+  verdadeira.
+- **(e) Densidade e sobreposição.** p. 8: "the false positive rate is highest (34.9%) at the lowest particle
+  concentration (bin 1), while the missed detection rate is highest (30.9%) at the highest concentration (bin 10)."
+  p. 7: "particles with small z produce small fringe patterns that are more easily disturbed by neighboring
+  fringes." p. 16: "(iii) at very high particle concentrations, the model produces more missed detections". p. 14:
+  "a slight underestimation is observed during periods of extremely high concentration values". p. 15: "This
+  underestimation in dense cloud regions accumulates over time". Em sentido contrário, p. 13: "Correlation
+  coefficients between the evaluation metrics and both brightness and particle overlap are below 0.3, indicating
+  low sensitivity to these variables" (índice de sobreposição da eq. 21, p. 13, baseado na distância ao vizinho mais
+  próximo; a métrica é SSIM/PSNR da imagem codificada, não a taxa de perda). Os valores de concentração dos dez bins
+  não são dados no texto (só a Fig. 7g).
+- **(f) Dados:** reais, HOLODEC II na campanha CSET (2015), 1400 hologramas de treino e validação (p. 2) e um
+  conjunto de 7200 de outro trecho do voo, "characterized by a significantly higher particle concentration" (p. 3),
+  que eles chamam de teste de covariate shift e não de fora da distribuição (p. 3, p. 16). Simulação só na Fig. 2
+  (ilustração).
+- **(g) Outros pontos que tocam as nossas afirmações:** (i) reduzir a resolução custa as partículas pequenas (p. 5:
+  "particles smaller than 10 μm account for 66% of missed detections, indicating that the loss of fine and
+  high-frequency fringe details during downsampling may disproportionately affect small-particle detection"),
+  relevante para a parte A (resolução da fonte); (ii) a referência de acerto é a própria reconstrução convencional,
+  então o trabalho mede concordância com a reconstrução, não acerto absoluto; (iii) não cronometram a detecção à
+  parte: a rede faz detecção e regressão juntas.
+- **O que muda em relação ao que escrevemos pelo resumo:** o resumo dava 479× e ≈ 60× sem a linha de base; o texto
+  confirma que a linha de base é a reconstrução multiplano completa, com foco e segmentação, em sub-imagens 3,2 vezes
+  maiores por lado que a entrada da rede. Não contradiz a frase "Where the claim was measured, it was measured
+  against a long reconstruction". A descrição "Do holograma bruto a máscaras de partículas" da tabela 3c está certa,
+  com a precisão de que a "máscara" é uma imagem codificada (posição, profundidade, raio).
+
 ## 3. Tabela C.1
 
 "Afirma" quer dizer que achei no texto a frase em que a reconstrução é dita lenta, cara ou iterativa, ou em que pulá-la dá velocidade ou tempo real. "Mediu" quer dizer que o trabalho cronometrou a reconstrução contra o próprio método. Os anos anteriores a 2020 estão marcados com †.
@@ -264,6 +344,7 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 | Scherrer et al. 2022 (10.1007/978-3-031-20837-9_3; versão do autor no Archimer, pp. 1–15 = pp. 25–39 publicadas) | "However, this iterative and time-consuming step must be performed at each frame of a video, which makes it difficult to support real-time processing." (resumo); "conventional algorithms [5] used to search each object's focus plane and remove twin image artifacts are iterative and computationally intensive and therefore not always compatible with real-time processing." | 1 e 2 (versão do autor) | Sim (iterativa) | Só o próprio detector: YOLOv5s 4 ms, YOLOv5x 14 ms por holograma de 512 × 512 (Tabela 1, p. 11); YOLOv5s+SORT 44 FPS (Tabela 2, p. 12) | Nenhuma reconstrução cronometrada; o "baseline" de acerto é a função de transmissão perfeita t0, não uma reconstrução | i7 2,9 GHz + GTX 2060 | *Acrescentado em 2026-11-15.* Hologramas **simulados**, 13 objetos por imagem "randomly placed without overlapping" (p. 6), objetos só de amplitude, onda plana, z = 0,8 mm fixo (pp. 6–7); conjunto fechado de 13 classes |
 | Zhu et al. 2021 (10.1088/2515-7647/abf250) | "However, traditional digital holography usually requires post-processing steps, which is time-consuming and may not achieve the final object detection performance." | 1 (resumo) | Sim | Só entre redes: "decision time" = treino + teste (Tabela 2) | Outras redes e trabalhos anteriores do grupo, nenhuma reconstrução | TITAN V | *Acrescentado em 2026-11-15.* Microplásticos, conjunto fechado |
 | Pirone et al. 2026 (10.1088/2515-7647/ae79c2) | "Some HIFC approaches even utilize raw holograms for classification rather than reconstructed phase images. This is advantageous for high-speed analysis, as it eliminates the computational overhead of the holographic reconstruction pipeline, including zeroth and twin order filtering, refocusing, and phase unwrapping, thus dramatically reducing processing cost." | 2 | Sim (como motivação da literatura) | **Sim, estágio por estágio, mesma máquina** (Tabela 2, p. 6): demodulação (um filtro no domínio de Fourier) 0,0177 s; refoco pela busca do coeficiente de Tamura 0,3975 s; desembrulhamento 0,0444 s; classificação do bruto 0,0527 s (18 IPS) contra a do campo demodulado 0,0289 s (34 IPS). Acerto: bruto 89,62 %, demodulado 90,12 %, refocado 93,87 %, fase 95,87 % (teste, binário) | O pipeline completo off-axis, e as reconstruções aprendidas (refoco por regressão 0,0767 s; UNET ponta a ponta 0,0473 s, Tabela 4, p. 9) | Xeon W7-2475X + RTX 4000 Ada, MATLAB | *Acrescentado em 2026-11-15.* **Medição a favor do nosso argumento:** classificar o campo demodulado (um passo de Fourier) é **mais rápido** que classificar o bruto, porque a entrada é menor (p. 7: "Interestingly, this is faster than directly classifying raw holograms"), e mais acertado; o gargalo é a busca do foco ("the refocusing stage is the main bottleneck", p. 7). Off-axis, ROIs de 512 × 512 com uma célula cada (p. 4); a detecção das células não é cronometrada |
+| Song et al. 2026, HoloAtt-UNet (10.1016/j.measurement.2026.122543; PDF enviado pelo orientador) | "The conventional holographic processing workflow-comprising diffraction reconstruction, focal plane detection, target segmentation, and feature extraction-is inherently computationally intensive and time-consuming." (resumo: "circumventing the computationally expensive multi-plane reconstruction stage") | 2 (e 1) | Sim | **Sim**, contra o pipeline convencional completo: 62,3 s (CPU) e 7,82 s (GPU) contra 0,13 s por imagem, 800 imagens (p. 7, Fig. 6) | Reconstrução multiplano + foco + segmentação por partícula, em sub-imagens de 1624 × 1624 (p. 6, Fig. 4); número de planos não dado | Xeon Platinum 8352V + RTX 4090 (Tabela 1) | *Acrescentado em 2026-11-17* (ficha completa na seção 2). Volume 3D de gotas, uma única retropropagação não é a alternativa; dados reais (HOLODEC II) |
 | Göröcs et al. 2018† (10.1038/s41377-018-0067-0) | "The major computational operations are (1) segmentation of the full FOV hologram for object detection (~70 ms), (2) holographic autofocusing and reconstruction (~12 ms/object), and (3) transfer ... and saving of the images on an internal solid-state drive (~10–20 ms per object)." e "The deep learning-based phase-recovery step is currently the most intensive part of our algorithm, with a runtime of ~250 ms/object." (duas colunas juntadas) | 7 | Não afirma (reconstrói) | **Sim, estágio por estágio** | — | GTX 1080 | **Medição a favor do nosso argumento:** autofocus + retropropagação (12 ms/objeto) custam menos que a detecção (70 ms por quadro) e muito menos que a recuperação de fase para imagem limpa (250 ms/objeto) |
 
 ### 3b. Lidos, sem a afirmação (não entram na lista "afirma")
@@ -292,7 +373,7 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
 | Kim et al. 2021, Holo-SpeckleNet (10.1016/j.jhazmat.2020.124637) | Sem acesso aberto | Mede concentração de material particulado direto do speckle, sem pós-processamento demorado |
 | O'Connor et al. 2020, Douglass et al. 2022 e Gupta et al. 2025, SRPE lensless (10.1364/OE.405563; 10.1364/OE.469199; 10.1364/OE.546326) | Optica, desafio JS | Classificação sem reconstrução com codificação por difusor. O de 2022 fala em economia computacional ao recortar a assinatura |
 | *Acrescentados em 2026-11-15 (complemento aberto):* | | |
-| Song et al. 2026, HoloAtt-UNet (10.1016/j.measurement.2026.122543) | Optica Open: desafio anti-bot | Do holograma bruto a máscaras de partículas de nuvem, evitando a reconstrução em vários planos. **Diz ter medido:** 479 vezes mais rápido que o algoritmo convencional em CPU e cerca de 60 vezes mais rápido que o convencional acelerado em GPU. Sem o texto, não sei o baseline (quantos planos) nem se a detecção entra. **Prioridade para o orientador baixar** |
+| ~~Song et al. 2026, HoloAtt-UNet (10.1016/j.measurement.2026.122543)~~ *lido em 2026-11-17, ver seção 2 e tabela 3a* | Optica Open: desafio anti-bot | Do holograma bruto a máscaras de partículas de nuvem, evitando a reconstrução em vários planos. **Diz ter medido:** 479 vezes mais rápido que o algoritmo convencional em CPU e cerca de 60 vezes mais rápido que o convencional acelerado em GPU. Sem o texto, não sei o baseline (quantos planos) nem se a detecção entra. **Prioridade para o orientador baixar** |
 | Zhang et al. 2021, plâncton (10.1016/j.optlastec.2021.106979) | Elsevier | Afirma que a reconstrução exige "time-consuming iterative calculations" e classifica o bruto com transferência de aprendizado (≈ 92 %) |
 | "Holographic Classifier", INDIN 2020 (10.1109/INDIN45582.2020.9442146; autores não conferidos) | IEEE | Afirma que desembrulhar, filtrar e refocar "costs a lot of time"; detecção de microplásticos no bruto |
 | JBO 26:036001 (2021), contagem de hemácias por FCN (10.1117/1.JBO.26.3.036001) | SPIE: desafio anti-bot | Afirma que a análise pela fase é ineficiente pela complexidade da reconstrução; U-Net no bruto, > 288 células/s em 200 × 200 µm |
@@ -325,7 +406,10 @@ A numeração foi conferida no PDF compilado (`latex_final/main.pdf`, estilo `un
   classificação, e classificar depois dele é mais rápido que classificar o bruto; o que custa é a busca do foco.
 - **Mediram só o próprio pipeline:** acrescentar Scherrer 2022 (só o detector) e Seo 2010 (só a reconstrução).
 - **Não mediram:** acrescentar Seo 2009 e Zhu 2021 (este só "decision time" entre redes).
-- **Somente resumo, novos: 7 linhas** (fim da tabela 3c), entre eles HoloAtt-UNet 2026, que diz ter medido contra a
+- *2026-11-17:* HoloAtt-UNet saiu do "somente resumo": texto completo lido (seção 2). Agora **18** afirmam com a frase
+  localizada no texto completo, e são **4** os que mediram contra uma reconstrução no mesmo hardware (Liu, Matthews,
+  OAH-Net, HoloAtt-UNet).
+- **Somente resumo, novos: 7 linhas** (fim da tabela 3c; desde 2026-11-17, 6), entre eles HoloAtt-UNet 2026, que diz ter medido contra a
   reconstrução em vários planos e cujo texto foi bloqueado.
 
 ---
@@ -454,7 +538,8 @@ Legenda: **[TC]** texto completo lido; **[TC-parcial]** texto completo baixado e
 - **Triagem:** os 207 registros do PubMed foram triados por título e, para os sinalizados, pelo resumo. As decisões estão em `referencias/c/merged/screening.csv`: 28 incluídos, 179 "não incluído".
 - **2026-11-15:** a triagem dos 711 trabalhos novos do complemento aberto está no mesmo arquivo (37 incluídos; total
   56 em 918). Scopus e ScienceDirect **continuam sem rodar**; o que o complemento não cobre está na seção 1b.
-  Abertos mas bloqueados ao cliente automático, novos: HoloAtt-UNet (Optica Open), a versão HAL de Scherrer, JBO
+  Abertos mas bloqueados ao cliente automático, novos: HoloAtt-UNet (Optica Open; *PDF recebido do orientador e lido em
+  2026-11-17*), a versão HAL de Scherrer, JBO
   2021 (SPIE), Cotter (MIT, 429 pela terceira vez), Delli Priscoli e IEEE Photonics J. 2024 (IEEE, 502). Não contornei
   nenhum desafio.
 
@@ -491,6 +576,8 @@ trabalho; "TC" = texto completo lido; "R" = só resumo (descrito sem aspas e sem
 | CBMS 2024: "computationally expensive" (p. 364), "iterative and complex" (p. 365), "significantly reduces processing time and computational resources" (p. 369); só tempo de treino; Eq. 3 é convolução de Fresnel com um par de FFTs; tempo real deixado para um contexto não simulado (p. 369) | TC, seção 2 deste documento |
 | Liu 2021: ≈ 14 s por recorte contra < 0,1 s; 501 distâncias de 10 a 60 mm; sem localização cronometrada (Tabela 5) | TC, Tabela 5 e nota b; p. 7 |
 | Matthews 2024: 149 ms contra 1658 ms por quadro, mesma CPU (Tabela 2); pilha de refoco para 3D | TC, Tabela 2 (p. 11), p. 5 |
+| *2026-11-17:* Song 2026 (HoloAtt-UNet): 0,13 s por holograma contra 62,3 s (CPU) e 7,82 s (GPU) do processamento convencional; pilha de planos (número não dado), foco e segmentação (Fig. 4); gotas em profundidades diferentes de ≈ 15 cm³; sub-imagens de 1624 × 1624 reduzidas a 512 × 512; também na lista dos que afirmam o argumento | TC, p. 7, Fig. 6 (p. 8), Fig. 4 (p. 6), p. 2; afirmação: p. 1 e p. 2 |
+| *2026-11-17:* Song 2026: maior taxa de perda (30,9 %) no bin de maior concentração (p. 8); qualidade pouco correlacionada com o índice de sobreposição (p. 13) | TC, p. 8 e p. 13 |
 | Rivenson 2018 e FIN 2022 comparam recuperação de fase aprendida com a iterativa multialtura | TC, Rivenson tabela p. 5; FIN Tabela 1 |
 | Göröcs 2018: ≈ 70 ms por quadro para detectar, ≈ 12 ms por objeto para autofocus + reconstrução, ≈ 250 ms por objeto para a recuperação de fase (p. 7, GPU) | TC, p. 7 (GTX 1080) |
 | Xu 2025: reconstrução aprendida 13,0 ms, YOLO 14,7 ms | TC: "The average reconstruction time for each image is 0.0130 s, the recognition time is 0.0147 s" |
