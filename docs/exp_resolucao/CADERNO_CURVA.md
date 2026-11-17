@@ -353,7 +353,7 @@ de gpu não é um problema, faça o necessário pela qualidade da pesquisa". Avi
 - **Previsão registrada:** D-N explica em ≥ 4 de 5; D-P não explica em ≥ 4 de 5; a rejeição de 0,849 da reconstrução
   no D-N não se repete na média (palpite, sem critério).
 
-## 2026-11-17, 11:42 — Q5: pré-registro do nível de 450 por mm² da curva de densidade (responsável)
+## 2026-11-17, 11:40 — Q5: pré-registro do nível de 450 por mm² da curva de densidade (responsável)
 
 Escrito depois do "#2 pode rodar" do orientador (≈ 11:35; `PROTOCOLO_CURVA.md`, fim) e antes de gravar o conjunto.
 Nenhum holograma deste nível existe; o que existe é a medida do gerador sem holograma (Q3-L,

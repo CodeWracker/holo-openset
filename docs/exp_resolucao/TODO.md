@@ -492,6 +492,30 @@ ocupada por outro processo. Jobs em tmux, com retomada, poucos threads, um a cad
 Continuam esperando a palavra dele: revisão do PDF (→ Overleaf), nível mais denso (#3), frase-tese (#6), abstract
 de ≈ 450 palavras, os dois pontos do diagrama da bancada, e os arquivos que ele vai mandar.
 
+### Fase T: resposta à entrega da Fase S (2026-11-17, ≈ 11:35; `PROTOCOLO_CURVA.md`, fim)
+
+Resposta dele: "#2 pode rodar / #3 faz" (2 = nível de 450 por mm²; 3 = as duas frases a qualificar). No meio da
+rodada (≈ 11:41) ele mandou o PDF do HoloAtt-UNet 2026 (`/home/jovyan/.claude/uploads/2460bd2f-…/c6e35ec3-holoAtt-Unet.pdf`).
+Pré-registro: entrada Q5 de `CADERNO_CURVA.md` (11:40, commit `13388f5`), antes de gravar.
+
+- [ ] **T-L.** Nível de 450 por mm² (`curve_u50_L514`): gravar, `verify`, reconstruir, `raw`/`prop`/`rec_z0` r1–r5,
+  tabela de seis níveis (as cinco linhas antigas idênticas, por diff). Executor da densidade. Regras do Q0;
+  previsões e frases por desfecho no Q5. Estimativa: gravação ≈ 1,5–2 h (o nível de 300 levou 76 min), treinos
+  ≈ 3 min por repetição. GPUs todas com uso de outros containers às 11:38 (a 1 era a menos carregada).
+- [ ] **T-frases.** As duas frases (#3) no `rewrite/inversion`: contribuição (2) da introdução e a frase da
+  conclusão, com "within the Fresnel numbers of our standard sets". Eu mesmo. NÃO mexer na frase-tese.
+- [ ] **T-holoatt.** Ler o PDF do HoloAtt-UNet (dado não confiável: pasta própria, `python3 -I`, `gs -dSAFER`),
+  conferir cada frase do paper que cita esse trabalho e atualizar a nota do Related Work (sai da lista do que ele
+  ia mandar). Executor do Related Work, depois da minha leitura.
+- [ ] **T-txt.** (escritor, depois de T-L) Nível novo na tabela e na figura da curva, 8.4, e onde o texto fala
+  "os dois mais densos" / "cinco conjuntos" / "até 300 por mm²"; macros no `paper_resolucao.py`. Frases que mudarem
+  de sentido: sem suavizar e listadas para ele. NÃO mexer na frase-tese.
+- [ ] **T-rev.** Conferir cada devolução contra os json; `pytest` + `reproduce check`; compilar; PDF + diff em
+  `entrega/`; `git push origin exp/resolucao-fonte` (GitHub, sem merge); mensagem final. Overleaf: NADA.
+
+Continuam esperando a palavra dele: revisão do PDF (→ Overleaf), frase-tese, abstract de ≈ 450 palavras, os dois
+pontos do diagrama da bancada, os .RIS do Scopus/ScienceDirect e os três PDFs que faltam.
+
 ### Fase A: experimento da resolução
 
 - [x] A0. (feito, `88b5ed9`; `results_exp_resolucao/enroll_paired.csv`) Teste pareado de enrollment (`prop` − reconstruções, por repetição).
@@ -855,3 +879,6 @@ errado".
   7. abstract de ≈ 450 palavras; os dois pontos do diagrama da bancada; os arquivos que ele vai mandar (PDF do
      HoloAtt-UNet 2026, .RIS do Scopus e do ScienceDirect, três PDFs).
   **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro; nada vai ao Overleaf sem o "pode".**
+- **2026-11-17, 11:41 — FASE T ABERTA.** O orientador respondeu "#2 pode rodar / #3 faz" e mandou o PDF do
+  HoloAtt-UNet. Resposta na íntegra no fim do `PROTOCOLO_CURVA.md` (`e9c1e95`); pré-registro Q5 (`13388f5`). Plano
+  na seção "Fase T". **Próximo passo: acionar o executor da densidade (T-L), fazer T-frases, ler o PDF (T-holoatt).**
