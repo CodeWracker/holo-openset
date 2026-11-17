@@ -507,7 +507,7 @@ Pré-registro: entrada Q5 de `CADERNO_CURVA.md` (11:40, commit `13388f5`), antes
   entering the crop, not the spread…") e a conclusão ("…in a dense one; within the Fresnel numbers of our standard
   sets, the cause is the fringes of neighbouring patterns entering each crop"). Frase-tese intocada. Falta compilar
   (junto com o resto, no fim).
-- [ ] **T-holoatt.** Ler o PDF do HoloAtt-UNet (dado não confiável: pasta própria, `python3 -I`, `gs -dSAFER`),
+- [x] **T-holoatt.** (15:45, conferido por mim: 62,3 / 7,82 / 0,13 s na p. 7; 30,9 % na p. 8; correlação < 0,3 com a sobreposição na p. 13; 15 cm³ e 6 sub-imagens de 1624² → 512² na p. 2. Paper `faaa9e8`, ficha `51b3c3a`. Nada do que escrevemos pelo abstract é contradito. O artigo traz duas inconsistências internas: o tempo em GPU aparece como 6,0 s e como 7,82 s, e eles chamam de "super-linear" um crescimento que os números da Fig. 6 mostram sublinear. A frase "none of them is a single back-propagation at a known distance" continua valendo.) Ler o PDF do HoloAtt-UNet (dado não confiável: pasta própria, `python3 -I`, `gs -dSAFER`),
   conferir cada frase do paper que cita esse trabalho e atualizar a nota do Related Work (sai da lista do que ele
   ia mandar). Executor do Related Work, depois da minha leitura.
 - [ ] **T-txt.** (escritor, depois de T-L) Nível novo na tabela e na figura da curva, 8.4, e onde o texto fala
@@ -897,3 +897,8 @@ errado".
   `06-results` l.45 ("two densest levels"), `06b` l.18, 41, 46, 51, 72, 74, 76 ("five standard sets", "five levels",
   "two densest", "at any level up to", "largest loss … at the densest level"), `08-conc` l.4.
   **Próximo passo: esperar as duas devoluções; conferir; acionar o escritor (T-txt); compilar; entregar.**
+- **2026-11-17, 15:45.** O uso da API do orientador bateu o limite entre ≈ 12:00 e 15:40, e o executor da densidade parou
+  no meio. A gravação NÃO parou: o tmux `res_curve_rec_L514` seguiu e estava em 4000/5000 às 15:42 (lento: as GPUs
+  estão a 100 % com outros containers). Retomei o executor às 15:42 com a mesma tarefa (sem relançar nada).
+  T-holoatt conferido e aceito.
+  **Próximo passo: esperar a devolução de T-L; conferir com `scratchpad/check_L514.py`; acionar o escritor (T-txt).**
