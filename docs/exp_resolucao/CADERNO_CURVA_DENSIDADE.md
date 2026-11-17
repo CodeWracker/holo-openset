@@ -799,3 +799,21 @@ ctlN F1 0,119 a R_reg contra 0,009 a R_curva, rejeição 0,434 contra 0,055; ctl
 Ao lado, sem critério: a rejeição de 0,849 da reconstrução no ctlN em r1 não se repete (r2–r5: 0,960–1,000; média
 0,961, mín. 0,849, máx. 1,000, contra 0,985 no `small_near_newrec`); a camada no ctlN teve r3 em 0,825 de rejeição
 (média 0,963). No ctlP as duas rotas ficam em 0,994–0,996 de rejeição média.
+
+## 2026-11-17, 11:46 — D15: Fase T, T-L, o nível de 450 por mm² (`curve_u50_L514`), começo (antes de qualquer treino ou leitura de teste)
+
+Contrato: `CADERNO_CURVA.md`, Q5 (commit `13388f5`): gravar `curve_u50_L514` com `fill_mean=514` e nada mais diferente da
+família; `verify` antes de treinar; `raw`, `prop --alpha-extend 12`, `rec_z0`, `--no-aux`, r1–r5 direto (desvio do Q0
+declarado no Q5); regras do Q0; tabela de seis níveis com as linhas dos cinco antigos idênticas (diff).
+
+- `density_curve.sh` aceita `LEVEL=514` (só o `case` e o cabeçalho) e `density_curve_table.py` tem 514 em `LEVELS`
+  (commit `1b056ff`).
+- Antes de lançar (11:40): GPU 0 com 79,4 de 81,6 GB em uso (17 %), 1 com 53,5 GB (12 %), 2–5 a 88–99 % de uso por
+  outros containers; `cpu.pressure` some avg10 0,23; 5 threads prontas. Escolhida a **GPU 1**.
+- 11:41 `OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENCV_FOR_THREADS_NUM=4 NUMBA_NUM_THREADS=4
+  HOLO_THREADS=4 LAW=u50 LEVEL=514 WORKERS=8 bash scripts/exp_resolucao/density_curve.sh 1 record` (tmux
+  `res_curve_rec_L514`) → `simulate fresnel --name curve_u50_L514 --n-images 5000 --device cuda:1 --workers 8
+  --set-physics z0=1.0e-3 oversample=4 margin=394 reach=233 depth_std=2.6e-6 depth_max=7.8e-6 depth_uniform=25e-6
+  --layout letters_mean=8 letters_std=3 letters_min=3 letters_max=18 fill_mean=514`.
+- Cópia dos arquivos da tabela antes de regenerar (`density_curve.csv`, `_reps.csv`, `_reading.json`, `curve_alpha.csv`,
+  iguais aos do git) no scratchpad, `…/scratchpad/curve_before_L514/`.
