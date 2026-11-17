@@ -133,3 +133,23 @@ Os números são os da lista "O que espera a sua palavra" da minha mensagem fina
   Se ele achar que passei do pedido, é só descartar: nada disso mexe no que já existe.
 - **#6 (frase-tese):** ele vai ler. Não mexo na frase. #1, #7, #8, #9 seguem esperando.
 - Continua valendo: nada no Overleaf antes da revisão dele; sem merge; pré-registro antes de rodar.
+
+## Resposta do orientador à entrega da Fase S (2026-11-17, ≈ 11:35)
+
+Os números são os da lista "O que espera a sua palavra" da minha mensagem final da Fase S (1 Overleaf; 2 nível
+mais denso, 450 por mm², "rodo se você disser sim"; 3 duas frases que o resultado dos controles pede para
+qualificar: contribuição (2) da introdução e a frase da conclusão, com a proposta "within the Fresnel numbers of our
+standard sets"; 4 frase-tese; 5 pendentes: abstract, diagrama da bancada, arquivos que ele manda). Na íntegra:
+
+> #2 pode rodar
+> #3 faz
+
+### O que cada item vira (leitura do responsável; Fase T do `TODO.md`)
+
+- **#2 (nível mais denso):** gravo o nível de 450 por mm² da família padrão (514 letras por janela) e rodo crops,
+  camada e reconstrução em cinco repetições, com as regras do Q0 sem mudança. Pré-registro na entrada Q5 de
+  `CADERNO_CURVA.md`, antes de gravar. O resultado entra na curva (tabela, figura, 8.4) por macro.
+- **#3 (as duas frases):** acrescento a oração de limite na contribuição (2) da introdução e na frase da conclusão,
+  no `rewrite/inversion`. A frase-tese não é tocada.
+- Nada sobre o #1: o Overleaf continua esperando a revisão dele. Nada sobre o #4 e o #5: seguem como estão.
+- Continua valendo: sem merge; pré-registro antes de rodar; números no texto só por macro; PDF e diff no fim.
