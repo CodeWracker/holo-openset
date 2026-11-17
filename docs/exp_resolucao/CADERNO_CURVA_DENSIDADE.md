@@ -817,3 +817,75 @@ declarado no Q5); regras do Q0; tabela de seis níveis com as linhas dos cinco a
   --layout letters_mean=8 letters_std=3 letters_min=3 letters_max=18 fill_mean=514`.
 - Cópia dos arquivos da tabela antes de regenerar (`density_curve.csv`, `_reps.csv`, `_reading.json`, `curve_alpha.csv`,
   iguais aos do git) no scratchpad, `…/scratchpad/curve_before_L514/`.
+
+## 2026-11-17, 20:43 — D15 (fim): o nível de 450 por mm² (`curve_u50_L514`), resultado
+
+### Gravação e conferência
+
+- Gravação (GPU 1, 8 construtores): 11:41:21–16:13:46, **16 345 s** (4 h 32 min; GPUs compartilhadas com outros
+  containers a 88–100 %). Disco: 9,2 GB com o `rec_z0.npy`; modelos 669 MB.
+- `verify` (GPU 2, 16:14–16:30, 954 s; `results_exp_resolucao/curve_u50_L514_checks.json`, `_sanity.json`, folha
+  `docs/exp_resolucao/img/curve_u50_L514_examples.png`), contra `curve_u50_L008`: `annotations.csv` idêntico byte a
+  byte (40 309 linhas; 28 227 / 5711 / 6371); rótulos (5000), mapas (1600), `dust.csv`, `sessions.csv`,
+  `backgrounds.npy` e colunas comuns do `metadata.csv` idênticos; `physics.json` só com `fill_mean` = 514; sem
+  enchimento = L008 e com enchimento = o conjunto nas imagens 100 e 0 (0 níveis; o enchimento muda o holograma em
+  27,1–28,6 níveis rms). **Passou.**
+- **Densidade obtida:** 511,03 letras por janela (dp 20,46; p5–p95 476–544; mín. 445, máx. 578; treino 511,03,
+  validação 511,25, teste 510,80) = **447,35 por mm²**; na faixa, 509,88 por 640². Enchimento pulado: 53 829 de
+  7 553 667 (**0,71 %**, em 4993 imagens; abaixo dos 5 % do Q0). Área coberta (caixas de tinta, 100 cenas):
+  **34,44 %**. π D² σ = 17,56 (D = 111,8 µm), sobreposição 1,0000. Sanidade: nível médio 94,99, brancos 101,51,
+  ruído refeito das sementes média −0,002 a 0,006, rms 2,038–2,045.
+- `reconstruct` (GPU 2) 78 s. Treinos (r1–r3 na GPU 2, r4–r5 na GPU 1, lançados com 1,5 min de intervalo): 344 /
+  463 / 466 / 336 / 375 s; avaliações 49 / 114 / 52 / 44 / 127 s; 16:32–16:57. Os 15 modelos com 3000 passos.
+  Teste lido uma vez por modelo.
+
+### Resultados (`density_curve.csv`, `_reps.csv`, `_reading.json`, seis níveis)
+
+| rep | raw F1 / rej. / fechada | prop F1 / rej. / fechada | rec_z0 F1 / rej. / fechada |
+|---|---|---|---|
+| 1 | 0,5636 / 0,0153 / 0,6547 | 0,9066 / 0,4775 / 0,9628 | 0,9406 / 0,7319 / 0,9782 |
+| 2 | 0,5664 / 0,0237 / 0,6522 | 0,9216 / 0,6593 / 0,9620 | 0,9412 / 0,7666 / 0,9739 |
+| 3 | 0,5363 / 0,0086 / 0,6267 | 0,9068 / 0,4238 / 0,9626 | 0,9362 / 0,6773 / 0,9786 |
+| 4 | 0,5537 / 0,0139 / 0,6419 | 0,9187 / 0,6003 / 0,9627 | 0,9444 / 0,7625 / 0,9796 |
+| 5 | 0,5457 / 0,0205 / 0,6311 | 0,9211 / 0,6527 / 0,9612 | 0,9523 / 0,8382 / 0,9755 |
+| média | 0,5531 / 0,0164 / 0,6413 | 0,9150 / 0,5627 / 0,9623 | 0,9429 / 0,7553 / 0,9772 |
+| mín. | 0,5363 / 0,0086 / 0,6267 | 0,9066 / 0,4238 / 0,9612 | 0,9362 / 0,6773 / 0,9739 |
+| máx. | 0,5664 / 0,0237 / 0,6547 | 0,9216 / 0,6593 / 0,9628 | 0,9523 / 0,8382 / 0,9796 |
+
+### "Caiu" (contra o nível 8, mesma repetição; ≥ 0,10 em F1, ≥ 0,30 em rejeição; ≥ 4 de 5)
+
+| fluxo | queda de F1 por repetição (r1–r5) | caiu em F1 | queda de rejeição por repetição | caiu em rejeição |
+|---|---|---|---|---|
+| raw | −0,361 / −0,372 / −0,400 / −0,393 / −0,392 | **sim (5 de 5)** | −0,598 / −0,691 / −0,716 / −0,813 / −0,669 | **sim (5 de 5)** |
+| prop | −0,068 / −0,056 / −0,063 / −0,059 / −0,054 | **não (0 de 5)** | −0,502 / −0,341 / −0,513 / −0,397 / −0,347 | **sim (5 de 5)** |
+| rec_z0 | −0,033 / −0,038 / −0,043 / −0,031 / −0,025 | **não (0 de 5)** | −0,263 / −0,233 / −0,310 / −0,236 / −0,161 | **não (1 de 5)** |
+
+Onde a camada cai (`density_curve_reading.json`): em rejeição, no nível 514 (o primeiro); em F1, não caiu até a
+densidade obtida. Reconstrução − camada: F1 +0,028 em média (0,020–0,034), positiva em **5 de 5**; rejeição +0,193
+(0,107–0,254), positiva em **5 de 5**. Limiares do P0 (camada − crops ≥ 0,10 / ≥ 0,30): F1 5 de 5 (média +0,362),
+rejeição 5 de 5 (+0,546), os dois 5 de 5.
+
+### α da camada (`curve_alpha.csv`, commit `3f2c618`, do responsável; recalculado com o código do piloto)
+
+Calibrado 0,001058662 → 0,99986 mm nas cinco; treinado 0,0010452 / 0,0010459 / 0,0010428 / 0,0010405 / 0,0010383
+→ 0,9872 / 0,9878 / 0,9849 / 0,9827 / 0,9807 mm (variação −1,27 / −1,21 / −1,50 / −1,72 / −1,92 %; média −1,52 %).
+As linhas dos cinco níveis antigos saíram idênticas (diff contra a cópia de antes).
+
+### Tabela de seis níveis: as linhas antigas
+
+Diff contra as cópias de antes (`…/scratchpad/curve_before_L514/`): cabeçalhos iguais; `density_curve.csv` 25 → 30
+linhas e `density_curve_reps.csv` 125 → 150, as linhas dos níveis 8–343 **idênticas**; em `density_curve_reading.json`
+as entradas dos cinco níveis antigos idênticas; mudou só `layer_falls_first.rej` ("did not fall…" → 514).
+
+### Previsões do Q5
+
+1. Crops: F1 médio abaixo de 0,668 (0,553), rejeição média ≤ 0,05 (0,016), acerto em fechado abaixo de 0,770
+   (0,641) → **valeu**.
+2. Camada cai em rejeição (≥ 4 de 5) e não cai em F1 → **valeu** (5 de 5; 0 de 5). Palpites numéricos: rejeição média
+   entre 0,60 e 0,70 (queda de 0,28 a 0,38) → **não valeu** (0,563; queda 0,420); F1 médio entre 0,91 e 0,935 →
+   **valeu** (0,915).
+3. Reconstrução não cai em nenhuma das duas → **valeu** (F1 0 de 5, rejeição 1 de 5); rejeição média ≥ 0,80 → **não
+   valeu** (0,755); rejeita mais que a camada em 5 de 5 → **valeu**.
+
+Commits: `1b056ff` (script), `c563ace` (D15, começo), `d8adf60` (gravação e conferência), `fe42138` (avaliações e
+tabela de seis níveis), `3f2c618` (`curve_alpha.csv`, do responsável).
