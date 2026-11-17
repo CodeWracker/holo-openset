@@ -352,3 +352,63 @@ de gpu não é um problema, faça o necessário pela qualidade da pesquisa". Avi
   `small_near_newrec` (0,973 / 0,985 e 0,974 / 0,985, cinco repetições).
 - **Previsão registrada:** D-N explica em ≥ 4 de 5; D-P não explica em ≥ 4 de 5; a rejeição de 0,849 da reconstrução
   no D-N não se repete na média (palpite, sem critério).
+
+## 2026-11-17, 11:42 — Q5: pré-registro do nível de 450 por mm² da curva de densidade (responsável)
+
+Escrito depois do "#2 pode rodar" do orientador (≈ 11:35; `PROTOCOLO_CURVA.md`, fim) e antes de gravar o conjunto.
+Nenhum holograma deste nível existe; o que existe é a medida do gerador sem holograma (Q3-L,
+`curve_feasibility_dense.csv`: a 514 letras por janela ele coloca 512,3; 0,75 % do enchimento pulado; 34,2 % da área
+coberta).
+
+### O que é gravado e o que roda
+
+- **Conjunto:** `curve_u50_L514`, o sexto nível da família padrão: as mesmas 40 309 letras anotadas, as mesmas
+  sementes, a lei de profundidade padrão (uniforme em ±25 µm), gravador (s = 4), física e receita da família
+  (`density_curve.sh`, com `LEVEL=514` aceito; nenhuma outra mudança no caminho de gravação). A única diferença para
+  os outros níveis é `fill_mean=514`.
+- **Conferência antes de qualquer treino** (passo `verify`, como nos outros níveis): anotações, rótulos, mapas,
+  poeira, sessões e quadros em branco idênticos aos do nível esparso; gravações sem o enchimento idênticas às do
+  esparso; letras por janela, enchimento pulado e área coberta. Se a conferência falhar, para tudo e é reportado.
+- **Densidade reportada:** a obtida (contada no `metadata.csv`), não o alvo. Se mais de 5 % do enchimento for
+  pulado, declaro (regra do Q0). A sobreposição do nível sai da fórmula do Q0 com D = 111,8 µm.
+- **Fluxos e repetições:** `raw`, `prop` (`--alpha-extend 12`) e `rec_z0`, `--no-aux`, **r1 a r5 direto**. Desvio
+  declarado da ordem do Q0 (r1 primeiro, r2–r5 onde "as curvas se separam"): os outros cinco níveis já têm cinco
+  repetições, a regra deu sim em todos com folga, e o nível só entra na curva com cinco. As cinco rodam e são
+  reportadas qualquer que seja o r1; nenhuma é descartada; cada teste é lido uma vez.
+- **Nada mais roda neste nível:** nem bancos, nem distância, nem profundidade, nem os outros fluxos. Os cinco níveis
+  que existem não são regravados nem retreinados; as linhas deles em `density_curve.csv` têm de sair idênticas às
+  de hoje (confiro por diff).
+
+### Regras (as do Q0, sem mudança)
+
+- **"Caiu":** o fluxo caiu em F1 no nível se ficar ≥ 0,10 abaixo do F1 dele mesmo no nível esparso, na mesma
+  repetição; caiu em rejeição se a rejeição das não vistas ficar ≥ 0,30 abaixo, na mesma comparação; com cinco
+  repetições, caiu se a condição valer em ≥ 4 de 5. F1 e rejeição são reportados separados.
+- **Descritivo, ao lado:** reconstrução − camada em F1 e em rejeição (média e em quantas de 5 é positiva); os
+  limiares do P0 (camada − crops ≥ 0,10 em F1 e ≥ 0,30 em rejeição em ≥ 4 de 5); acerto em conjunto fechado dos
+  três fluxos; o α calibrado e o treinado da camada (`curve_alpha.csv`).
+
+### Previsões registradas (antes de gravar)
+
+Referência, média de cinco no nível de 300 por mm²: crops 0,668 / 0,031; camada 0,942 / 0,743 (queda de rejeição
+contra o esparso 0,239; por repetição 0,135–0,292, isto é, 0 de 5 cruzam a linha de 0,30); reconstrução 0,960 /
+0,895.
+
+1. **Crops:** F1 médio abaixo de 0,668 e rejeição média ≤ 0,05; acerto em fechado abaixo de 0,770.
+2. **Camada:** cai em rejeição (≥ 4 de 5) e **não** cai em F1. É palpite, e a linha de rejeição está perto: espero
+   rejeição média entre 0,60 e 0,70 (queda de 0,28 a 0,38) e F1 médio entre 0,91 e 0,935.
+3. **Reconstrução:** não cai em nenhuma das duas; rejeição média ≥ 0,80; rejeita mais que a camada em 5 de 5.
+
+### O que o texto diz em cada desfecho (fixado agora)
+
+- **A camada cai em rejeição e a reconstrução não:** "a camada cai em rejeição a 450 por mm², o primeiro nível em
+  que isso acontece; a reconstrução não cai em nenhum nível gravado". Reforça, sem mudar, a frase "a reconstrução
+  calibrada é a melhor rota no denso".
+- **A camada não cai:** "não cai até 450 por mm²", com a contagem das repetições e a queda média, e a informação de
+  que o gerador satura perto de 575 por mm². Nenhum nível novo é gravado sem perguntar ao orientador.
+- **As duas caem (em F1 ou em rejeição):** é dito assim, e toda frase que afirma que a etapa de propagação resolve
+  o open-set ganha o limite de densidade (abstract, contribuição (3), conclusão, discussão). Frase que mudar de
+  sentido entra com o sentido novo, sem suavizar, e vai listada para o orientador. A frase-tese não é tocada.
+- **Contagem entre os limites (2 ou 3 de 5):** pela regra "não caiu"; reporto a contagem e as quedas por repetição.
+- Em qualquer desfecho o nível entra na tabela e na figura da curva, com a densidade obtida, e nada é rodado de
+  novo com outra configuração depois de lido o teste.
