@@ -502,8 +502,11 @@ Pré-registro: entrada Q5 de `CADERNO_CURVA.md` (11:40, commit `13388f5`), antes
   tabela de seis níveis (as cinco linhas antigas idênticas, por diff). Executor da densidade. Regras do Q0;
   previsões e frases por desfecho no Q5. Estimativa: gravação ≈ 1,5–2 h (o nível de 300 levou 76 min), treinos
   ≈ 3 min por repetição. GPUs todas com uso de outros containers às 11:38 (a 1 era a menos carregada).
-- [ ] **T-frases.** As duas frases (#3) no `rewrite/inversion`: contribuição (2) da introdução e a frase da
-  conclusão, com "within the Fresnel numbers of our standard sets". Eu mesmo. NÃO mexer na frase-tese.
+- [x] **T-frases.** (11:45, paper `a1c7276`) As duas frases (#3) no `rewrite/inversion`: contribuição (2) da
+  introdução ("…and of why: within the Fresnel numbers of our standard sets, the patterns of neighbouring objects
+  entering the crop, not the spread…") e a conclusão ("…in a dense one; within the Fresnel numbers of our standard
+  sets, the cause is the fringes of neighbouring patterns entering each crop"). Frase-tese intocada. Falta compilar
+  (junto com o resto, no fim).
 - [ ] **T-holoatt.** Ler o PDF do HoloAtt-UNet (dado não confiável: pasta própria, `python3 -I`, `gs -dSAFER`),
   conferir cada frase do paper que cita esse trabalho e atualizar a nota do Related Work (sai da lista do que ele
   ia mandar). Executor do Related Work, depois da minha leitura.
@@ -882,3 +885,15 @@ errado".
 - **2026-11-17, 11:41 — FASE T ABERTA.** O orientador respondeu "#2 pode rodar / #3 faz" e mandou o PDF do
   HoloAtt-UNet. Resposta na íntegra no fim do `PROTOCOLO_CURVA.md` (`e9c1e95`); pré-registro Q5 (`13388f5`). Plano
   na seção "Fase T". **Próximo passo: acionar o executor da densidade (T-L), fazer T-frases, ler o PDF (T-holoatt).**
+- **2026-11-17, 11:52.** T-frases feita (`a1c7276`). **T-L RODANDO:** gravação de `curve_u50_L514` começou às
+  11:41:21 na GPU 1, tmux `res_curve_rec_L514`, log `logs/exp_resolucao/curve_record_u50_L514.log` (executor da
+  densidade; o script aceita o nível desde `1b056ff`). **T-holoatt RODANDO:** PDF copiado para
+  `scratchpad/recebidos/holoatt_unet/` (sha256 3688be3d…), texto por página em `scratchpad/recebidos_txt/holoatt_unet/`
+  (é mesmo Song et al., Measurement 289 (2026) 122543); executor do Related Work lendo e escrevendo (só
+  `02-related.tex`, `.bib` e `LEVANTAMENTO_C.md`). Para a minha conferência de T-L: cópia das tabelas de antes em
+  `scratchpad/antes_T/` e script `scratchpad/check_L514.py` (refaz médias, quedas, "caiu", reconstrução − camada e
+  limiares do P0 a partir dos json; testado no nível 343). Lista das frases do paper que dependem do nível mais
+  denso (para o escritor, T-txt): abstract e intro l.10 (pares 135/300), `05-protocol` l.17 ("five levels … to"),
+  `06-results` l.45 ("two densest levels"), `06b` l.18, 41, 46, 51, 72, 74, 76 ("five standard sets", "five levels",
+  "two densest", "at any level up to", "largest loss … at the densest level"), `08-conc` l.4.
+  **Próximo passo: esperar as duas devoluções; conferir; acionar o escritor (T-txt); compilar; entregar.**
