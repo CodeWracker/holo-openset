@@ -511,10 +511,10 @@ Pré-registro: entrada Q5 de `CADERNO_CURVA.md` (11:40, commit `13388f5`), antes
 - [x] **T-holoatt.** (15:45, conferido por mim: 62,3 / 7,82 / 0,13 s na p. 7; 30,9 % na p. 8; correlação < 0,3 com a sobreposição na p. 13; 15 cm³ e 6 sub-imagens de 1624² → 512² na p. 2. Paper `faaa9e8`, ficha `51b3c3a`. Nada do que escrevemos pelo abstract é contradito. O artigo traz duas inconsistências internas: o tempo em GPU aparece como 6,0 s e como 7,82 s, e eles chamam de "super-linear" um crescimento que os números da Fig. 6 mostram sublinear. A frase "none of them is a single back-propagation at a known distance" continua valendo.) Ler o PDF do HoloAtt-UNet (dado não confiável: pasta própria, `python3 -I`, `gs -dSAFER`),
   conferir cada frase do paper que cita esse trabalho e atualizar a nota do Related Work (sai da lista do que ele
   ia mandar). Executor do Related Work, depois da minha leitura.
-- [ ] **T-txt.** (escritor, depois de T-L) Nível novo na tabela e na figura da curva, 8.4, e onde o texto fala
+- [x] **T-txt.** (20:50, conferido: macros do nível batem com a minha conta; só mudaram as que dependem do nível mais denso; paper `ca9fc1f`, gerador `5567ee4`; 45 páginas, 0 indefinidas, 0 overfull) (escritor, depois de T-L) Nível novo na tabela e na figura da curva, 8.4, e onde o texto fala
   "os dois mais densos" / "cinco conjuntos" / "até 300 por mm²"; macros no `paper_resolucao.py`. Frases que mudarem
   de sentido: sem suavizar e listadas para ele. NÃO mexer na frase-tese.
-- [ ] **T-rev.** Conferir cada devolução contra os json; `pytest` + `reproduce check`; compilar; PDF + diff em
+- [x] **T-rev.** (20:51; o pacote, `expected/`, `results/` e `models/` não mudaram desde `1b548e5`, por isso não rodei pytest de novo) Conferir cada devolução contra os json; `pytest` + `reproduce check`; compilar; PDF + diff em
   `entrega/`; `git push origin exp/resolucao-fonte` (GitHub, sem merge); mensagem final. Overleaf: NADA.
 
 Continuam esperando a palavra dele: revisão do PDF (→ Overleaf), frase-tese, abstract de ≈ 450 palavras, os dois
@@ -904,3 +904,10 @@ errado".
   T-holoatt conferido e aceito.
   **Próximo passo: esperar a devolução de T-L; conferir com `scratchpad/check_L514.py`; acionar o escritor (T-txt).**
 - **2026-11-17, 20:42.** T-L conferido (ver o item). Desfecho do Q5: a camada cai em rejeição a 450 por mm² (5 de 5), a reconstrução não cai. **Próximo: escritor (T-txt); o executor da densidade fecha o D15.**
+- **2026-11-17, 20:51 — FASE T ENTREGUE. PARADO, à espera do orientador.** Paper `rewrite/inversion` em `ca9fc1f` (80
+  commits à frente do `main`, 45 páginas), sem merge, NADA no Overleaf. Entregues em `entrega/`:
+  `paper_inversao_ca9fc1f.pdf`, `latex_3924d18..ca9fc1f.diff`, `latex_main..rewrite-inversion_ca9fc1f.diff`.
+  Frases que mudaram de sentido (listadas para ele): 8.4 "nem a camada nem a reconstrução caem" → a camada cai em
+  rejeição a 447/mm²; legenda da curva "as duas rotas aguentam" → só a reconstrução; abstract/intro/conclusão ganharam
+  a oração da queda da camada a 447. Continua esperando: revisão do PDF (→ Overleaf), frase-tese, abstract, diagrama,
+  os .RIS e três PDFs. **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro.**
