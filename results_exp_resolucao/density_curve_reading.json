@@ -302,11 +302,71 @@
     "rej": 5,
     "both": 5
    }
+  },
+  "514": {
+   "set": "curve_u50_L514",
+   "letters_per_window": 511.0268,
+   "per_mm2": 447.353445242748,
+   "covered": 0.34442555694580085,
+   "fillers_skipped_share": 0.007177355030868667,
+   "pi_D2_sigma": 17.560739422752896,
+   "overlap": 0.9999999763697797,
+   "reps": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "r1": {
+    "prop_minus_raw": {
+     "f1": 0.343001893751285,
+     "rej": 0.46215780998389694
+    },
+    "rec_minus_prop": {
+     "f1": 0.03400266160636112,
+     "rej": 0.25442834138486314
+    },
+    "fell": {
+     "raw": {
+      "f1": true,
+      "rej": true
+     },
+     "prop": {
+      "f1": false,
+      "rej": true
+     },
+     "rec_z0": {
+      "f1": false,
+      "rej": false
+     }
+    }
+   },
+   "separate_r1": true,
+   "fell_4of5": {
+    "raw": {
+     "f1": true,
+     "rej": true
+    },
+    "prop": {
+     "f1": false,
+     "rej": true
+    },
+    "rec_z0": {
+     "f1": false,
+     "rej": false
+    }
+   },
+   "p0_thresholds_of_5": {
+    "f1": 5,
+    "rej": 5,
+    "both": 5
+   }
   }
  },
  "layer_falls_first": {
   "f1": "did not fall up to the obtained density",
-  "rej": "did not fall up to the obtained density"
+  "rej": 514
  },
  "provisional": false
 }
