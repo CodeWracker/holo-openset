@@ -4,7 +4,7 @@
 # letters per 640 x 640 window, with the depth law of the standard family (LAW). The recorder (s = 4), the physics
 # and the recipe of the pilot. One step at a time:
 #   LAW=<law> LEVEL=<level> [REP=<1-5>] [WORKERS=<n>] bash scripts/exp_resolucao/density_curve.sh <physical GPU> <step>
-# LEVEL   8 (no fillers: the sparse level of the family), 15, 69, 154, 343 (letters per window; 7, 13, 60, 135, 300
+# LEVEL   8 (no fillers: the sparse level of the family), 15, 69, 154, 343, 514 (letters per window; 7, 13, 60, 135, 300, 450
 #         per mm^2)
 # LAW     d50   depth_std 50 um, depth_max 150 um (as bench_1mm_depth50); its sparse level IS bench_1mm_depth50
 #               (recorded by the other executor; never re-recorded here)
@@ -39,7 +39,7 @@ case "$LAW" in
   u50) DEPTH="depth_std=2.6e-6 depth_max=7.8e-6 depth_uniform=25e-6"; SPARSE=curve_u50_L008 ;;   # std, max unused
   *) echo "LAW must be d50 or u50 (the depth law of the standard family, Q1)"; exit 1 ;;
 esac
-case "$LEVEL" in 8|15|69|154|343) ;; *) [ "$STEP" = table ] || { echo "LEVEL must be 8, 15, 69, 154 or 343"; exit 1; } ;; esac
+case "$LEVEL" in 8|15|69|154|343|514) ;; *) [ "$STEP" = table ] || { echo "LEVEL must be 8, 15, 69, 154, 343 or 514"; exit 1; } ;; esac
 SET=curve_${LAW}_L$(printf %03d "${LEVEL:-0}"); [ "$LEVEL" = 8 ] && SET=$SPARSE
 FILL="fill_mean=$LEVEL"; [ "$LEVEL" = 8 ] && FILL=""   # the sparse level has no fillers
 LOG=logs/exp_resolucao/curve_${STEP}_${LAW}$([ "$STEP" != table ] && echo _L$LEVEL || true)$([ "$REP" != 1 ] && echo _r$REP || true).log

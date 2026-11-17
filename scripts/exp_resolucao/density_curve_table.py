@@ -1,6 +1,6 @@
 """The table of the density curve and the rules of Q0 b (CADERNO_CURVA.md), applied mechanically.
 
-For each level of the family (8 = the sparse set, 15, 69, 154, 343 -> data/curve_<law>_L<level>) and each repetition
+For each level of the family (8 = the sparse set, 15, 69, 154, 343, 514 -> data/curve_<law>_L<level>) and each repetition
 with an evaluation json:
   density      letters per 640 x 640 window obtained (annotated + fillers, metadata.csv) and per mm^2 (window 1.142
                mm^2); covered area (sum of the ink boxes, <set>_checks.json; for the sparse level, from its
@@ -27,7 +27,7 @@ import pandas as pd
 from holo_openset import paths
 from holo_openset.sim.physics import PIXEL
 
-LEVELS = [8, 15, 69, 154, 343]
+LEVELS = [8, 15, 69, 154, 343, 514]
 FLOWS = ['raw', 'prop', 'rec_z0']
 DIFFS = [('prop - raw', 'prop', 'raw'), ('rec_z0 - prop', 'rec_z0', 'prop')]
 METRICS = {'novel_open_macro_f1': 'f1', 'novel_unknown_rejection': 'rejection', 'novel_closed_acc': 'closed_acc'}
