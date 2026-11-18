@@ -911,3 +911,4 @@ errado".
   rejeição a 447/mm²; legenda da curva "as duas rotas aguentam" → só a reconstrução; abstract/intro/conclusão ganharam
   a oração da queda da camada a 447. Continua esperando: revisão do PDF (→ Overleaf), frase-tese, abstract, diagrama,
   os .RIS e três PDFs. **Próximo passo ao voltar: ler a resposta dele; nada roda sem pré-registro.**
+- **2026-11-17, 21:19.** O orientador mandou enviar tudo ("pode mandar tudo então para o GitHub e para o Overleaf"). Paper: `main` avançado por fast-forward até `rewrite/inversion` (`ca9fc1f`) e enviado ao Overleaf (de1c95a..ca9fc1f). Código: as quatro branches já estavam iguais às do GitHub; nenhum merge no `main` do código.
