@@ -22,6 +22,11 @@ It rebuilds `numbers.tex` and the eleven tables from `results/`, and `numbers_di
 distance study, from its stored results in `results_exp_distancia/`), into a temporary folder, and compares them byte
 by byte with `expected/`, the snapshot used in the paper. Expected output: `13/13 files identical to expected/`.
 
+The third file of numbers, `numbers_resolucao.tex` (the section on the simulation), is rebuilt from
+`results_exp_resolucao/` and the physics and metadata of the simulated sets by
+`python scripts/exp_resolucao/paper_resolucao.py --out <folder>`; it needs `data/` (level 2) and is not part of this
+check.
+
 ## Level 2: evaluate
 
 ```bash
@@ -93,6 +98,7 @@ What to expect:
 | stage times table | `results/timing_*.csv` | `experiment timing` | 3 (machine-dependent) |
 | robustness table and figure (with the sets whose distance changes per image) | `results/robustness.csv`, `results/oracle.csv` | `experiment robustness`, `experiment oracle` | 3 |
 | numbers of the distance study (`numbers_distancia.tex`) | `results_exp_distancia/` | the study, `docs/exp_distancia/`; `paper distance` | 1 |
+| section on the simulation: density curve, depth, distance, focal stacks, small objects (`numbers_resolucao.tex`) | `results_exp_resolucao/` | the study, `docs/exp_resolucao/`; `scripts/exp_resolucao/paper_resolucao.py` | 2 |
 | idealised and small-object tables | `results/eval/ideal`, `results/eval/small_*` | `evaluate --set` | 2 |
 | fidelity numbers | `results/fidelity.json` | `experiment fidelity` | 2 |
 | gaps of the idealised model | `results/gaps.json` | `experiment gaps` | 3 |

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "holo-openset"
 version = "1.0.0"
-description = "Open-set recognition of interference patterns on raw lensless holograms with a learnable Fourier layer"
+description = "Open-set recognition of interference patterns on lensless holograms: why crops of the raw hologram fail, and what a propagation step costs"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 license = { text = "AGPL-3.0-only" }
